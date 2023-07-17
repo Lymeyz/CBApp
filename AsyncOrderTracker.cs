@@ -163,6 +163,7 @@ namespace CBApp1
                 CancelResponse cancelResp = JsonConvert.DeserializeObject<CancelResponse>( resp.Content );
 
                 OrderInfo removedPending;
+                OrderInfo returnOrderInfo;
                 bool cancelled = false;
                 int count = 0;
 
@@ -184,6 +185,11 @@ namespace CBApp1
                             if( pendingOrders.ContainsKey( orderClientOrderId ) )
                             {
                                 pendingOrders.TryRemove( orderClientOrderId, out removedPending );
+                            }
+
+                            if( unMatchedOrders[ orderProductId ].ContainsKey( orderClientOrderId ) )
+                            {
+                                returnOrderInfo = unMatchedOrders[ orderProductId ][ orderClientOrderId ];
                             }
 
                             cancelled = true;
