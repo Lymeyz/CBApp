@@ -349,7 +349,7 @@ namespace CBApp1
                     
                     // check if there was a recent buy or a previous buy price is too close
                     OrderInfo trackedUnMatched = null;
-                    double roundedPrelPrice = Math.Round( prel.Price, productInfos[ prel.ProductId ].QuotePrecision );
+                    prel.Price = Math.Round( prel.Price, productInfos[ prel.ProductId ].QuotePrecision );
                     count = wsTracker.UnMatched[ prel.ProductId ].Count;
 
                     // for every unmatched order in tracker
@@ -363,7 +363,7 @@ namespace CBApp1
                             tooClose = true;
                         }
 
-                        if( Math.Abs( trackedUnMatched.Price - roundedPrelPrice ) < orderSpreadPercent * roundedPrelPrice )
+                        if( Math.Abs( trackedUnMatched.Price - prel.Price ) < orderSpreadPercent * prel.Price )
                         {
                             tooClose = true;
 
@@ -381,7 +381,7 @@ namespace CBApp1
                                 double remainingQuoteSize = eurAm - trackedUnMatchedQuoteSize;
                                 double complementaryBaseSize = Math.Round(remainingQuoteSize / prel.Price,
                                                             productInfos[ prel.ProductId].BasePrecision );
-                                double complementaryQuoteSize = Math.Round( complementaryBaseSize * roundedPrelPrice,
+                                double complementaryQuoteSize = Math.Round( complementaryBaseSize * prel.Price,
                                                                         productInfos[ prel.ProductId ].QuotePrecision );
 
                                 if( complementaryQuoteSize < productInfos[ prel.ProductId].QuoteMinSize )
@@ -408,37 +408,82 @@ namespace CBApp1
                     {
                         if( activeBuyOrder.Price != Math.Round( prel.Price, productInfos[ prel.ProductId ].QuotePrecision ) )
                         {
-                            if( await wsTracker.CancelOrder( activeBuyOrder.ProductId, activeBuyOrder.ClientOrderId, activeBuyOrder.Order_Id ) )
+                            if( trackedUnMatched != null )
                             {
-                                // get size of fills on cancelled order, calculate new order size
-                                if( trackedUnMatched != null )
+                                if( await wsTracker.CancelOrder( activeBuyOrder.ProductId, activeBuyOrder.ClientOrderId, activeBuyOrder.Order_Id ) )
                                 {
-                                    if( wsTracker.UnMatched[ prel.ProductId ][ trackedUnMatched.ClientOrderId ].FilledSize 
+                                    if( wsTracker.UnMatched[ prel.ProductId ][ trackedUnMatched.ClientOrderId ].FilledSize
                                         == trackedUnMatched.FilledSize )
                                     {
                                         if( accounts.Accounts[ prel.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
                                         {
-                                            await SendOrder( prel, null );
+                                            if( analyser.DataHandler.Fetcher.CheckUserSocket() )
+                                            {
+                                                await SendOrder( prel, null );
+                                            }
+                                            else
+                                            {
+                                                throw new Exception( "Usersocket disconnected" );
+                                            }
                                         }
                                     }
                                     else
                                     {
-                                        // part of trackedUnMatched was filled, redo calculations etc
+                                        double[] complementarySizes =
+                                            CalculateRemainingOrder( wsTracker.UnMatched[ prel.ProductId ][ trackedUnMatched.ClientOrderId ], prel );
+
+                                        if( complementarySizes[ 1 ] >= productInfos[ prel.ProductId ].QuoteMinSize &&
+                                            complementarySizes[ 0 ] >= productInfos[ prel.ProductId ].BaseMinSize )
+                                        {
+                                            prel.Size = complementarySizes[ 0 ];
+
+                                            if( accounts.Accounts[ prel.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
+                                            {
+                                                if( analyser.DataHandler.Fetcher.CheckUserSocket() )
+                                                {
+                                                    await SendOrder( prel, null );
+                                                }
+                                                else
+                                                {
+                                                    throw new Exception( "Usersocket disconnected" );
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                OrderInfo cancelledOrder =
+                                    await wsTracker.CancelReturnOrder( activeBuyOrder.ProductId, activeBuyOrder.ClientOrderId, activeBuyOrder.Order_Id );
+
+                                if( cancelledOrder == null )
+                                {
+                                    if( ( cancelledOrder.FilledSize * cancelledOrder.Price ) < eurAm )
+                                    {
+                                        double[] remaining = CalculateRemainingOrder( cancelledOrder, prel );
+
+                                        if( remaining[0] >= productInfos[prel.ProductId].BaseMinSize )
+                                        {
+                                            prel.Size = remaining[ 0 ];
+
+                                            if( accounts.Accounts[ prel.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
+                                            {
+                                                if( analyser.DataHandler.Fetcher.CheckUserSocket() )
+                                                {
+                                                    await SendOrder( prel, null );
+                                                }
+                                                else
+                                                {
+                                                    throw new Exception( "Usersocket disconnected" );
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                                 else
                                 {
-                                    if( accounts.Accounts[ prel.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
-                                    {
-                                        if( analyser.DataHandler.Fetcher.CheckUserSocket() )
-                                        {
-                                            await SendOrder( prel, null );
-                                        }
-                                        else
-                                        {
-                                            throw new Exception( "Usersocket disconnected" );
-                                        }
-                                    }
+                                    writer.Write( "No fills on cancelled order" );
                                 }
                             }
                         }
@@ -502,6 +547,28 @@ namespace CBApp1
             {
                 Console.WriteLine(e.StackTrace);
                 Console.WriteLine(e.Message);
+            }
+        }
+
+        private double[] CalculateRemainingOrder( OrderInfo prevOrder, PreOrder preliminaryOrder )
+        {
+            try
+            {
+                // calculate remaining size etc
+                double trackedUnMatchedQuoteSize = prevOrder.FilledSize * prevOrder.Price;
+                double remainingQuoteSize = eurAm - trackedUnMatchedQuoteSize;
+                double complementaryBaseSize = Math.Round( remainingQuoteSize / preliminaryOrder.Price,
+                                            productInfos[ preliminaryOrder.ProductId ].BasePrecision );
+                double complementaryQuoteSize = Math.Round( complementaryBaseSize * preliminaryOrder.Price,
+                                                        productInfos[ preliminaryOrder.ProductId ].QuotePrecision );
+
+                return new double[] { complementaryBaseSize, complementaryQuoteSize };
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+                return null;
             }
         }
 

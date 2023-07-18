@@ -164,33 +164,37 @@ namespace CBApp1
 
                 OrderInfo removedPending;
                 bool cancelled = false;
-                int count = 0;
 
                 if( cancelResp.Results[0].Success )
                 {
+                    // successful cancel request
 
-                    Thread.Sleep( 1000 );
+                    // wait for 5 sec order id to be added to recentCancels
 
-                    do
+                    cancelled = false;
+
+                    for( int i = 0; i < 30; i++ )
                     {
-                        if( activeOrders[ orderProductId ].ContainsKey( orderClientOrderId ) )
+
+                        Thread.Sleep( 100 );
+
+                        foreach( var id in recentCancels )
                         {
-                            await logger.LogTrackerOutput( $"Not Cancelled - {orderClientOrderId}" );
-                            Thread.Sleep( 1000 );
-                            count++;
-                        }
-                        else
-                        {
-                            if( pendingOrders.ContainsKey( orderClientOrderId ) )
+                            if( id == orderClientOrderId )
                             {
-                                pendingOrders.TryRemove( orderClientOrderId, out removedPending );
+                                cancelled = true;
+                                break;
                             }
-
-                            cancelled = true;
-                            break;
-
                         }
-                    } while( count < 10 );
+                    }
+
+                    if( cancelled )
+                    {
+                        if( pendingOrders.ContainsKey( orderClientOrderId ) )
+                        {
+                            pendingOrders.TryRemove( orderClientOrderId, out removedPending );
+                        }
+                    }
                 }
                 else
                 {
@@ -204,6 +208,76 @@ namespace CBApp1
                 Console.WriteLine( e.StackTrace );
                 Console.WriteLine( e.Message );
                 return false;
+            }
+        }
+
+        /// <summary>
+        /// Sends cancel request, waits for id to appear in recentCancels if successful.
+        /// </summary>
+        /// <param name="orderProductId"></param>
+        /// <param name="orderClientOrderId"></param>
+        /// <param name="OrderId"></param>
+        /// <returns>Returns an OrderInfo if cancelled order was at least partly filled, otherwise returns null</returns>
+        public async Task<OrderInfo> CancelReturnOrder( string orderProductId, string orderClientOrderId, string OrderId )
+        {
+            try
+            {
+                var orderIds = new { order_ids = new string[] { OrderId } };
+                string jsonString = JsonConvert.SerializeObject( orderIds );
+
+                RestResponse resp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/batch_cancel", Method.Post, jsonString );
+                CancelResponse cancelResp = JsonConvert.DeserializeObject<CancelResponse>( resp.Content );
+
+                OrderInfo removedPending;
+                OrderInfo returnOrderInfo = null;
+
+                if( cancelResp.Results[ 0 ].Success )
+                {
+                    // successful cancel request
+
+                    // wait for 5 sec order id to be added to recentCancels
+
+                    bool cancelled = false;
+
+                    for( int i = 0; i < 20; i++ )
+                    {
+
+                        Thread.Sleep( 100 );
+
+                        foreach( var id in recentCancels )
+                        {
+                            if( id == orderClientOrderId )
+                            {
+                                cancelled = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if( cancelled )
+                    {
+
+                        if( pendingOrders.ContainsKey( orderClientOrderId ) )
+                        {
+                            pendingOrders.TryRemove( orderClientOrderId, out removedPending );
+                        }
+
+                        // if cancelled order was added to unMatched, it was partly filled and is returned
+                        if( unMatchedOrders[ orderProductId ].ContainsKey( orderClientOrderId ) )
+                        {
+                            returnOrderInfo = unMatchedOrders[ orderProductId ][ orderClientOrderId ];
+                        }
+
+                    }
+                }
+
+                return returnOrderInfo;
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+                return null;
             }
         }
 
@@ -911,6 +985,9 @@ namespace CBApp1
                                        
                                     }
                                 }
+
+                                updateOrder.Price = Math.Round( updateOrder.Price, productInfos[ order.ProductId ].QuotePrecision );
+                                updateOrder.FilledSize = Math.Round( updateOrder.FilledSize, productInfos[ order.ProductId ].BasePrecision );
 
                                 unMatchedOrders[ updateOrder.ProductId ][ updateOrderId ] = updateOrder;
 
