@@ -991,12 +991,6 @@ namespace CBApp1
 
                                 unMatchedOrders[ updateOrder.ProductId ][ updateOrderId ] = updateOrder;
 
-                                //
-                                //unMatchedOrders[ order.ProductId ].TryRemove( updateOrderId, out updateOrder );
-                                //updateOrder.Price = ((updateOrder.Price * updateOrder.FilledSize) + (order.Price * order.FilledSize))
-                                //                                        / (updateOrder.FilledSize + order.FilledSize);
-                                //updateOrder.FilledSize += order.FilledSize;
-                                //unMatchedOrders[ updateOrder.ProductId ][ updateOrderId ] = updateOrder;
                             }
                             else
                             {
@@ -1011,7 +1005,11 @@ namespace CBApp1
                                     }
                                 }
 
+                                order.Size = Math.Round( order.Size, productInfos[ order.ProductId ].BasePrecision );
+                                order.Price = Math.Round( order.Size, productInfos[ order.ProductId ].QuotePrecision );
+
                                 unMatchedOrders[ order.ProductId ][ order.ClientOrderId ] = order;
+
                             }
                         }
                         else
@@ -1074,7 +1072,7 @@ namespace CBApp1
                                                     count--;
                                                 }
 
-                                                if( associatedOrder.Size == 0 )
+                                                if( associatedOrder.FilledSize == 0 )
                                                 {
                                                     break;
                                                 }
@@ -1089,27 +1087,6 @@ namespace CBApp1
                                         string throwawayAssociatedId;
                                         associatedOrders.TryRemove( id, out throwawayAssociatedId );
                                         await logger.LogAssociatedOrders( associatedOrders );
-
-                                        ////
-                                        //if( associatedOrder.FilledSize < order.FilledSize )
-                                        //{
-                                        //    order.FilledSize = Math.Round( order.FilledSize - associatedOrder.FilledSize, basePrecision );
-                                        //    associatedOrder.FilledSize = 0;
-                                        //}
-                                        //else if( associatedOrder.FilledSize >= order.FilledSize )
-                                        //{
-                                        //    associatedOrder.FilledSize = Math.Round( associatedOrder.FilledSize - order.FilledSize, basePrecision );
-                                        //    order.FilledSize = 0;
-                                        //}
-
-                                        //if( associatedOrder.FilledSize > 0 )
-                                        //{
-                                        //    unMatchedOrders[ order.ProductId ][ associatedOrder.ClientOrderId ] = associatedOrder;
-                                        //}
-
-                                        //string throwawayAssociated;
-                                        //associatedOrders.TryRemove( id, out throwawayAssociated );
-                                        //await logger.LogAssociatedOrders( associatedOrders );
                                     }
                                     else
                                     {
