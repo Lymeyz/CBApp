@@ -1006,7 +1006,7 @@ namespace CBApp1
                                 }
 
                                 order.Size = Math.Round( order.Size, productInfos[ order.ProductId ].BasePrecision );
-                                order.Price = Math.Round( order.Size, productInfos[ order.ProductId ].QuotePrecision );
+                                order.Price = Math.Round( order.Price, productInfos[ order.ProductId ].QuotePrecision );
 
                                 unMatchedOrders[ order.ProductId ][ order.ClientOrderId ] = order;
 

@@ -457,7 +457,7 @@ namespace CBApp1
                                 OrderInfo cancelledOrder =
                                     await wsTracker.CancelReturnOrder( activeBuyOrder.ProductId, activeBuyOrder.ClientOrderId, activeBuyOrder.Order_Id );
 
-                                if( cancelledOrder == null )
+                                if( cancelledOrder != null )
                                 {
                                     if( ( cancelledOrder.FilledSize * cancelledOrder.Price ) < eurAm )
                                     {
