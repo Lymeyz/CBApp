@@ -1060,16 +1060,27 @@ namespace CBApp1
                                                 if( associatedOrder.FilledSize < fills[ i ].Size )
                                                 {
                                                     associatedOrder.FillTradeIds.Add( fills[ i ].Trade_Id );
-                                                    fills[ i ].Size = Math.Round( fills[ i ].Size - associatedOrder.FilledSize, basePrecision );
+                                                    double remainingFill = fills[ i ].Size - associatedOrder.FilledSize;
+                                                    fills[ i ].Size = Math.Round( remainingFill, basePrecision );
+
+                                                    writer.Write( $"Remaining fill {remainingFill}, " +
+                                                        $"Remaining fill rounded {fills[ i ].Size}" );
+
                                                     associatedOrder.FilledSize = 0;
                                                 }
                                                 else if( associatedOrder.FilledSize >= fills[ i ].Size )
                                                 {
                                                     associatedOrder.FillTradeIds.Add( fills[ i ].Trade_Id );
-                                                    associatedOrder.FilledSize = Math.Round( associatedOrder.FilledSize - fills[ i ].Size, basePrecision );
+                                                    double remainingOrder = associatedOrder.FilledSize - fills[ i ].Size;
+                                                    associatedOrder.FilledSize = Math.Round( remainingOrder, basePrecision );
                                                     //fills[ i ].Size = 0;
+
+                                                    writer.Write( $"Remaining order {remainingOrder}, " +
+                                                        $"Remaining order rounded {associatedOrder.FilledSize}" );
+
                                                     fills.RemoveAt( i );
                                                     count--;
+                                                    i--;
                                                 }
 
                                                 if( associatedOrder.FilledSize == 0 )
