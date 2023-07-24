@@ -802,7 +802,24 @@ namespace CBApp1
             
         }
 
+        private void AnalyseDataNew()
+        {
+            try
+            {
+                // analysis functions
+                
 
+
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+            }
+        }
+
+        
+        
         private void AnalyseData()
         {
             try
@@ -993,20 +1010,363 @@ namespace CBApp1
             
         }
 
+        private void DoubleEmaAnalyseProduct( string product,
+                                              double bTurnP,
+                                              double tStartP,
+                                              double sOffP,
+                                              double sDiffP,
+                                              double bTooLateP,
+                                              int[] periods,
+                                              ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> longEmas,
+                                              ref Dictionary<int, Ema> currEmas,
+                                              ref Dictionary<int, Ema> currEmaSlopes,
+                                              ref Dictionary<string, Candle> currentLongCandlesCopy )
+        {
+            try
+            {
+                int shortPeriod = periods[ 0 ];
+                int longPeriod = periods[ 1 ];
 
+                Dictionary<int, LimitedDateTimeList<Ema>> prevEmas = new Dictionary<int, LimitedDateTimeList<Ema>>();
+                Dictionary<int, LimitedDateTimeList<Ema>> prevEmaSlopes = new Dictionary<int, LimitedDateTimeList<Ema>>();
+
+                prevEmas[ shortPeriod ] = new LimitedDateTimeList<Ema>( longEmas[ product ][ shortPeriod ], 300 );
+                prevEmas[ longPeriod ] = new LimitedDateTimeList<Ema>( longEmas[ product ][ longPeriod ], 300 );
+
+                prevEmaSlopes[ shortPeriod ] = new LimitedDateTimeList<Ema>( longEmaSlopes[ product ][ shortPeriod ], 300 );
+                prevEmaSlopes[ longPeriod ] = new LimitedDateTimeList<Ema>( longEmaSlopes[ product ][ longPeriod ], 300 );
+
+                Ema newestShortEma = currEmas[ shortPeriod ];
+                Ema newestLongEma = currEmas[ longPeriod ];
+                Ema newestShortEmaSlope = currEmaSlopes[ shortPeriod ];
+                Ema newestLongEmaSlope = currEmaSlopes[ longPeriod ];
+                Ema currShortEma = currEmas[ shortPeriod ];
+                Ema currLongEma = currEmas[ longPeriod ];
+                Ema currShortEmaSlope = currEmaSlopes[ shortPeriod ];
+                Ema currLongEmaSlope = currEmaSlopes[ longPeriod ];
+
+                LongAnalysisResult result;
+                double currDiff;
+
+                // check for previous result
+                if( results[ product ] == null )
+                {
+                    result = null;
+                }
+                else
+                {
+                    result = results[ product ];
+                }
+
+                if( result == null )
+                {
+                    // No previous result
+                    // Determine current trend
+                    for( int i = 0; i < longEmas[ product ][ longPeriod ].Count; i++ )
+                    {
+                        if( result == null )
+                        {
+                            currDiff = Math.Abs( currShortEma - currLongEma );
+                            // Current result null, initialize and set to current ema-trend
+                            if( currShortEma.Price < currLongEma.Price )
+                            {
+                                result = new LongAnalysisResult();
+                                result.Trend = false;
+
+                                result.PeakDiff = currDiff;
+                                result.PeakTime = currShortEma.Time;
+                            }
+                            else if( currShortEma.Price > currLongEma.Price )
+                            {
+                                result = new LongAnalysisResult();
+                                result.Trend = true;
+
+                                result.PeakDiff = currDiff;
+                                result.PeakTime = currShortEma.Time;
+                            }
+
+
+
+
+                            // Get next ema pair
+                            currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
+                            currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
+
+                            // Get next slope pair
+                            currShortEmaSlope = prevEmaSlopes[ shortPeriod ].GetRemoveNewest();
+                            currLongEmaSlope = prevEmaSlopes[ longPeriod ].GetRemoveNewest();
+
+                        }
+                        // Determine phase of trend
+                        else
+                        {
+                            // Current difference in ema-pair
+                            currDiff = Math.Abs( currShortEma - currLongEma );
+
+                            // Short ema under long ema (not rising trend)
+                            if( result.Trend == false )
+                            {
+                                // Find peak difference
+                                if( result.PeakDiff < (currLongEma.Price - currShortEma.Price) )
+                                {
+                                    result.PeakDiff = currLongEma.Price - currShortEma.Price;
+                                    result.PeakTime = currShortEma.Time;
+                                }
+
+                                // Find start of trend
+                                if( currShortEma >= currLongEma )
+                                {
+                                    result.Time = currShortEma.Time;
+                                    break;
+                                }
+                            }
+                            // Short ema over long ema (rising trend)
+                            else
+                            {
+                                // Find peak difference
+                                if( result.PeakDiff < (currShortEma.Price - currLongEma.Price) )
+                                {
+                                    result.PeakDiff = currShortEma.Price - currLongEma.Price;
+                                    result.PeakTime = currShortEma.Time;
+                                }
+
+                                // Find start of trend
+                                if( currShortEma <= currLongEma )
+                                {
+                                    result.Time = currShortEma.Time;
+                                    break;
+                                }
+                            }
+
+                            // Check if current peak is most relevant
+                            // PeakDiff always initialized to -1
+                            if( result.PeakDiff != -1 )
+                            {
+                                // If current difference > tStart * peak difference, this is 
+                                // taken to be start of trend
+                                if( currDiff < tStartP * result.PeakDiff )
+                                {
+                                    if( result.Trend == false )
+                                    {
+                                        result.StartPrice = currShortEma.Price;
+                                        result.Time = currShortEma.Time;
+                                    }
+                                    // Start price provided in od
+                                    else
+                                    {
+                                        result.StartPrice = currLongEma.Price;
+                                        result.Time = currLongEma.Time;
+                                    }
+
+                                    break;
+
+                                }
+                            }
+
+                            currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
+                            currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
+                        }
+                    }
+                }
+                else
+                {
+                    // Check if trend still ongoing
+                    if( result.Trend == false )
+                    {
+                        if( newestShortEma >= newestLongEma )
+                        {
+                            // Emas crossed
+                            result = null;
+                            results[ product ] = null;
+                        }
+                    }
+                    else
+                    {
+                        if( newestShortEma <= newestLongEma )
+                        {
+                            // Emas crossed
+                            result = null;
+                            results[ product ] = null;
+                        }
+                    }
+                }
+
+
+
+                if( result != null )
+                {
+                    currDiff = Math.Abs( newestShortEma - newestLongEma );
+
+                    // Update current result if at new peak
+                    if( currDiff > result.PeakDiff )
+                    {
+                        result.PeakDiff = currDiff;
+                        result.PeakTime = newestShortEma.Time;
+                    }
+
+                    bool sellingOff;
+
+                    if( result.Trend == false )
+                    {
+                        // Too late-condition
+
+                        // If difference decreased more than bTurnP + bTooLate %, wait for another peak
+                        if( newestLongEmaSlope.Price < 0 )
+                        {
+                            if( Math.Abs( newestShortEmaSlope.Price ) > 0.0004 * newestShortEma.Price )
+                            {
+                                sellingOff = true;
+                                result.SellOff = true;
+                                result.Complete = true;
+
+                                results[ product ] = result;
+                            }
+                        }
+                        else
+                        {
+                            sellingOff = false;
+                            result.SellOff = false;
+
+                            if( result.PeakDiff - currDiff > (result.PeakDiff * (bTurnP + bTooLateP)) )
+                            {
+
+                            }
+                            //else if( (newestShortEmaSlope.Price >= 0 && newestLongEmaSlope.Price >= 0)
+                            //    && result.PeakDiff - currDiff > (result.PeakDiff * bTurnP) )
+                            else if( (newestShortEmaSlope.Price >= 0 && newestLongEmaSlope.Price >= 0)
+                                && result.PeakDiff - currDiff > (result.PeakDiff * bTurnP) )
+                            {
+                                // Suggested price 
+                                result.Price = currentLongCandlesCopy[ product ].Avg;
+                                //Console.WriteLine($"Buy {prel.ProductId} order at {prel.Price} ");
+                                result.BuyOk = true;
+
+                                result.Complete = true;
+
+                                results[ product ] = result;
+
+                                if( Math.Abs( currentShortCandles[ product ].Avg - currentLongCandlesCopy[ product ].Avg ) < 0.005 * currentLongCandlesCopy[ product ].Avg )
+                                {
+
+                                }
+
+                                PreOrder pre = new PreOrder( product,
+                                                             result.Time,
+                                                             true );
+                                pre.PeakTime = result.PeakTime;
+                                pre.Price = currentShortCandles[ product ].Close;
+
+                                PreliminaryComplete( pre, ref longProductCandles, ref currentLongCandles, 1.0075 );
+                            }
+
+                        }
+                    }
+                    else
+                    {
+
+                        sellingOff = false;
+
+                        if( newestLongEmaSlope.Price < 0 )
+                        {
+                            // 0.0018 --> 0.0012
+                            if( Math.Abs( newestShortEmaSlope.Price ) > 0.0012 * newestShortEma.Price )
+                            {
+                                sellingOff = true;
+                                result.SellOff = true;
+                                result.Complete = true;
+
+                                results[ product ] = result;
+                            }
+                        }
+                        else
+                        {
+                            bool sending = false;
+                            result.SellOff = false;
+                            sellingOff = false;
+
+                            if( newestShortEmaSlope.Price >= newestLongEmaSlope.Price )
+                            {
+                                if( ((Math.Abs( newestShortEmaSlope.Price - newestLongEmaSlope.Price ) < (sDiffP * newestLongEmaSlope.Price)) ||
+                                  (newestShortEmaSlope.Price < newestLongEmaSlope.Price)) )
+                                {
+                                    sending = true;
+                                }
+                            }
+                            else
+                            {
+                                sending = true;
+                            }
+
+                            if( sending )
+                            {
+                                result.Price = currentLongCandlesCopy[ product ].Avg;
+
+                                result.SellOk = true;
+
+                                result.Complete = true;
+
+                                results[ product ] = result;
+
+                                PreOrder pre = new PreOrder( product,
+                                                             result.Time,
+                                                             false );
+                                pre.PeakTime = result.PeakTime;
+                                pre.Price = currentShortCandles[ product ].Avg;
+
+                                PreliminaryComplete( pre, ref longProductCandles, ref currentLongCandles, 1.0075 );
+                            }
+                            // result.PeakDiff - currDiff > (result.PeakDiff * 0.006)
+
+                        }
+
+
+                        if( !sellingOff )
+                        {
+
+
+
+                        }
+                    }
+
+                    if( result.Complete )
+                    {
+                        //PreliminaryComplete( prel );
+                        // prepare placing long order? 
+
+                        if( result.BuyOk )
+                        {
+                            //writer.Write( $"{product} - buy ok {result.Time:HH-mm-ss}" );
+                        }
+                        else if( result.SellOk )
+                        {
+                            //writer.Write( $"{product} - sell ok {result.Time:HH-mm-ss}" );
+                        }
+                    }
+                    else
+                    {
+                        results[ product ] = result;
+                    }
+                }
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+            }
+        }
 
         private void AnalyseProductLongTerm( string product,
-                                            double bTurnP,
-                                            double tStartP,
-                                            double sOffP,
-                                            double sDiffP,
-                                            double bTooLateP,
-                                            int shortPeriod,
-                                            int longPeriod,
-                                            ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> longEmas,
-                                            ref Dictionary<int, Ema> currEmas,
-                                            ref Dictionary<int, Ema> currEmaSlopes,
-                                            ref Dictionary<string, Candle> currentLongCandlesCopy )
+                                             double bTurnP,
+                                             double tStartP,
+                                             double sOffP,
+                                             double sDiffP,
+                                             double bTooLateP,
+                                             int shortPeriod,
+                                             int longPeriod,
+                                             ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> longEmas,
+                                             ref Dictionary<int, Ema> currEmas,
+                                             ref Dictionary<int, Ema> currEmaSlopes,
+                                             ref Dictionary<string, Candle> currentLongCandlesCopy )
         {
             try
             {
@@ -1243,72 +1603,9 @@ namespace CBApp1
                             }
 
                         }
-                        
-                        
-                        //else
-                        //{
-                        //    // cancel any active buy order
-                        //    foreach( var item in collection )
-                        //    {
-
-                        //    }
-                        //}
-
-                        //if( newestShortEmaSlope.Price >= 0 && (result.PeakDiff - currDiff > (result.PeakDiff * bTurnP)) )
-                        //{
-                        //    // Suggested price 
-                        //    result.Price = currentLongCandlesCopy[ product ].Avg;
-                        //    //Console.WriteLine($"Buy {prel.ProductId} order at {prel.Price} ");
-                        //    result.BuyOk = true;
-
-                        //    result.Complete = true;
-
-                        //    results[ product ] = result;
-                        //}
-                        //else if( newestShortEmaSlope.Price >= 0 || newestLongEmaSlope.Price >= 0 )
-                        //{
-                        //    // Suggested price 
-                        //    result.Price = currentLongCandlesCopy[ product ].Avg;
-                        //    //Console.WriteLine($"Buy {prel.ProductId} order at {prel.Price} ");
-                        //    result.BuyOk = true;
-
-                        //    result.Complete = true;
-
-                        //    results[ product ] = result;
-                        //}
-                        //else if( ( Math.Abs( newestShortEmaSlope.Price - newestLongEmaSlope.Price ) < (sDiffP * newestLongEmaSlope.Price  ) ) 
-                        //            || newestShortEmaSlope.Price > newestLongEmaSlope.Price )
-                        //{
-                        //    // Suggested price 
-                        //    result.Price = currentLongCandlesCopy[ product ].Avg;
-                        //    //Console.WriteLine($"Buy {prel.ProductId} order at {prel.Price} ");
-                        //    result.BuyOk = true;
-
-                        //    result.Complete = true;
-
-                        //    results[ product ] = result;
-                        //}
                     }
                     else
                     {
-
-                        // Too late-condition
-
-                        //if( result.PeakDiff - currDiff > (result.PeakDiff * (0.003 + 0.4)) )
-                        //{
-
-                        //}
-                        //If difference decreased by turnP % suggest order
-
-
-                        // if short ema-slope is less than longer ema-slope
-                        // or short ema-slope is within 10% of longer ema-slope
-                        //
-                        // abs(short-long) <-- abs difference between s l
-                        // 0.1 * long <-- 10% of long
-                        //
-
-                        //if( newestShortEmaSlope.Price < 0 && newestLongEmaSlope.Price < 0 )
 
                         sellingOff = false;
 

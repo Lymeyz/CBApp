@@ -101,6 +101,7 @@
     <Compile Include="AnalysisParameters.cs" />
     <Compile Include="AsyncOrderLogger.cs" />
     <Compile Include="CandleHolder.cs" />
+    <Compile Include="DoubleEmaAnalysisSettings.cs" />
     <Compile Include="Fill.cs" />
     <Compile Include="FillInfo.cs" />
     <Compile Include="LameCandle.cs" />

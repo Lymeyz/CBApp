@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace CBApp1
 {
-    class Ema : ITimeBound
+    public class Ema : ITimeBound
     {
         public Ema(int length, double price, DateTime time)
         {
