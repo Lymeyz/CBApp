@@ -63,6 +63,18 @@ namespace CBApp1
             analysisRunning = false;
         }
 
+        private void AnalyseVolatilities( ref Dictionary<string, Queue<Candle>> candles )
+        {
+            try
+            {
+
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.Message );
+                Console.WriteLine( e.StackTrace );
+            }
+        }
         //periods in ascending order
         private void CalculateAllEmas( Dictionary<string, Queue<Candle>> productCandles,
                                       ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> currentAnalyserEmas,
@@ -808,6 +820,7 @@ namespace CBApp1
             {
                 // analysis functions
                 
+
 
 
             }

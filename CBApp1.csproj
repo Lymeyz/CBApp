@@ -101,7 +101,7 @@
     <Compile Include="AnalysisParameters.cs" />
     <Compile Include="AsyncOrderLogger.cs" />
     <Compile Include="CandleHolder.cs" />
-    <Compile Include="DoubleEmaAnalysisSettings.cs" />
+    <Compile Include="EmaAnalysisSettings.cs" />
     <Compile Include="Fill.cs" />
     <Compile Include="FillInfo.cs" />
     <Compile Include="LameCandle.cs" />
@@ -122,6 +122,7 @@
     <Compile Include="NonBlockingConsole.cs" />
     <Compile Include="PrelO.cs" />
     <Compile Include="Tick.cs" />
+    <Compile Include="VolatilityAnalysisSettings.cs" />
     <Compile Include="WsMessage.cs" />
     <Compile Include="TimedObjectComp.cs" />
     <Compile Include="Ema.cs" />

@@ -43,14 +43,15 @@ namespace CBApp1
                                           ref Dictionary<int, Ema> currEmaSlopes,
                                           ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emas )
         {
-            Product1 = product;
+            Product = product;
             SDiffP = sDiffP;
             SOffP = sOffP;
-            Periods1 = periods;
+            Periods = periods;
             CurrentCandles = currentCandles;
-            CurrEmas1 = currEmas;
+            CurrEmas = currEmas;
             CurrEmaSlopes = currEmaSlopes;
             Emas1 = emas;
+            
         }
 
         public string Product { get; }
@@ -60,12 +61,9 @@ namespace CBApp1
         public double BTooLateP { get; }
         public double STooLateP { get; }
         public int[] Periods { get; }
-        public string Product1 { get; }
         public double SDiffP { get; }
         public double SOffP { get; }
-        public int[] Periods1 { get; }
         public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
-        public Dictionary<int, Ema> CurrEmas1 { get; }
         public Dictionary<int, Ema> CurrEmaSlopes { get; }
         public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> Emas1 { get; }
         public Dictionary<int, Ema> CurrEmas { get; }
@@ -74,11 +72,14 @@ namespace CBApp1
 
     public class SingleEmaAnalysisSettings
     {
-        public SingleEmaAnalysisSettings()
+        public SingleEmaAnalysisSettings( string product,
+                                          double sOffP )
         {
-            
+            Product = product;
+            SOffP = sOffP;
         }
 
-
+        public string Product { get; }
+        public double SOffP { get; }
     }
 }

@@ -35,7 +35,9 @@ namespace CBApp1
                 lastTries = new Dictionary<string, DateTime>();
 
                 this.writer = writer;
-                analyser.PreOrderReady += this.PreOrderReadyEvent;
+
+                // UNSUBSCRIBED
+                //analyser.PreOrderReady += this.PreOrderReadyEvent;
 
                 this.reqMaker = reqMaker;
 
