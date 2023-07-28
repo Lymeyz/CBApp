@@ -63,18 +63,7 @@ namespace CBApp1
             analysisRunning = false;
         }
 
-        private void AnalyseVolatilities( ref Dictionary<string, Queue<Candle>> candles )
-        {
-            try
-            {
-
-            }
-            catch( Exception e )
-            {
-                Console.WriteLine( e.Message );
-                Console.WriteLine( e.StackTrace );
-            }
-        }
+        
         //periods in ascending order
         private void CalculateAllEmas( Dictionary<string, Queue<Candle>> productCandles,
                                       ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> currentAnalyserEmas,
@@ -818,10 +807,28 @@ namespace CBApp1
         {
             try
             {
-                // analysis functions
-                
+                // long
+
+                // calculate long ema, double ema or both
+
+                // calculate volatility between crosses or zero slopes
+
+                // if volatility high enough and slope positive enough
+                // analyse ema/emas for timing
+                // input: volatility and long ema results + volatilitySettings + longEmaSettings + 
+
+                // short
+
+                // calculate long ema, or double ema or both
+
+                // calculate volatility between crosses or zero slopes
+
+                // if volatility high enough and slope positive enough
+                // analyse ema/emas for timing
 
 
+
+                // 
 
             }
             catch( Exception e )
@@ -831,8 +838,45 @@ namespace CBApp1
             }
         }
 
-        
-        
+        private void DoubleEmaAnalysis()
+        {
+            try
+            {
+
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+            }
+        }
+
+        private void SingleEmaAnalysis()
+        {
+            try
+            {
+
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+            }
+        }
+
+        private void AnalyseVolatilities( ref Dictionary<string, Queue<Candle>> candles )
+        {
+            try
+            {
+
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.Message );
+                Console.WriteLine( e.StackTrace );
+            }
+        }
+
         private void AnalyseData()
         {
             try
