@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace CBApp1
 {
-    public class LongAnalysisResult : ITimeBound
+    public class DoubleEmaAnalysisResult : ITimeBound
     {
-        public LongAnalysisResult()
+        public DoubleEmaAnalysisResult()
         {
             PeakDiff = -1;
             PeakTime = DateTime.MinValue;

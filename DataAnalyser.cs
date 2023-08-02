@@ -42,7 +42,7 @@ namespace CBApp1
             calculatedShortEmas = new ConcurrentDictionary<string, bool>();
             calculatedLongEmas = new ConcurrentDictionary<string, bool>();
             prelOs = new ConcurrentDictionary<string, PreOrder>();
-            results = new ConcurrentDictionary<string, LongAnalysisResult>();
+            results = new ConcurrentDictionary<string, DoubleEmaAnalysisResult>();
 
             productInfos = new ConcurrentDictionary<string, ProductInfo>(dataHandler.Fetcher.ProductInfos);
 
@@ -1067,42 +1067,69 @@ namespace CBApp1
             
         }
 
-        private void DoubleEmaAnalyseProduct( string product,
-                                              double bTurnP,
-                                              double tStartP,
-                                              double sOffP,
-                                              double sDiffP,
-                                              double bTooLateP,
-                                              int[] periods,
-                                              ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> longEmas,
-                                              ref Dictionary<int, Ema> currEmas,
-                                              ref Dictionary<int, Ema> currEmaSlopes,
-                                              ref Dictionary<string, Candle> currentLongCandlesCopy )
+        private void DoubleEmaAnalyseProduct( DoubleEmaAnalysisSettings aSet )
         {
             try
             {
-                int shortPeriod = periods[ 0 ];
-                int longPeriod = periods[ 1 ];
+                string product = aSet.Product;
 
-                Dictionary<int, LimitedDateTimeList<Ema>> prevEmas = new Dictionary<int, LimitedDateTimeList<Ema>>();
-                Dictionary<int, LimitedDateTimeList<Ema>> prevEmaSlopes = new Dictionary<int, LimitedDateTimeList<Ema>>();
+                int shortPeriod = aSet.Periods[ 0 ];
+                int longPeriod = aSet.Periods[ 1 ];
 
-                prevEmas[ shortPeriod ] = new LimitedDateTimeList<Ema>( longEmas[ product ][ shortPeriod ], 300 );
-                prevEmas[ longPeriod ] = new LimitedDateTimeList<Ema>( longEmas[ product ][ longPeriod ], 300 );
+                Dictionary<int, LimitedDateTimeList<Ema>> prevEmas = null;
+                Dictionary<int, LimitedDateTimeList<Ema>> prevEmaSlopes = null;
 
-                prevEmaSlopes[ shortPeriod ] = new LimitedDateTimeList<Ema>( longEmaSlopes[ product ][ shortPeriod ], 300 );
-                prevEmaSlopes[ longPeriod ] = new LimitedDateTimeList<Ema>( longEmaSlopes[ product ][ longPeriod ], 300 );
+                Ema newestShortEmaSlope = null;
+                Ema newestLongEmaSlope = null;
+                Ema currShortEmaSlope = null;
+                Ema currLongEmaSlope = null;
 
-                Ema newestShortEma = currEmas[ shortPeriod ];
-                Ema newestLongEma = currEmas[ longPeriod ];
-                Ema newestShortEmaSlope = currEmaSlopes[ shortPeriod ];
-                Ema newestLongEmaSlope = currEmaSlopes[ longPeriod ];
-                Ema currShortEma = currEmas[ shortPeriod ];
-                Ema currLongEma = currEmas[ longPeriod ];
-                Ema currShortEmaSlope = currEmaSlopes[ shortPeriod ];
-                Ema currLongEmaSlope = currEmaSlopes[ longPeriod ];
+                Ema newestShortEma = null;
+                Ema newestLongEma = null;
+                Ema currShortEma = null;
+                Ema currLongEma = null;
 
-                LongAnalysisResult result;
+                if( aSet.Slopes )
+                {
+                    prevEmaSlopes = new Dictionary<int, LimitedDateTimeList<Ema>>();
+
+                    prevEmaSlopes[ shortPeriod ] = new LimitedDateTimeList<Ema>( aSet.EmaSlopes[ product ][ shortPeriod ],
+                        aSet.EmaSlopes[ product ][ shortPeriod ].Count );
+
+                    prevEmaSlopes[ longPeriod ] = new LimitedDateTimeList<Ema>( aSet.EmaSlopes[ product ][ longPeriod ],
+                        aSet.EmaSlopes[ product ][ shortPeriod ].Count );
+
+                    newestShortEmaSlope = aSet.CurrEmaSlopes[ shortPeriod ];
+                    newestLongEmaSlope = aSet.CurrEmaSlopes[ longPeriod ];
+                    currShortEmaSlope = aSet.CurrEmaSlopes[ shortPeriod ];
+                    currLongEmaSlope = aSet.CurrEmaSlopes[ longPeriod ];
+
+                    newestShortEma = aSet.CurrEmas[ shortPeriod ];
+                    newestLongEma = aSet.CurrEmas[ longPeriod ];
+                    currShortEma = aSet.CurrEmas[ shortPeriod ];
+                    currLongEma = aSet.CurrEmas[ longPeriod ];
+                }
+                else
+                {
+                    prevEmas = new Dictionary<int, LimitedDateTimeList<Ema>>();
+
+                    prevEmas[ shortPeriod ] = new LimitedDateTimeList<Ema>( aSet.Emas[ product ][ shortPeriod ],
+                        aSet.Emas[ product ][ shortPeriod ].Count );
+
+                    prevEmas[ longPeriod ] = new LimitedDateTimeList<Ema>( aSet.Emas[ product ][ longPeriod ],
+                        aSet.Emas[ product ][ longPeriod ].Count );
+
+                    newestShortEma = aSet.CurrEmas[ shortPeriod ];
+                    newestLongEma = aSet.CurrEmas[ longPeriod ];
+                    currShortEma = aSet.CurrEmas[ shortPeriod ];
+                    currLongEma = aSet.CurrEmas[ longPeriod ];
+                }
+                
+
+                //
+                // ? 
+                //
+                DoubleEmaAnalysisResult result;
                 double currDiff;
 
                 // check for previous result
@@ -1119,111 +1146,222 @@ namespace CBApp1
                 {
                     // No previous result
                     // Determine current trend
-                    for( int i = 0; i < longEmas[ product ][ longPeriod ].Count; i++ )
+                    // Depending on aSet.Slopes
+
+                    if( aSet.Slopes )
                     {
-                        if( result == null )
+                        for( int i = 0; i < longEmas[ product ][ longPeriod ].Count; i++ )
                         {
-                            currDiff = Math.Abs( currShortEma - currLongEma );
-                            // Current result null, initialize and set to current ema-trend
-                            if( currShortEma.Price < currLongEma.Price )
+                            if( result == null )
                             {
-                                result = new LongAnalysisResult();
-                                result.Trend = false;
-
-                                result.PeakDiff = currDiff;
-                                result.PeakTime = currShortEma.Time;
-                            }
-                            else if( currShortEma.Price > currLongEma.Price )
-                            {
-                                result = new LongAnalysisResult();
-                                result.Trend = true;
-
-                                result.PeakDiff = currDiff;
-                                result.PeakTime = currShortEma.Time;
-                            }
-
-
-
-
-                            // Get next ema pair
-                            currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
-                            currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
-
-                            // Get next slope pair
-                            currShortEmaSlope = prevEmaSlopes[ shortPeriod ].GetRemoveNewest();
-                            currLongEmaSlope = prevEmaSlopes[ longPeriod ].GetRemoveNewest();
-
-                        }
-                        // Determine phase of trend
-                        else
-                        {
-                            // Current difference in ema-pair
-                            currDiff = Math.Abs( currShortEma - currLongEma );
-
-                            // Short ema under long ema (not rising trend)
-                            if( result.Trend == false )
-                            {
-                                // Find peak difference
-                                if( result.PeakDiff < (currLongEma.Price - currShortEma.Price) )
+                                currDiff = Math.Abs( currShortEma - currLongEma );
+                                // Current result null, initialize and set to current ema-trend
+                                if( currShortEma.Price < currLongEma.Price )
                                 {
-                                    result.PeakDiff = currLongEma.Price - currShortEma.Price;
+                                    result = new DoubleEmaAnalysisResult();
+                                    result.Trend = false;
+
+                                    result.PeakDiff = currDiff;
+                                    result.PeakTime = currShortEma.Time;
+                                }
+                                else if( currShortEma.Price > currLongEma.Price )
+                                {
+                                    result = new DoubleEmaAnalysisResult();
+                                    result.Trend = true;
+
+                                    result.PeakDiff = currDiff;
                                     result.PeakTime = currShortEma.Time;
                                 }
 
-                                // Find start of trend
-                                if( currShortEma >= currLongEma )
-                                {
-                                    result.Time = currShortEma.Time;
-                                    break;
-                                }
+
+
+
+                                // Get next ema pair
+                                currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
+                                currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
+
+                                // Get next slope pair
+                                currShortEmaSlope = prevEmaSlopes[ shortPeriod ].GetRemoveNewest();
+                                currLongEmaSlope = prevEmaSlopes[ longPeriod ].GetRemoveNewest();
+
                             }
-                            // Short ema over long ema (rising trend)
+                            // Determine phase of trend
                             else
                             {
-                                // Find peak difference
-                                if( result.PeakDiff < (currShortEma.Price - currLongEma.Price) )
+                                // Current difference in ema-pair
+                                currDiff = Math.Abs( currShortEma - currLongEma );
+
+                                // Short ema under long ema (not rising trend)
+                                if( result.Trend == false )
                                 {
-                                    result.PeakDiff = currShortEma.Price - currLongEma.Price;
+                                    // Find peak difference
+                                    if( result.PeakDiff < (currLongEma.Price - currShortEma.Price) )
+                                    {
+                                        result.PeakDiff = currLongEma.Price - currShortEma.Price;
+                                        result.PeakTime = currShortEma.Time;
+                                    }
+
+                                    // Find start of trend
+                                    if( currShortEma >= currLongEma )
+                                    {
+                                        result.Time = currShortEma.Time;
+                                        break;
+                                    }
+                                }
+                                // Short ema over long ema (rising trend)
+                                else
+                                {
+                                    // Find peak difference
+                                    if( result.PeakDiff < (currShortEma.Price - currLongEma.Price) )
+                                    {
+                                        result.PeakDiff = currShortEma.Price - currLongEma.Price;
+                                        result.PeakTime = currShortEma.Time;
+                                    }
+
+                                    // Find start of trend
+                                    if( currShortEma <= currLongEma )
+                                    {
+                                        result.Time = currShortEma.Time;
+                                        break;
+                                    }
+                                }
+
+                                // Check if current peak is most relevant
+                                // PeakDiff always initialized to -1
+                                if( result.PeakDiff != -1 )
+                                {
+                                    // If current difference > tStart * peak difference, this is 
+                                    // taken to be start of trend
+                                    if( currDiff < aSet.TStartP * result.PeakDiff )
+                                    {
+                                        if( result.Trend == false )
+                                        {
+                                            result.StartPrice = currShortEma.Price;
+                                            result.Time = currShortEma.Time;
+                                        }
+                                        // Start price provided in od
+                                        else
+                                        {
+                                            result.StartPrice = currLongEma.Price;
+                                            result.Time = currLongEma.Time;
+                                        }
+
+                                        break;
+
+                                    }
+                                }
+
+                                currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
+                                currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for( int i = 0; i < prevEmas[ longPeriod ].Count; i++ )
+                        {
+                            if( result == null )
+                            {
+                                currDiff = Math.Abs( currShortEma - currLongEma );
+                                // Current result null, initialize and set to current ema-trend
+                                if( currShortEma.Price < currLongEma.Price )
+                                {
+                                    result = new DoubleEmaAnalysisResult();
+                                    result.Trend = false;
+
+                                    result.PeakDiff = currDiff;
+                                    result.PeakTime = currShortEma.Time;
+                                }
+                                else if( currShortEma.Price > currLongEma.Price )
+                                {
+                                    result = new DoubleEmaAnalysisResult();
+                                    result.Trend = true;
+
+                                    result.PeakDiff = currDiff;
                                     result.PeakTime = currShortEma.Time;
                                 }
 
-                                // Find start of trend
-                                if( currShortEma <= currLongEma )
-                                {
-                                    result.Time = currShortEma.Time;
-                                    break;
-                                }
-                            }
+                                // Get next ema pair
+                                currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
+                                currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
 
-                            // Check if current peak is most relevant
-                            // PeakDiff always initialized to -1
-                            if( result.PeakDiff != -1 )
+                                // Get next slope pair
+                                currShortEmaSlope = prevEmaSlopes[ shortPeriod ].GetRemoveNewest();
+                                currLongEmaSlope = prevEmaSlopes[ longPeriod ].GetRemoveNewest();
+
+                            }
+                            // Determine phase of trend
+                            else
                             {
-                                // If current difference > tStart * peak difference, this is 
-                                // taken to be start of trend
-                                if( currDiff < tStartP * result.PeakDiff )
+                                // Current difference in ema-pair
+                                currDiff = Math.Abs( currShortEma - currLongEma );
+
+                                // Short ema under long ema (not rising trend)
+                                if( result.Trend == false )
                                 {
-                                    if( result.Trend == false )
+                                    // Find peak difference
+                                    if( result.PeakDiff < (currLongEma.Price - currShortEma.Price) )
                                     {
-                                        result.StartPrice = currShortEma.Price;
+                                        result.PeakDiff = currLongEma.Price - currShortEma.Price;
+                                        result.PeakTime = currShortEma.Time;
+                                    }
+
+                                    // Find start of trend
+                                    if( currShortEma >= currLongEma )
+                                    {
                                         result.Time = currShortEma.Time;
+                                        break;
                                     }
-                                    // Start price provided in od
-                                    else
-                                    {
-                                        result.StartPrice = currLongEma.Price;
-                                        result.Time = currLongEma.Time;
-                                    }
-
-                                    break;
-
                                 }
-                            }
+                                // Short ema over long ema (rising trend)
+                                else
+                                {
+                                    // Find peak difference
+                                    if( result.PeakDiff < (currShortEma.Price - currLongEma.Price) )
+                                    {
+                                        result.PeakDiff = currShortEma.Price - currLongEma.Price;
+                                        result.PeakTime = currShortEma.Time;
+                                    }
 
-                            currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
-                            currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
+                                    // Find start of trend
+                                    if( currShortEma <= currLongEma )
+                                    {
+                                        result.Time = currShortEma.Time;
+                                        break;
+                                    }
+                                }
+
+                                // Check if current peak is most relevant
+                                // PeakDiff always initialized to -1
+                                if( result.PeakDiff != -1 )
+                                {
+                                    // If current difference > tStart * peak difference, this is 
+                                    // taken to be start of trend
+                                    if( currDiff < tStartP * result.PeakDiff )
+                                    {
+                                        if( result.Trend == false )
+                                        {
+                                            result.StartPrice = currShortEma.Price;
+                                            result.Time = currShortEma.Time;
+                                        }
+                                        // Start price provided in od
+                                        else
+                                        {
+                                            result.StartPrice = currLongEma.Price;
+                                            result.Time = currLongEma.Time;
+                                        }
+
+                                        break;
+
+                                    }
+                                }
+
+                                currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
+                                currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
+                            }
                         }
                     }
+                    
                 }
                 else
                 {
@@ -1445,7 +1583,7 @@ namespace CBApp1
                 Ema currShortEmaSlope = currEmaSlopes[ shortPeriod ];
                 Ema currLongEmaSlope = currEmaSlopes[ longPeriod ];
 
-                LongAnalysisResult result;
+                DoubleEmaAnalysisResult result;
                 double currDiff;
 
                 // check for previous result
@@ -1470,7 +1608,7 @@ namespace CBApp1
                             // Current result null, initialize and set to current ema-trend
                             if( currShortEma.Price < currLongEma.Price )
                             {
-                                result = new LongAnalysisResult();
+                                result = new DoubleEmaAnalysisResult();
                                 result.Trend = false;
 
                                 result.PeakDiff = currDiff;
@@ -1478,7 +1616,7 @@ namespace CBApp1
                             }
                             else if( currShortEma.Price > currLongEma.Price )
                             {
-                                result = new LongAnalysisResult();
+                                result = new DoubleEmaAnalysisResult();
                                 result.Trend = true;
 
                                 result.PeakDiff = currDiff;
@@ -2212,7 +2350,7 @@ namespace CBApp1
         private ConcurrentDictionary<string, bool> calculatedLongEmas;
         private ConcurrentDictionary<string, ProductInfo> productInfos;
         private ConcurrentDictionary<string, PreOrder> prelOs;
-        private ConcurrentDictionary<string, LongAnalysisResult> results;
+        private ConcurrentDictionary<string, DoubleEmaAnalysisResult> results;
     }
 
     public class PreOrderReadyEventArgs

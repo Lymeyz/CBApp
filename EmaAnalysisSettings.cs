@@ -7,10 +7,13 @@ using System.Threading.Tasks;
 
 namespace CBApp1
 {
+    // short 6-26, 50
+    // long 6-12, 20
     public class DoubleEmaAnalysisSettings
     {
         /// <summary>
-        /// Constructor for double ema analysis using difference between long and short
+        /// Constructor for double ema analysis using difference between long and short.
+        /// Needs to be passed current candles and current emas need calculating
         /// </summary>
         /// <param name="product">Product id</param>
         /// <param name="startP">Percentage difference between emas considered start of trend</param>
@@ -25,6 +28,7 @@ namespace CBApp1
         /// <param name="currEmas">Reference to collection holding current emas of appropriate lengths</param>
         /// <param name="emas">Reference to collection holding previously calculated emas of appropriate lengths</param>
         public DoubleEmaAnalysisSettings( string product,
+                                          bool slopes,
                                           double startP,
                                           double bTurnP,
                                           double sTurnP,
@@ -38,6 +42,7 @@ namespace CBApp1
                                           ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emas )
         {
             Product = product;
+            Slopes = slopes;
             TStartP = startP;
             BTurnP = bTurnP;
             STurnP = sTurnP;
@@ -52,6 +57,7 @@ namespace CBApp1
 
         /// <summary>
         /// Constructor for double ema analysis using slopes of long and short emas
+        /// Needs to be passed current candles and current emas and ema-slopes need calculating
         /// </summary>
         /// <param name="product">Product id</param>
         /// <param name="sDiffP">Percentage difference in slopes of emas to trigger sell</param>
@@ -65,6 +71,7 @@ namespace CBApp1
         /// <param name="currEmaSlopes">Reference to collection holding current slopes of emas of appropriate lengths</param>
         /// <param name="emaSlopes">Reference to collection holding previously calculated ema slopes of appropriate lengths</param>
         public DoubleEmaAnalysisSettings( string product,
+                                          bool slopes,
                                           double sDiffP,
                                           double sOffP,
                                           bool bTrigger,
@@ -77,6 +84,7 @@ namespace CBApp1
                                           ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes )
         {
             Product = product;
+            Slopes = slopes;
             SDiffP = sDiffP;
             SOffP = sOffP;
             BTrigger = bTrigger;
@@ -91,6 +99,7 @@ namespace CBApp1
         }
 
         public string Product { get; }
+        public bool Slopes { get; }
         public double TStartP { get; }
         public double BTurnP { get; }
         public double STurnP { get; }

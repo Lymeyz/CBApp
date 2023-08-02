@@ -105,7 +105,7 @@
     <Compile Include="Fill.cs" />
     <Compile Include="FillInfo.cs" />
     <Compile Include="LameCandle.cs" />
-    <Compile Include="LongAnalysisResult.cs" />
+    <Compile Include="DoubleEmaAnalysisResult.cs" />
     <Compile Include="Profile.cs" />
     <Compile Include="SynchronizedConsoleWriter.cs" />
     <Compile Include="Authenticator.cs" />
