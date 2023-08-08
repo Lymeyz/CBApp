@@ -13,10 +13,10 @@ namespace CBApp1
     {
         /// <summary>
         /// Constructor for double ema analysis using difference between long and short.
-        /// Needs to be passed current candles and current emas need calculating
+        /// Needs to be passed current candles, and current emas need calculating
         /// </summary>
         /// <param name="product">Product id</param>
-        /// <param name="startP">Percentage difference between emas considered start of trend</param>
+        /// <param name="tStartP">Percentage difference between emas considered start of trend</param>
         /// <param name="bTurnP">Percentage decrease in difference between emas after peak difference to trigger buy</param>
         /// <param name="sTurnP">Percentage decrease in difference between emas after peak difference to trigger sell</param>
         /// <param name="bTooLateP">Percentage decrease in difference between emas --> too late to buy</param>
@@ -29,7 +29,7 @@ namespace CBApp1
         /// <param name="emas">Reference to collection holding previously calculated emas of appropriate lengths</param>
         public DoubleEmaAnalysisSettings( string product,
                                           bool slopes,
-                                          double startP,
+                                          double tStartP,
                                           double bTurnP,
                                           double sTurnP,
                                           double bTooLateP,
@@ -43,7 +43,7 @@ namespace CBApp1
         {
             Product = product;
             Slopes = slopes;
-            TStartP = startP;
+            TStartP = tStartP;
             BTurnP = bTurnP;
             STurnP = sTurnP;
             BTooLateP = bTooLateP;
@@ -57,7 +57,7 @@ namespace CBApp1
 
         /// <summary>
         /// Constructor for double ema analysis using slopes of long and short emas
-        /// Needs to be passed current candles and current emas and ema-slopes need calculating
+        /// Needs to be passed current candles, and current emas and ema-slopes need calculating
         /// </summary>
         /// <param name="product">Product id</param>
         /// <param name="sDiffP">Percentage difference in slopes of emas to trigger sell</param>
