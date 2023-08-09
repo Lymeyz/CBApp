@@ -18,44 +18,46 @@ namespace CBApp1
         private readonly object analyserLongCandlesRoot = new object();
         private readonly object analyserCurrentLongCandlesRoot = new object();
         private readonly object analyserCurrentShortCandlesRoot = new object();
-        public DataAnalyser(ref DataHandler dataHandler, ref System.Timers.Timer aTimer, ref SynchronizedConsoleWriter writer)
+        public DataAnalyser( ref DataHandler dataHandler,
+                             ref System.Timers.Timer aTimer,
+                             ref SynchronizedConsoleWriter writer,
+                             AnalyserConfiguration config )
         {
             this.writer = writer;
+            this.config = config;
             this.dataHandler = dataHandler;
             this.dataHandler.UpdatedProductCandles += UpdatedProductCandles;
             dataHandler.Fetcher.ShortCandleUpdate += ShortCandleUpdateEvent;
             dataHandler.Fetcher.LongCandleUpdate += LongCandleUpdateEvent;
             aTimer.Elapsed += this.OnTimedEvent;
 
-            shortProductCandles = new Dictionary<string, Queue<Candle>>();
-            longProductCandles = new Dictionary<string, Queue<Candle>>();
-            shortEmas = new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>>();
-            longEmas = new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>>();
-            shortEmaSlopes = new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>>();
-            longEmaSlopes = new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>>();
+            fiveMinCandles = new Dictionary<string, Queue<Candle>>();
+            hourCandles = new Dictionary<string, Queue<Candle>>();
+            fiveMinEmas = new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>>();
+            hourEmas = new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>>();
+            fiveMinEmaSlopes = new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>>();
+            hourEmaSlopes = new ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>>();
             shortSlopes = new ConcurrentDictionary<string, ConcurrentStack<SlopeCandle>>();
-            shortMinMax24 = new ConcurrentDictionary<string, HighLow>();
-            shortMinMax = new ConcurrentDictionary<string, HighLow>();
-            longMinMax = new ConcurrentDictionary<string, HighLow>();
-            currentShortCandles = new ConcurrentDictionary<string, Candle>();
-            currentLongCandles = new ConcurrentDictionary<string, Candle>();
-            calculatedShortEmas = new ConcurrentDictionary<string, bool>();
-            calculatedLongEmas = new ConcurrentDictionary<string, bool>();
+            currentFiveMinCandles = new ConcurrentDictionary<string, Candle>();
+            currentHourCandles = new ConcurrentDictionary<string, Candle>();
+            calculatedFiveMinEmas = new ConcurrentDictionary<string, bool>();
+            calculatedHourEmas = new ConcurrentDictionary<string, bool>();
             prelOs = new ConcurrentDictionary<string, PreOrder>();
             results = new ConcurrentDictionary<string, DoubleEmaAnalysisResult>();
+            doubleEmaResults = new ConcurrentDictionary<string, ConcurrentDictionary<string, DoubleEmaAnalysisResult>>();
 
             productInfos = new ConcurrentDictionary<string, ProductInfo>(dataHandler.Fetcher.ProductInfos);
 
             foreach (var product in dataHandler.ShortProductCandles.Keys)
             {
                 shortSlopes[ product ] = null;
-                shortEmas[product] = null;
-                longEmas[ product ] = null;
-                shortEmaSlopes[product] = null;
-                longEmaSlopes[ product ] = null;
-                currentShortCandles[ product ] = new Candle( DateTime.MinValue, 0, 0, 0, 0, 0 );
-                calculatedShortEmas[product] = false;
-                calculatedLongEmas[ product ] = false;
+                fiveMinEmas[product] = null;
+                hourEmas[ product ] = null;
+                fiveMinEmaSlopes[product] = null;
+                hourEmaSlopes[ product ] = null;
+                currentFiveMinCandles[ product ] = new Candle( DateTime.MinValue, 0, 0, 0, 0, 0 );
+                calculatedFiveMinEmas[product] = false;
+                calculatedHourEmas[ product ] = false;
                 prelOs[ product ] = null;
                 results[ product ] = null;
             }
@@ -454,7 +456,6 @@ namespace CBApp1
 
                 }
 
-                shortMinMax24[product] = new HighLow(max, min, maxVolume, minVolume);
                 shortSlopes[product] = new ConcurrentStack<SlopeCandle>();
                 while (newSlopes.Count != 0)
                 {
@@ -475,100 +476,54 @@ namespace CBApp1
                 await Task.Run( () =>
                 {
                     ConcurrentQueue<Candle> currentQueue;
+
                     //Copy candles 
                     lock( analyserShortCandlesRoot )
                     {
-                        shortProductCandles = new Dictionary<string, Queue<Candle>>();
+                        fiveMinCandles = new Dictionary<string, Queue<Candle>>();
                         foreach( var product in dataHandler.ShortProductCandles.Keys )
                         {
                             currentQueue = dataHandler.ShortProductCandles[ product ];
-                            if( currentQueue.Count > 150 )
+                            if( currentQueue.Count > config.FiveMinCandleLowerLimit )
                             {
-                                shortProductCandles[ product ] = new Queue<Candle>( currentQueue );
+                                fiveMinCandles[ product ] = new Queue<Candle>( currentQueue );
                             }
                             results[ product ] = null;
                             prelOs[ product ] = null;
                         }
                     }
 
-                    //Console.WriteLine($"Calculating emas at {DateTime.UtcNow} UTC");
-
-                    CalculateAllEmas( shortProductCandles,
-                                     ref shortEmas,
-                                     ref shortEmaSlopes,
-                                     ref calculatedShortEmas,
-                                     6,
-                                     12,
-                                     26 );
-
-                    FindMinMaxes( shortProductCandles,
-                                 ref shortMinMax,
-                                 12 );
+                    // fiveMinEmas
+                    CalculateAllEmas( fiveMinCandles,
+                                     ref fiveMinEmas,
+                                     ref fiveMinEmaSlopes,
+                                     ref calculatedFiveMinEmas,
+                                     config.FiveMinDoubleEmaLengths[0],
+                                     config.FiveMinDoubleEmaLengths[1] );
 
                     if( e.updatedLong )
                     {
                         lock( analyserLongCandlesRoot )
                         {
-                            longProductCandles = new Dictionary<string, Queue<Candle>>();
+                            hourCandles = new Dictionary<string, Queue<Candle>>();
                             foreach( var product in dataHandler.LongProductCandles.Keys )
                             {
                                 currentQueue = dataHandler.LongProductCandles[ product ];
-                                if( currentQueue.Count > 70 )
+                                if( currentQueue.Count > config.HourCandleLowerLimit )
                                 {
-                                    longProductCandles[ product ] = new Queue<Candle>( currentQueue );
+                                    hourCandles[ product ] = new Queue<Candle>( currentQueue );
                                 }
                             }
                         }
-                        // Calc long emas...
 
-                        CalculateAllEmas( longProductCandles,
-                                         ref longEmas,
-                                         ref longEmaSlopes,
-                                         ref calculatedLongEmas,
-                                         6,
-                                         12 );
-
-                        //Queue<Ema> currentShortEmaSQ;
-                        //Queue<Ema> currentLongEmaSQ;
-                        //Queue<Ema> currentLongEmaQ;
-                        //Queue<Ema> currentShortEmaQ;
-                        //foreach( var prod in longEmaSlopes.Keys )
-                        //{
-                        //    if( longEmaSlopes[prod] != null && longEmas[prod] != null )
-                        //    {
-                        //        currentShortEmaSQ = new Queue<Ema>( longEmaSlopes[ prod ][ 15 ] );
-                        //        currentLongEmaSQ = new Queue<Ema>( longEmaSlopes[ prod ][ 30 ] );
-                        //        currentLongEmaQ = new Queue<Ema>( longEmas[ prod ][ 30 ] );
-                        //        currentShortEmaQ = new Queue<Ema>( longEmas[ prod ][ 15 ] );
-                        //        Ema sS;
-                        //        Ema lS;
-                        //        Ema s;
-                        //        Ema l;
-
-                        //        writer.Write( $"Last 5 {prod} long ema-slopes: " );
-
-                        //        for( int i = 0; i < 7; i++ )
-                        //        {
-                        //            sS = currentShortEmaSQ.Dequeue();
-                        //            lS = currentLongEmaSQ.Dequeue();
-                        //            l = currentLongEmaQ.Dequeue();
-                        //            s = currentShortEmaQ.Dequeue();
-
-                        //            if( i < 6 )
-                        //            {
-                        //                writer.Write( $"ema: {s.Time:HH-mm-ss} - {s.Price}, {l.Time:HH-mm-ss} - {l.Price}" );
-                        //                writer.Write( $"slope: {sS.Time:HH-mm-ss} - {sS.Price}, {lS.Time:HH-mm-ss} - {lS.Price}" );
-                        //            }
-                        //            else
-                        //            {
-                        //                writer.Write( $"Short ema: {s.Time:HH-mm-ss} - {s.Price}, Long ema: {l.Time:HH-mm-ss} - {l.Price}" );
-                        //            }
-                        //        }
-                        //    }
-                        //}
-                        
-                        // FindMinMaxes()
-                        
+                        // Hour emas
+                        CalculateAllEmas( hourCandles,
+                                          ref hourEmas,
+                                          ref hourEmaSlopes,
+                                          ref calculatedHourEmas,
+                                          config.HourDoubleEmaLengths
+                                         );
+  
                     }
                 });
             }
@@ -653,10 +608,10 @@ namespace CBApp1
             //for each period, print 10 emas and 10 emaslopes next to eachother
             Console.WriteLine("");
             Console.WriteLine($"emas and emaslopes for {product}");
-            foreach (int period in shortEmas[product].Keys)
+            foreach (int period in fiveMinEmas[product].Keys)
             {
-                currEmas = new LimitedDateTimeList<Ema>(shortEmas[product][period], 300);
-                currEmaSlopes = new LimitedDateTimeList<Ema>(shortEmaSlopes[product][period], 300);
+                currEmas = new LimitedDateTimeList<Ema>(fiveMinEmas[product][period], 300);
+                currEmaSlopes = new LimitedDateTimeList<Ema>(fiveMinEmaSlopes[product][period], 300);
                 
                 Console.WriteLine($"ema{period}  -  ema slope{period}");
                 for (int i = 0; i < 10; i++)
@@ -673,7 +628,7 @@ namespace CBApp1
         {
             try
             {
-                foreach (var product in shortProductCandles.Keys)
+                foreach (var product in fiveMinCandles.Keys)
                 {
                     CalculateProductSlopes(product);
                 }
@@ -690,7 +645,7 @@ namespace CBApp1
             try
             {
                 LimitedDateTimeList<SlopeCandle> currSlopes;
-                Queue<Candle> currCandles = new Queue<Candle>(shortProductCandles[product]);
+                Queue<Candle> currCandles = new Queue<Candle>(fiveMinCandles[product]);
                 Candle candle1 = currCandles.Dequeue();
                 Candle candle2 = currCandles.Dequeue();
                 double max = Math.Max(candle1.High, candle2.High);
@@ -754,7 +709,6 @@ namespace CBApp1
                     }
                 }
 
-                shortMinMax24[product] = new HighLow(max, min, maxVolume, minVolume);
                 shortSlopes[product] = new ConcurrentStack<SlopeCandle>();
                 while(currSlopes.Count!=0)
                 {
@@ -771,7 +725,7 @@ namespace CBApp1
         {
             try
             {
-                if (shortProductCandles.Values.Count != 0)
+                if (fiveMinCandles.Values.Count != 0)
                 {
                     if (!((e.SignalTime.Minute % 5 == 0) && (e.SignalTime.Second > 49 || e.SignalTime.Second < 10)))
                     {
@@ -900,23 +854,23 @@ namespace CBApp1
 
                 lock( analyserCurrentLongCandlesRoot )
                 {
-                    currentLongCandlesCopy = new Dictionary<string, Candle>( currentLongCandles );
+                    currentLongCandlesCopy = new Dictionary<string, Candle>( currentHourCandles );
                 }
 
-                foreach( string product in longProductCandles.Keys )
+                foreach( string product in hourCandles.Keys )
                 {
                     hasLongEmas = true;
                     emaPeriods = new int[] { 6, 12 };
 
-                    if( longProductCandles.ContainsKey( product ) && currentLongCandlesCopy.ContainsKey( product ) )
+                    if( hourCandles.ContainsKey( product ) && currentLongCandlesCopy.ContainsKey( product ) )
                     {
-                        if( longProductCandles[ product ] != null && currentLongCandlesCopy[ product ] != null )
+                        if( hourCandles[ product ] != null && currentLongCandlesCopy[ product ] != null )
                         {
                             foreach( int period in emaPeriods )
                             {
-                                if( longEmas[ product ][ period ] != null )
+                                if( hourEmas[ product ][ period ] != null )
                                 {
-                                    if( longEmas[ product ][ period ].Count == 0 )
+                                    if( hourEmas[ product ][ period ].Count == 0 )
                                     {
                                         hasLongEmas = false;
                                     }
@@ -936,7 +890,7 @@ namespace CBApp1
                                 foreach( int period in emaPeriods )
                                 {
                                     k = 2.0 / (period + 1);
-                                    longEmas[ product ][ period ].TryPeek( out newestEma );
+                                    hourEmas[ product ][ period ].TryPeek( out newestEma );
                                     emaPrice = (currentLongCandlesCopy[ product ].Close * k) + (newestEma.Price * (1 - k));
                                     currentLongEmas[ period ] = new Ema( period,
                                                                          emaPrice,
@@ -956,7 +910,7 @@ namespace CBApp1
                                                         0.95,
                                                         emaPeriods.Min<int>(),
                                                         emaPeriods.Max<int>(),
-                                                        ref longEmas,
+                                                        ref hourEmas,
                                                         ref currentLongEmas,
                                                         ref currentLongEmaSlopes,
                                                         ref currentLongCandlesCopy);
@@ -988,12 +942,12 @@ namespace CBApp1
                                         hasShortEmas = true;
                                         emaPeriods = new int[] { 6, 26 };
 
-                                        if( shortProductCandles.ContainsKey( product ) && currentShortCandles.ContainsKey( product ) )
+                                        if( fiveMinCandles.ContainsKey( product ) && currentFiveMinCandles.ContainsKey( product ) )
                                         {
                                             if( results[ product ].SellOff )
                                             {
                                                 PreOrder pre = new PreOrder( product, DateTime.UtcNow, false );
-                                                pre.Price = currentShortCandles[ product ].Close;
+                                                pre.Price = currentFiveMinCandles[ product ].Close;
                                                 pre.SellOff = true;
                                                 PreOrderReadyEventArgs args = new PreOrderReadyEventArgs();
                                                 args.PreliminaryOrder = new PreOrder( pre );
@@ -1001,13 +955,13 @@ namespace CBApp1
                                             }
                                             else if( results[ product ].BuyOk || results[ product ].SellOk )
                                             {
-                                                if( shortProductCandles[ product ] != null && currentShortCandles[ product ] != null )
+                                                if( fiveMinCandles[ product ] != null && currentFiveMinCandles[ product ] != null )
                                                 {
                                                     foreach( int period in emaPeriods )
                                                     {
-                                                        if( shortEmas[ product ][ period ] != null )
+                                                        if( fiveMinEmas[ product ][ period ] != null )
                                                         {
-                                                            if( shortEmas[ product ][ period ].Count == 0 )
+                                                            if( fiveMinEmas[ product ][ period ].Count == 0 )
                                                             {
                                                                 hasShortEmas = false;
                                                             }
@@ -1025,11 +979,11 @@ namespace CBApp1
                                                         foreach( int period in emaPeriods )
                                                         {
                                                             k = 2.0 / (period + 1);
-                                                            shortEmas[ product ][ period ].TryPeek( out newestEma );
-                                                            emaPrice = (currentShortCandles[ product ].Avg * k) + (newestEma.Price * (1 - k));
+                                                            fiveMinEmas[ product ][ period ].TryPeek( out newestEma );
+                                                            emaPrice = (currentFiveMinCandles[ product ].Avg * k) + (newestEma.Price * (1 - k));
                                                             currentEmas[ period ] = new Ema( period,
                                                                 emaPrice,
-                                                                currentShortCandles[ product ].Time );
+                                                                currentFiveMinCandles[ product ].Time );
                                                             currentEmaSlopes[ period ] = new Ema( period,
                                                                                             emaPrice - newestEma.Price,
                                                                                             currentEmas[ period ].Time );
@@ -1067,7 +1021,7 @@ namespace CBApp1
             
         }
 
-        private void DoubleEmaAnalyseProduct( DoubleEmaAnalysisSettings aSett, DoubleEmaAnalysisResult result )
+        private DoubleEmaAnalysisResult DoubleEmaAnalyseProduct( DoubleEmaAnalysisSettings aSett, DoubleEmaAnalysisResult inResult )
         {
             try
             {
@@ -1091,7 +1045,13 @@ namespace CBApp1
 
                 double currDiff;
 
-                DoubleEmaAnalysisResult returnResult;
+                DoubleEmaAnalysisResult result = null;
+
+                if( inResult != null )
+                {
+                    result = inResult;
+                }
+                
 
                 // Saves the effort of running analysis during certain 
                 // circumstances.
@@ -1125,11 +1085,11 @@ namespace CBApp1
                     currLongEma = aSett.CurrEmas[ longPeriod ];
 
                     // noStart condition for normal double ema analysis
-                    if( aSett.BTrigger == false && currShortEma < currLongEma )
+                    if( aSett.BTrigger == false && newestShortEma < newestLongEma )
                     {
                         noStart = true;
                     }
-                    if( aSett.STrigger == false && currShortEma >= currLongEma )
+                    if( aSett.STrigger == false && newestShortEma >= newestLongEma )
                     {
                         noStart = true;
                     }
@@ -1151,7 +1111,7 @@ namespace CBApp1
                     // double ema slope analysis
                     if( aSett.Slopes )
                     {
-                        for( int i = 0; i < longEmas[ product ][ longPeriod ].Count; i++ )
+                        for( int i = 0; i < hourEmas[ product ][ longPeriod ].Count; i++ )
                         {
                             if( result == null )
                             {
@@ -1273,33 +1233,19 @@ namespace CBApp1
                                         // in order to find peaks and troughs.
                                         if( currShortEma.Price < currLongEma.Price )
                                         {
-                                            if( aSett.BTrigger )
-                                            {
-                                                result = new DoubleEmaAnalysisResult();
-                                                result.Trend = false;
+                                            result = new DoubleEmaAnalysisResult();
+                                            result.Trend = false;
 
-                                                result.PeakDiff = currDiff;
-                                                result.PeakTime = currShortEma.Time;
-                                            }
-                                            else
-                                            {
-                                                break;
-                                            }
+                                            result.PeakDiff = currDiff;
+                                            result.PeakTime = currShortEma.Time;
                                         }
                                         else if( currShortEma.Price >= currLongEma.Price )
                                         {
-                                            if( aSett.STrigger )
-                                            {
-                                                result = new DoubleEmaAnalysisResult();
-                                                result.Trend = true;
+                                            result = new DoubleEmaAnalysisResult();
+                                            result.Trend = true;
 
-                                                result.PeakDiff = currDiff;
-                                                result.PeakTime = currShortEma.Time;
-                                            }
-                                            else
-                                            {
-                                                break;
-                                            }
+                                            result.PeakDiff = currDiff;
+                                            result.PeakTime = currShortEma.Time;
                                         }
 
                                         // Get next ema pair
@@ -1484,16 +1430,10 @@ namespace CBApp1
                                 // If difference decreased by turnP % suggest order
                                 else if( result.PeakDiff - currDiff > (result.PeakDiff * aSett.BTurnP) )
                                 {
-                                    result.Price = currentShortCandles[ product ].Avg;
 
-
-
-
-
+                                    result.Price = currentFiveMinCandles[ product ].Avg;
                                     // Delete perchance
                                     result.Complete = true;
-
-
                                 }
                             }
                             else
@@ -1507,45 +1447,27 @@ namespace CBApp1
                                 else if( result.PeakDiff - currDiff > (result.PeakDiff * aSett.STurnP) )
                                 {
                                     // Suggested price
-                                    result.Price = currentShortCandles[ product ].Avg;
+                                    result.Price = currentFiveMinCandles[ product ].Avg;
                                     //Console.WriteLine($"Sell {prel.ProductId} order at {prel.Price} ");
-
-
-
-
-
 
                                     // Delete perchance
                                     result.Complete = true;
                                 }
                             }
-
-                            if( result.Complete )
-                            {
-                                //PreliminaryComplete( prel );
-                                // prepare placing long order? 
-
-                                if( result.BuyOk )
-                                {
-                                    //writer.Write( $"{product} - buy ok {result.Time:HH-mm-ss}" );
-                                }
-                                else if( result.SellOk )
-                                {
-                                    //writer.Write( $"{product} - sell ok {result.Time:HH-mm-ss}" );
-                                }
-                            }
-                            else
-                            {
-                                results[ product ] = result;
-                            }
                         }
                     }
                 }
+
+
+                return result;
+
+
             }
             catch( Exception e )
             {
                 Console.WriteLine( e.StackTrace );
                 Console.WriteLine( e.Message );
+                return null;
             }
         }
 
@@ -1570,8 +1492,8 @@ namespace CBApp1
                 prevEmas[ shortPeriod ] = new LimitedDateTimeList<Ema>( longEmas[ product ][ shortPeriod ], 300 );
                 prevEmas[ longPeriod ] = new LimitedDateTimeList<Ema>( longEmas[ product ][ longPeriod ], 300 );
 
-                prevEmaSlopes[ shortPeriod ] = new LimitedDateTimeList<Ema>( longEmaSlopes[ product ][ shortPeriod ], 300 );
-                prevEmaSlopes[ longPeriod ] = new LimitedDateTimeList<Ema>( longEmaSlopes[ product ][ longPeriod ], 300 );
+                prevEmaSlopes[ shortPeriod ] = new LimitedDateTimeList<Ema>( hourEmaSlopes[ product ][ shortPeriod ], 300 );
+                prevEmaSlopes[ longPeriod ] = new LimitedDateTimeList<Ema>( hourEmaSlopes[ product ][ longPeriod ], 300 );
 
                 Ema newestShortEma = currEmas[ shortPeriod ];
                 Ema newestLongEma = currEmas[ longPeriod ];
@@ -1782,7 +1704,7 @@ namespace CBApp1
 
                                 results[ product ] = result;
 
-                                if( Math.Abs( currentShortCandles[ product ].Avg - currentLongCandlesCopy[ product ].Avg ) < 0.005 * currentLongCandlesCopy[ product ].Avg )
+                                if( Math.Abs( currentFiveMinCandles[ product ].Avg - currentLongCandlesCopy[ product ].Avg ) < 0.005 * currentLongCandlesCopy[ product ].Avg )
                                 {
                                     
                                 }
@@ -1791,9 +1713,9 @@ namespace CBApp1
                                                              result.Time,
                                                              true );
                                 pre.PeakTime = result.PeakTime;
-                                pre.Price = currentShortCandles[ product ].Close;
+                                pre.Price = currentFiveMinCandles[ product ].Close;
 
-                                PreliminaryComplete( pre, ref longProductCandles, ref currentLongCandles, 1.0075 );
+                                PreliminaryComplete( pre, ref hourCandles, ref currentHourCandles, 1.0075 );
                             }
 
                         }
@@ -1848,9 +1770,9 @@ namespace CBApp1
                                                              result.Time,
                                                              false );
                                 pre.PeakTime = result.PeakTime;
-                                pre.Price = currentShortCandles[ product ].Avg;
+                                pre.Price = currentFiveMinCandles[ product ].Avg;
 
-                                PreliminaryComplete( pre, ref longProductCandles, ref currentLongCandles, 1.0075 );
+                                PreliminaryComplete( pre, ref hourCandles, ref currentHourCandles, 1.0075 );
                             }
                             // result.PeakDiff - currDiff > (result.PeakDiff * 0.006)
 
@@ -1907,11 +1829,11 @@ namespace CBApp1
                 Dictionary<int, LimitedDateTimeList<Ema>> prevEmas = new Dictionary<int, LimitedDateTimeList<Ema>>();
                 Dictionary<int, LimitedDateTimeList<Ema>> prevEmaSlopes = new Dictionary<int, LimitedDateTimeList<Ema>>();
 
-                prevEmas[ shortPeriod ] = new LimitedDateTimeList<Ema>( shortEmas[ product ][ shortPeriod ], 300 );
-                prevEmas[ longPeriod ] = new LimitedDateTimeList<Ema>( shortEmas[ product ][ longPeriod ], 300 );
+                prevEmas[ shortPeriod ] = new LimitedDateTimeList<Ema>( fiveMinEmas[ product ][ shortPeriod ], 300 );
+                prevEmas[ longPeriod ] = new LimitedDateTimeList<Ema>( fiveMinEmas[ product ][ longPeriod ], 300 );
 
-                prevEmaSlopes[ shortPeriod ] = new LimitedDateTimeList<Ema>( shortEmas[ product ][ shortPeriod ], 300 );
-                prevEmaSlopes[ longPeriod ] = new LimitedDateTimeList<Ema>( shortEmas[ product ][ longPeriod ], 300 );
+                prevEmaSlopes[ shortPeriod ] = new LimitedDateTimeList<Ema>( fiveMinEmas[ product ][ shortPeriod ], 300 );
+                prevEmaSlopes[ longPeriod ] = new LimitedDateTimeList<Ema>( fiveMinEmas[ product ][ longPeriod ], 300 );
 
                 Ema newestShortEma = currEmas[ shortPeriod ];
                 Ema newestLongEma = currEmas[ longPeriod ];
@@ -1936,7 +1858,7 @@ namespace CBApp1
 
                 if( pre == null )
                 {
-                    for( int i = 0; i < shortEmas[ product ][ longPeriod ].Count; i++ )
+                    for( int i = 0; i < fiveMinEmas[ product ][ longPeriod ].Count; i++ )
                     {
                         // Determine current trend
                         if( pre == null )
@@ -2076,7 +1998,7 @@ namespace CBApp1
                             if( results[ product ].BuyOk )
                             {
                                 // Suggested price 
-                                pre.Price = currentShortCandles[ product ].Avg;
+                                pre.Price = currentFiveMinCandles[ product ].Avg;
                                 //Console.WriteLine($"Buy {prel.ProductId} order at {prel.Price} ");
                                 //pre.Complete = true;
 
@@ -2096,7 +2018,7 @@ namespace CBApp1
                             if( results[ product ].SellOk )
                             {
                                 // Suggested price
-                                pre.Price = currentShortCandles[ product ].Avg;
+                                pre.Price = currentFiveMinCandles[ product ].Avg;
                                 //Console.WriteLine($"Sell {prel.ProductId} order at {prel.Price} ");
                                 pre.Complete = true;
                             }
@@ -2105,7 +2027,7 @@ namespace CBApp1
 
                     if( pre.Complete )
                     {
-                        PreliminaryComplete( pre, ref shortProductCandles, ref currentShortCandles, 1.0025 );
+                        PreliminaryComplete( pre, ref fiveMinCandles, ref currentFiveMinCandles, 1.0025 );
                     }
                     else
                     {
@@ -2238,19 +2160,19 @@ namespace CBApp1
                 lock( analyserCurrentLongCandlesRoot )
                 {
 
-                    if( currentLongCandles[ productId ].Close != newShortCandle.Close )
+                    if( currentHourCandles[ productId ].Close != newShortCandle.Close )
                     {
-                        currentLongCandles[ productId ].Close = newShortCandle.Close;
+                        currentHourCandles[ productId ].Close = newShortCandle.Close;
                     }
 
-                    if( currentLongCandles[ productId ].High < newShortCandle.High )
+                    if( currentHourCandles[ productId ].High < newShortCandle.High )
                     {
-                        currentLongCandles[ productId ].High = newShortCandle.High;
+                        currentHourCandles[ productId ].High = newShortCandle.High;
                     }
 
-                    if( currentLongCandles[ productId ].Low > newShortCandle.Low )
+                    if( currentHourCandles[ productId ].Low > newShortCandle.Low )
                     {
-                        currentLongCandles[ productId ].Low = newShortCandle.Low;
+                        currentHourCandles[ productId ].Low = newShortCandle.Low;
                     }
 
                 }
@@ -2274,7 +2196,7 @@ namespace CBApp1
             {
                 await Task.Run(() =>
                 {
-                    currentShortCandles[e.ProductId] = e.NewShortCandle;
+                    currentFiveMinCandles[e.ProductId] = e.NewShortCandle;
 
                     //addToLongCandle( e.NewShortCandle );
                 });
@@ -2298,7 +2220,7 @@ namespace CBApp1
                         {
                             if( e.NewLongCandles[ product ] != null )
                             {
-                                currentLongCandles[ product ] = e.NewLongCandles[ product ];
+                                currentHourCandles[ product ] = e.NewLongCandles[ product ];
                             }
                         }
                     }
@@ -2332,24 +2254,25 @@ namespace CBApp1
         bool analysisRunning;
 
         private SynchronizedConsoleWriter writer;
+        private readonly AnalyserConfiguration config;
         private DataHandler dataHandler;
-        private Dictionary<string, Queue<Candle>> shortProductCandles;
-        private Dictionary<string, Queue<Candle>> longProductCandles;
+        private Dictionary<string, Queue<Candle>> fiveMinCandles;
+        private Dictionary<string, Queue<Candle>> hourCandles;
         private ConcurrentDictionary<string, ConcurrentStack<SlopeCandle>> shortSlopes;
-        private ConcurrentDictionary<string, HighLow> shortMinMax24;
-        private ConcurrentDictionary<string, HighLow> shortMinMax;
-        private ConcurrentDictionary<string, HighLow> longMinMax;
-        private ConcurrentDictionary<string, Candle> currentShortCandles;
-        private ConcurrentDictionary<string, Candle> currentLongCandles;
-        private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> shortEmas;
-        private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> longEmas;
-        private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> shortEmaSlopes;
-        private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> longEmaSlopes;
-        private ConcurrentDictionary<string, bool> calculatedShortEmas;
-        private ConcurrentDictionary<string, bool> calculatedLongEmas;
+        private ConcurrentDictionary<string, Candle> currentFiveMinCandles;
+        private ConcurrentDictionary<string, Candle> currentHourCandles;
+        private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> fiveMinEmas;
+        private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> hourEmas;
+        private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> fiveMinEmaSlopes;
+        private ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> hourEmaSlopes;
+        private ConcurrentDictionary<string, bool> calculatedFiveMinEmas;
+        private ConcurrentDictionary<string, bool> calculatedHourEmas;
         private ConcurrentDictionary<string, ProductInfo> productInfos;
         private ConcurrentDictionary<string, PreOrder> prelOs;
         private ConcurrentDictionary<string, DoubleEmaAnalysisResult> results;
+        private ConcurrentDictionary<string, ConcurrentDictionary<string, DoubleEmaAnalysisResult>> doubleEmaResults;
+        private ConcurrentDictionary<string, ConcurrentDictionary<string, string>> singleEmaResults;
+        private ConcurrentDictionary<string, ConcurrentDictionary<string, string>> volatilityResults;
     }
 
     public class PreOrderReadyEventArgs
@@ -2359,9 +2282,27 @@ namespace CBApp1
 
     public class AnalyserConfiguration
     {
-        public AnalyserConfiguration()
+        public AnalyserConfiguration( int[] fiveMinDoubleEmaLengths,
+                                      int[] hourDoubleEmaLengths,
+                                      int   fiveMinSingleEmaLength,
+                                      int   hourSingleEmaLength,
+                                      int   fiveMinCandleLowerLimit,
+                                      int   hourCandleLowerLimit
+                                      )
         {
-
+            FiveMinDoubleEmaLengths = fiveMinDoubleEmaLengths;
+            HourDoubleEmaLengths = hourDoubleEmaLengths;
+            FiveMinSingleEmaLength = fiveMinSingleEmaLength;
+            HourSingleEmaLength = hourSingleEmaLength;
+            FiveMinCandleLowerLimit = fiveMinCandleLowerLimit;
+            HourCandleLowerLimit = hourCandleLowerLimit;
         }
+
+        public int[] FiveMinDoubleEmaLengths { get; }
+        public int[] HourDoubleEmaLengths { get; }
+        public int FiveMinSingleEmaLength { get; }
+        public int HourSingleEmaLength { get; }
+        public int FiveMinCandleLowerLimit { get; }
+        public int HourCandleLowerLimit { get; }
     }
 }

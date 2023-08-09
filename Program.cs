@@ -44,9 +44,17 @@ namespace CBApp1
 
                 DataHandler dataHandler = new DataHandler(ref aTimer, ref writer, ref auth, ref reqMaker, products);
 
-                DataAnalyser analyser = new DataAnalyser( ref dataHandler, ref aTimer, ref writer );
+                AnalyserConfiguration analyserConfig = new AnalyserConfiguration( new int[] { 4, 8 },
+                                                                                  new int[] { 6, 12 },
+                                                                                  55,
+                                                                                  35,
+                                                                                  200,
+                                                                                  72
+                                                                                  );
 
-                OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 30, 3 , ref aTimer, 0.015, 1.01010);
+                DataAnalyser analyser = new DataAnalyser( ref dataHandler, ref aTimer, ref writer, analyserConfig);
+
+                //OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 30, 3 , ref aTimer, 0.015, 1.01010);
 
                 //string input = "";
               

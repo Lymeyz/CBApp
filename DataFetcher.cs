@@ -1115,7 +1115,7 @@ namespace CBApp1
 
                     if( DateTime.UtcNow.Minute != 0 )
                     {
-                        // only update shortProductCandles
+                        // only update fiveMinCandles
                         CopyCandlesAndIds( ref candlesAndIds);
                         //FindAddMissingTrades( ref candlesAndIds );
                         args.ShortCandles = new Dictionary<string, Candle>( candlesAndIds.ShortCandles );
@@ -1129,7 +1129,7 @@ namespace CBApp1
                     }
                     else
                     {
-                        // hour passed, update longProductCandles
+                        // hour passed, update hourCandles
                         CopyCandlesAndIds( ref candlesAndIds);
                         //FindAddMissingTrades( ref candlesAndIds );
                         args.ShortCandles = new Dictionary<string, Candle>( candlesAndIds.ShortCandles );
