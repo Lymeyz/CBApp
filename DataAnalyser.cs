@@ -46,6 +46,10 @@ namespace CBApp1
             results = new ConcurrentDictionary<string, DoubleEmaAnalysisResult>();
             doubleEmaResults = new ConcurrentDictionary<string, ConcurrentDictionary<string, DoubleEmaAnalysisResult>>();
 
+            // Double ema collections
+            doubleEmaResults[ "fiveMin" ] = new ConcurrentDictionary<string, DoubleEmaAnalysisResult>();
+            doubleEmaResults[ "hour" ] = new ConcurrentDictionary<string, DoubleEmaAnalysisResult>();
+
             productInfos = new ConcurrentDictionary<string, ProductInfo>(dataHandler.Fetcher.ProductInfos);
 
             foreach (var product in dataHandler.ShortProductCandles.Keys)
@@ -493,7 +497,7 @@ namespace CBApp1
                         }
                     }
 
-                    // fiveMinEmas
+                    // prevEmas
                     CalculateAllEmas( fiveMinCandles,
                                      ref fiveMinEmas,
                                      ref fiveMinEmaSlopes,
@@ -781,15 +785,88 @@ namespace CBApp1
                 // analyse ema/emas for timing
 
 
+                // test double ema analysis
+                DoubleEmaAnalysisResult fiveMinDoubleEmaResult;
+                DoubleEmaAnalysisSettings fiveMinDoubleEmaSetting;
+                foreach( string product in fiveMinEmas.Keys )
+                {
+                    if( currentFiveMinCandles.ContainsKey( product ) )
+                    {
+                        Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
 
-                // 
+                        CalculateNewestEma( product, ref currentFiveMinEmas, currentFiveMinCandles, fiveMinEmas);
 
+                        fiveMinDoubleEmaSetting = new DoubleEmaAnalysisSettings( product,
+                                                                             false,
+                                                                             0.01,
+                                                                             0.01,
+                                                                             0.003,
+                                                                             0.6,
+                                                                             0.97,
+                                                                             false,
+                                                                             false,
+                                                                             config.FiveMinDoubleEmaLengths,
+                                                                             ref currentFiveMinCandles,
+                                                                             ref currentFiveMinEmas,
+                                                                             ref fiveMinEmas );
+
+                        if( doubleEmaResults[ "fiveMin" ].ContainsKey( product ) )
+                        {
+                            fiveMinDoubleEmaResult = doubleEmaResults[ "fiveMin" ][ product ];
+                        }
+                        else
+                        {
+                            fiveMinDoubleEmaResult = null;
+                        }
+
+                        fiveMinDoubleEmaResult = DoubleEmaAnalyseProduct( fiveMinDoubleEmaSetting, fiveMinDoubleEmaResult );
+
+                        if( fiveMinDoubleEmaResult != null )
+                        {
+                            doubleEmaResults[ "fiveMin" ][ product ] = fiveMinDoubleEmaResult;
+                        }
+                    }
+                }
             }
             catch( Exception e )
             {
                 Console.WriteLine( e.StackTrace );
                 Console.WriteLine( e.Message );
             }
+        }
+
+        /// <summary>
+        /// Inputs current candles and previously calculated emas,
+        /// returns current emas into currentEmas referenced in parameters
+        /// </summary>
+        /// <param name="product"></param>
+        /// <param name="currentEmas">To input current emas</param>
+        /// <param name="currentCandles"></param>
+        /// <param name="prevEmas"></param>
+        private void CalculateNewestEma( string product,
+                                         ref Dictionary<int, Ema> currentEmas,
+                                         ConcurrentDictionary<string, Candle> currentCandles,
+                                         ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> prevEmas )
+        {
+            try
+            {
+                Ema newestEma = null;
+                foreach( int period in prevEmas[product].Keys )
+                {
+                    double k = 2.0 / (period + 1);
+                    double emaPrice;
+                    prevEmas[ product ][ period ].TryPeek( out newestEma );
+                    emaPrice = (currentCandles[ product ].Avg * k) + (newestEma.Price * (1 - k));
+
+                    currentEmas[ period ] = new Ema( period, emaPrice, currentCandles[ product ].Time );
+                }
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+            }
+            
         }
 
         private void DoubleEmaAnalysis()
