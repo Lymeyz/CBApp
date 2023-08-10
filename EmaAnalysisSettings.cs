@@ -49,6 +49,7 @@ namespace CBApp1
             BTooLateP = bTooLateP;
             STooLateP = sTooLateP;
             BTrigger = bTrigger;
+            STrigger = sTrigger;
             Periods = periods;
             CurrentCandles = currentCandles;
             CurrEmas = currEmas;

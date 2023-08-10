@@ -29,8 +29,11 @@ namespace CBApp1
         public double PeakDiff { get; set; }
         public double StartPrice { get; set; }
         public double Price { get; set; }
+        public double PeakPrice { get; set; }
+
         public DateTime PeakTime { get; set; }
         public DateTime Time { get; set; } // start of trend
+        public double PrevPeakPrice { get; set; }
         public double PrevPeakDiff { get; set; }
         public DateTime PrevPeakTime { get; set; }
         public DateTime PrevTime { get; set; }

@@ -738,7 +738,8 @@ namespace CBApp1
                             analysisRunning = true;
                             await Task.Run(() =>
                             {
-                                AnalyseData();
+                                //AnalyseData();
+                                AnalyseDataNew();
                             });
                             analysisRunning = false;
                         }
@@ -788,8 +789,9 @@ namespace CBApp1
                 // test double ema analysis
                 DoubleEmaAnalysisResult fiveMinDoubleEmaResult;
                 DoubleEmaAnalysisSettings fiveMinDoubleEmaSetting;
-                foreach( string product in fiveMinEmas.Keys )
+                foreach( var pair in fiveMinEmas.Where( p => p.Value != null ) )
                 {
+                    string product = pair.Key;
                     if( currentFiveMinCandles.ContainsKey( product ) )
                     {
                         Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
@@ -798,13 +800,13 @@ namespace CBApp1
 
                         fiveMinDoubleEmaSetting = new DoubleEmaAnalysisSettings( product,
                                                                              false,
-                                                                             0.01,
+                                                                             0.06,
                                                                              0.01,
                                                                              0.003,
                                                                              0.6,
                                                                              0.97,
-                                                                             false,
-                                                                             false,
+                                                                             true,
+                                                                             true,
                                                                              config.FiveMinDoubleEmaLengths,
                                                                              ref currentFiveMinCandles,
                                                                              ref currentFiveMinEmas,
@@ -1190,101 +1192,7 @@ namespace CBApp1
                     {
                         for( int i = 0; i < hourEmas[ product ][ longPeriod ].Count; i++ )
                         {
-                            if( result == null )
-                            {
-                                currDiff = Math.Abs( currShortEma - currLongEma );
-                                // Current result null, initialize and set to current ema-trend
-                                if( currShortEma.Price < currLongEma.Price )
-                                {
-                                    result = new DoubleEmaAnalysisResult();
-                                    result.Trend = false;
-
-                                    result.PeakDiff = currDiff;
-                                    result.PeakTime = currShortEma.Time;
-                                }
-                                else if( currShortEma.Price > currLongEma.Price )
-                                {
-                                    result = new DoubleEmaAnalysisResult();
-                                    result.Trend = true;
-
-                                    result.PeakDiff = currDiff;
-                                    result.PeakTime = currShortEma.Time;
-                                }
-
-                                // Get next slope pair
-                                currShortEmaSlope = prevEmaSlopes[ shortPeriod ].GetRemoveNewest();
-                                currLongEmaSlope = prevEmaSlopes[ longPeriod ].GetRemoveNewest();
-
-                            }
-                            // Determine phase of trend
-                            else
-                            {
-                                // Current difference in ema-pair
-                                currDiff = Math.Abs( currShortEma - currLongEma );
-
-                                // Short ema under long ema (not rising trend)
-                                if( result.Trend == false )
-                                {
-                                    // Find peak difference
-                                    if( result.PeakDiff < (currLongEma.Price - currShortEma.Price) )
-                                    {
-                                        result.PeakDiff = currLongEma.Price - currShortEma.Price;
-                                        result.PeakTime = currShortEma.Time;
-                                    }
-
-                                    // Find start of trend
-                                    if( currShortEma >= currLongEma )
-                                    {
-                                        result.Time = currShortEma.Time;
-                                        break;
-                                    }
-                                }
-                                // Short ema over long ema (rising trend)
-                                else
-                                {
-                                    // Find peak difference
-                                    if( result.PeakDiff < (currShortEma.Price - currLongEma.Price) )
-                                    {
-                                        result.PeakDiff = currShortEma.Price - currLongEma.Price;
-                                        result.PeakTime = currShortEma.Time;
-                                    }
-
-                                    // Find start of trend
-                                    if( currShortEma <= currLongEma )
-                                    {
-                                        result.Time = currShortEma.Time;
-                                        break;
-                                    }
-                                }
-
-                                // Check if current peak is most relevant
-                                // PeakDiff always initialized to -1
-                                if( result.PeakDiff != -1 )
-                                {
-                                    // If current difference > tStart * peak difference, this is 
-                                    // taken to be start of trend
-                                    if( currDiff < aSett.TStartP * result.PeakDiff )
-                                    {
-                                        if( result.Trend == false )
-                                        {
-                                            result.StartPrice = currShortEma.Price;
-                                            result.Time = currShortEma.Time;
-                                        }
-                                        // Start price provided in od
-                                        else
-                                        {
-                                            result.StartPrice = currLongEma.Price;
-                                            result.Time = currLongEma.Time;
-                                        }
-
-                                        break;
-
-                                    }
-                                }
-
-                                currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
-                                currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
-                            }
+                            
                         }
                     }
                     // non slope double ema analysis
@@ -1313,6 +1221,7 @@ namespace CBApp1
                                             result = new DoubleEmaAnalysisResult();
                                             result.Trend = false;
 
+                                            result.PeakPrice = currShortEma.Price;
                                             result.PeakDiff = currDiff;
                                             result.PeakTime = currShortEma.Time;
                                         }
@@ -1321,6 +1230,7 @@ namespace CBApp1
                                             result = new DoubleEmaAnalysisResult();
                                             result.Trend = true;
 
+                                            result.PeakPrice = currShortEma.Price;
                                             result.PeakDiff = currDiff;
                                             result.PeakTime = currShortEma.Time;
                                         }
@@ -1338,6 +1248,7 @@ namespace CBApp1
                                         // Find peak difference
                                         if( result.PeakDiff < currDiff )
                                         {
+                                            result.PeakPrice = currShortEma.Price;
                                             result.PeakDiff = currDiff;
                                             result.PeakTime = currShortEma.Time;
                                         }
@@ -1375,20 +1286,7 @@ namespace CBApp1
                                             // taken to be start of trend
                                             if( currDiff < aSett.TStartP * result.PeakDiff )
                                             {
-                                                if( result.Trend == false )
-                                                {
-                                                    result.StartPrice = currShortEma.Price;
-                                                    result.Time = currShortEma.Time;
-                                                }
-                                                // Start price provided in od
-                                                else
-                                                {
-                                                    result.StartPrice = currLongEma.Price;
-                                                    result.Time = currLongEma.Time;
-                                                }
-
                                                 secondary = true;
-
                                             }
                                         }
 
@@ -1442,23 +1340,39 @@ namespace CBApp1
 
                                     if( result.PrevPeakDiff == -1 )
                                     {
+                                        result.PrevPeakPrice = currShortEma.Price;
                                         result.PrevPeakDiff = currDiff;
                                         result.PrevPeakTime = currShortEma.Time;
-
-                                        currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
-                                        currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
                                     }
                                     else
                                     {
                                         if( result.PrevPeakDiff < currDiff )
                                         {
+                                            result.PrevPeakPrice = currShortEma.Price;
                                             result.PrevPeakDiff = currDiff;
                                             result.PrevPeakTime = currShortEma.Time;
                                         }
 
-                                        currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
-                                        currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
+                                        if( currDiff < aSett.TStartP * result.PrevPeakDiff )
+                                        {
+                                            //if( result.Trend == true )
+                                            //{
+                                            //    result.StartPrice = currShortEma.Price;
+                                            //    result.Time = currShortEma.Time;
+                                            //}
+                                            //// Start price provided in od
+                                            //else
+                                            //{
+                                            //    result.StartPrice = currLongEma.Price;
+                                            //    result.Time = currLongEma.Time;
+                                            //}
+
+                                            break;
+                                        }
                                     }
+
+                                    currShortEma = prevEmas[ shortPeriod ].GetRemoveNewest();
+                                    currLongEma = prevEmas[ longPeriod ].GetRemoveNewest();
                                 }
                             }
                         }
@@ -1484,6 +1398,7 @@ namespace CBApp1
                                 }
                             }
                         }
+                        
 
                         if( result != null )
                         {
@@ -1498,8 +1413,7 @@ namespace CBApp1
 
                             if( result.Trend == false )
                             {
-
-                                // If difference decreased more than turnP + tooLate %, wait for another peak
+                                // If difference decreased more than turnP + tooLate %, wait for another peak.
                                 if( result.PeakDiff - currDiff > (result.PeakDiff * (aSett.BTurnP + aSett.BTooLateP)) )
                                 {
 
@@ -1511,6 +1425,7 @@ namespace CBApp1
                                     result.Price = currentFiveMinCandles[ product ].Avg;
                                     // Delete perchance
                                     result.Complete = true;
+                                    writer.Write( $"Buy {product} at {result.Price} at {DateTime.UtcNow}" );
                                 }
                             }
                             else
@@ -1529,6 +1444,7 @@ namespace CBApp1
 
                                     // Delete perchance
                                     result.Complete = true;
+                                    writer.Write( $"Sell {product} at {result.Price} at {DateTime.UtcNow}" );
                                 }
                             }
                         }
