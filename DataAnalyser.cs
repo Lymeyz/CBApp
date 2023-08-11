@@ -1190,9 +1190,40 @@ namespace CBApp1
                     // double ema slope analysis
                     if( aSett.Slopes )
                     {
-                        for( int i = 0; i < hourEmas[ product ][ longPeriod ].Count; i++ )
+                        
+
+                        if( newestShortEma >= newestLongEma )
                         {
-                            
+                            if( aSett.BTrigger )
+                            {
+                                result = new DoubleEmaAnalysisResult();
+
+                                result.Trend = false;
+
+                                if( newestLongEmaSlope >= 0 + (aSett.BDiffP * newestLongEma.Price) )
+                                {
+                                    // buy
+                                    result.BuyOk = true;
+                                    result.Price = currentFiveMinCandles[ product ].Avg;
+                                    writer.Write( $"Buy {product} at {result.Price}" );
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if( aSett.STrigger )
+                            {
+                                result = new DoubleEmaAnalysisResult();
+                                result.Trend = true;
+
+                                if( Math.Abs( newestShortEmaSlope.Price ) > aSett.SDiffP * newestLongEmaSlope )
+                                {
+                                    // sell
+                                    result.SellOk = true;
+                                    result.Price = currentFiveMinCandles[ product ].Avg;
+                                    writer.Write( $"Sell {product} at {result.Price}" );
+                                }
+                            }
                         }
                     }
                     // non slope double ema analysis

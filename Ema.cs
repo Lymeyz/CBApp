@@ -24,7 +24,12 @@ namespace CBApp1
         public static bool operator >(Ema a, Ema b) => a.Price < b.Price;
         public static double operator +(Ema a, Ema b) => a.Price + b.Price;
         public static double operator -(Ema a, Ema b) => a.Price - b.Price;
-
+        public static bool operator <( Ema a, double b ) => a.Price < b;
+        public static bool operator <=( Ema a, double b ) => a.Price <= b;
+        public static bool operator >=( Ema a, double b ) => a.Price >= b;
+        public static bool operator >( Ema a, double b ) => a.Price < b;
+        public static double operator *( Ema a, double b ) => a.Price * b;
+        public static double operator *( double a, Ema b  ) =>  a * b.Price;
     }
 
     

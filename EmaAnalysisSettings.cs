@@ -73,6 +73,7 @@ namespace CBApp1
         /// <param name="emaSlopes">Reference to collection holding previously calculated ema slopes of appropriate lengths</param>
         public DoubleEmaAnalysisSettings( string product,
                                           bool slopes,
+                                          double bDiffP,
                                           double sDiffP,
                                           double sOffP,
                                           bool bTrigger,
@@ -86,6 +87,7 @@ namespace CBApp1
         {
             Product = product;
             Slopes = slopes;
+            BDiffP = bDiffP;
             SDiffP = sDiffP;
             SOffP = sOffP;
             BTrigger = bTrigger;
@@ -101,6 +103,7 @@ namespace CBApp1
 
         public string Product { get; }
         public bool Slopes { get; }
+        public double BDiffP { get; }
         public double TStartP { get; }
         public double BTurnP { get; }
         public double STurnP { get; }
