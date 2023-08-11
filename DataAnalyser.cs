@@ -829,6 +829,76 @@ namespace CBApp1
                         }
                     }
                 }
+
+                // Test double ema slope analysis
+                foreach( var pair in fiveMinEmaSlopes.Where( p => p.Value != null ) )
+                {
+                    string product = pair.Key;
+
+                    if( currentFiveMinCandles.ContainsKey( product ) )
+                    {
+                        Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
+                        Dictionary<int, Ema> currentFiveMinEmaSlopes = new Dictionary<int, Ema>();
+
+                        CalculateNewestEmaSlope( product,
+                                                 ref currentFiveMinEmas,
+                                                 ref currentFiveMinEmaSlopes,
+                                                 ref currentFiveMinCandles,
+                                                 ref fiveMinEmas,
+                                                 ref fiveMinEmaSlopes );
+
+                        DoubleEmaAnalysisSettings fiveMinDoubleEmaSlopeSetting =
+                            new DoubleEmaAnalysisSettings( product,
+                                                          true,
+                                                          0.04,
+                                                          0.15,
+                                                          true,
+                                                          true,
+                                                          config.FiveMinDoubleEmaLengths,
+                                                          ref currentFiveMinCandles,
+                                                          ref currentFiveMinEmas,
+                                                          ref currentFiveMinEmaSlopes,
+                                                          ref fiveMinEmas );
+
+                        DoubleEmaAnalyseProduct( fiveMinDoubleEmaSlopeSetting, null );
+                    }
+                }
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+            }
+        }
+
+        private void CalculateNewestEmaSlope( string product,
+                                              ref Dictionary<int, Ema> currentEmas,
+                                              ref Dictionary<int, Ema> currentEmaSlopes,
+                                              ref ConcurrentDictionary<string, Candle> currentCandles,
+                                              ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> prevEmas,
+                                              ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> fiveMinEmaSlopes )
+        {
+            try
+            {
+                Ema newestEma = null;
+                double emaPrice;
+
+                foreach( int period in prevEmas[ product ].Keys )
+                {
+                    double k = 2.0 / (period + 1);
+                    
+                    prevEmas[ product ][ period ].TryPeek( out newestEma );
+
+                    emaPrice = (currentCandles[ product ].Avg * k) + (newestEma.Price * (1 - k));
+
+                    currentEmas[ period ] = new Ema( period,
+                                                     emaPrice,
+                                                     currentCandles[ product ].Time );
+
+                    currentEmaSlopes[ period ] = new Ema( period,
+                                                          emaPrice - newestEma.Price,
+                                                          currentCandles[ product ].Time );
+                }
             }
             catch( Exception e )
             {

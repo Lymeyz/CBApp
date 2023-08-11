@@ -75,10 +75,8 @@ namespace CBApp1
                                           bool slopes,
                                           double bDiffP,
                                           double sDiffP,
-                                          double sOffP,
                                           bool bTrigger,
                                           bool sTrigger,
-                                          bool sOffTrigger,
                                           int[] periods,
                                           ref ConcurrentDictionary<string, Candle> currentCandles,
                                           ref Dictionary<int, Ema> currEmas,
@@ -89,10 +87,8 @@ namespace CBApp1
             Slopes = slopes;
             BDiffP = bDiffP;
             SDiffP = sDiffP;
-            SOffP = sOffP;
             BTrigger = bTrigger;
             STrigger = sTrigger;
-            SOffTrigger = sOffTrigger;
             Periods = periods;
             CurrentCandles = currentCandles;
             CurrEmas = currEmas;
@@ -111,10 +107,8 @@ namespace CBApp1
         public double STooLateP { get; }
         public int[] Periods { get; }
         public double SDiffP { get; }
-        public double SOffP { get; }
         public bool BTrigger { get; }
         public bool STrigger { get; }
-        public bool SOffTrigger { get; }
         public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
         public Dictionary<int, Ema> CurrEmaSlopes { get; }
         public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> EmaSlopes { get; }
