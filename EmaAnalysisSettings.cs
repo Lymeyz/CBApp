@@ -119,7 +119,8 @@ namespace CBApp1
     public class SingleEmaAnalysisSettings
     {
         public SingleEmaAnalysisSettings( string product,
-                                          double sOffP )
+                                          double sOffP
+                                          )
         {
             Product = product;
             SOffP = sOffP;
@@ -127,5 +128,7 @@ namespace CBApp1
 
         public string Product { get; }
         public double SOffP { get; }
+
+
     }
 }

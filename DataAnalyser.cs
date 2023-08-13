@@ -954,16 +954,20 @@ namespace CBApp1
             }
         }
 
-        private void SingleEmaAnalysis()
+        private SingleEmaAnalysisResult SingleEmaAnalysis()
         {
             try
             {
 
+
+
+                return null;
             }
             catch( Exception e )
             {
                 Console.WriteLine( e.StackTrace );
                 Console.WriteLine( e.Message );
+                return null;
             }
         }
 

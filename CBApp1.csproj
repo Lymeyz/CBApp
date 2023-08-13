@@ -107,6 +107,7 @@
     <Compile Include="LameCandle.cs" />
     <Compile Include="DoubleEmaAnalysisResult.cs" />
     <Compile Include="Profile.cs" />
+    <Compile Include="SingleEmaAnalysisResult.cs" />
     <Compile Include="SynchronizedConsoleWriter.cs" />
     <Compile Include="Authenticator.cs" />
     <Compile Include="AuthenticatorAndRequestTests.cs" />
