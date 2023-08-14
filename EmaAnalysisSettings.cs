@@ -122,7 +122,7 @@ namespace CBApp1
         /// 
         /// </summary>
         /// <param name="product"></param>
-        /// <param name="sOP"></param>
+        /// <param name="sOSP"></param>
         /// <param name="bS1"></param>
         /// <param name="bS2"></param>
         /// <param name="sS1"></param>
@@ -134,7 +134,8 @@ namespace CBApp1
         /// <param name="currEmaSlopes"></param>
         /// <param name="emaSlopes"></param>
         public SingleEmaAnalysisSettings( string product,
-                                          double sOP,
+                                          double sOSP,
+                                          double sOSSP,
                                           double bS1,
                                           double bS2,
                                           double sS1,
@@ -149,13 +150,14 @@ namespace CBApp1
                                           )
         {
             Product = product;
-            SOffP = sOP;
+            SOffSP = sOSP;
+            SOffSSP = sOSSP;
             BS1 = bS1;
             BS2 = bS2;
             SS1 = sS1;
             SS2 = sS2;
             BTrigger = bTrigger;
-            Strigger = strigger;
+            STrigger = strigger;
             SOffTrigger = sOffTrigger;
             EmaLength = emaLength;
             CurrentCandles = currentCandles;
@@ -164,13 +166,14 @@ namespace CBApp1
         }
 
         public string Product { get; }
-        public double SOffP { get; }
+        public double SOffSP { get; }
+        public double SOffSSP { get; }
         public double BS1 { get; }
         public double BS2 { get; }
         public double SS1 { get; }
         public double SS2 { get; }
         public bool BTrigger { get; }
-        public bool Strigger { get; }
+        public bool STrigger { get; }
         public bool SOffTrigger { get; }
         public int EmaLength { get; }
 
