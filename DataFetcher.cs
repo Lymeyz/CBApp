@@ -482,30 +482,39 @@ namespace CBApp1
             }
             else if( currentCandle != null )
             {
-                //newCandle = new Candle(currentCandle.Time.ToString(), "0", "0", "0", "0", "0");
-                newCandle = new Candle( currentCandle.Time, 0, 0, 0, 0, 0 );
-                newCandle.Close = double.Parse( match.Price, new CultureInfo( "En-Us" ) );
-                newCandle.Open = currentCandle.Open;
-                newCandle.Volume = currentCandle.Volume + double.Parse( match.Size, new CultureInfo( "En-Us" ) );
 
-                if( double.Parse( match.Price, new CultureInfo( "En-Us" ) ) > currentCandle.High )
+                double matchPrice = double.Parse( match.Price, new CultureInfo( "En-Us" ) );
+
+                if( !(Math.Abs( matchPrice - currentCandle.High ) > 0.01*currentCandle.High ) )
                 {
-                    newCandle.High = double.Parse( match.Price, new CultureInfo( "En-Us" ) );
+                    newCandle = new Candle( currentCandle.Time, 0, 0, 0, 0, 0 );
+                    newCandle.Close = double.Parse( match.Price, new CultureInfo( "En-Us" ) );
+                    newCandle.Open = currentCandle.Open;
+                    newCandle.Volume = currentCandle.Volume + double.Parse( match.Size, new CultureInfo( "En-Us" ) );
+
+                    if( double.Parse( match.Price, new CultureInfo( "En-Us" ) ) > currentCandle.High )
+                    {
+                        newCandle.High = double.Parse( match.Price, new CultureInfo( "En-Us" ) );
+                    }
+                    else
+                    {
+                        newCandle.High = currentCandle.High;
+                    }
+                    if( double.Parse( match.Price, new CultureInfo( "En-Us" ) ) < currentCandle.Low )
+                    {
+                        newCandle.Low = double.Parse( match.Price, new CultureInfo( "En-Us" ) );
+                    }
+                    else
+                    {
+                        newCandle.Low = currentCandle.Low;
+                    }
+
+                    currentCandles[ match.Product_Id ] = newCandle;
                 }
                 else
                 {
-                    newCandle.High = currentCandle.High;
+                    currentCandles[ match.Product_Id ] = currentCandle;
                 }
-                if( double.Parse( match.Price, new CultureInfo( "En-Us" ) ) < currentCandle.Low )
-                {
-                    newCandle.Low = double.Parse( match.Price, new CultureInfo( "En-Us" ) );
-                }
-                else
-                {
-                    newCandle.Low = currentCandle.Low;
-                }
-
-                currentCandles[ match.Product_Id ] = newCandle;
             }
 
         }

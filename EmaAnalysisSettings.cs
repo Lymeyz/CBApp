@@ -118,17 +118,64 @@ namespace CBApp1
 
     public class SingleEmaAnalysisSettings
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="product"></param>
+        /// <param name="sOP"></param>
+        /// <param name="bS1"></param>
+        /// <param name="bS2"></param>
+        /// <param name="sS1"></param>
+        /// <param name="sS2"></param>
+        /// <param name="bTrigger"></param>
+        /// <param name="strigger"></param>
+        /// <param name="currentCandles"></param>
+        /// <param name="currEmas"></param>
+        /// <param name="currEmaSlopes"></param>
+        /// <param name="emaSlopes"></param>
         public SingleEmaAnalysisSettings( string product,
-                                          double sOffP
+                                          double sOP,
+                                          double bS1,
+                                          double bS2,
+                                          double sS1,
+                                          double sS2,
+                                          bool bTrigger,
+                                          bool strigger,
+                                          bool sOffTrigger,
+                                          int emaLength,
+                                          ref ConcurrentDictionary<string, Candle> currentCandles,
+                                          ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emas,
+                                          ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes
                                           )
         {
             Product = product;
-            SOffP = sOffP;
+            SOffP = sOP;
+            BS1 = bS1;
+            BS2 = bS2;
+            SS1 = sS1;
+            SS2 = sS2;
+            BTrigger = bTrigger;
+            Strigger = strigger;
+            SOffTrigger = sOffTrigger;
+            EmaLength = emaLength;
+            CurrentCandles = currentCandles;
+            PrevEmas = emas;
+            PrevEmaSlopes = emaSlopes;
         }
 
         public string Product { get; }
         public double SOffP { get; }
+        public double BS1 { get; }
+        public double BS2 { get; }
+        public double SS1 { get; }
+        public double SS2 { get; }
+        public bool BTrigger { get; }
+        public bool Strigger { get; }
+        public bool SOffTrigger { get; }
+        public int EmaLength { get; }
 
-
+        public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
+        public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> PrevEmas { get; }
+        public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> PrevEmaSlopes { get; }
     }
 }

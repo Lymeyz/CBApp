@@ -263,7 +263,7 @@ namespace CBApp1
                         }
                     }
 
-                    // EMAs calculation based on last Emas
+                    // EMAs calculation based on last PrevEmas
                     foreach (int period in indices.Keys)
                     {
                         for (int i = indices[period]; i < candleList.Count; i++)
@@ -520,14 +520,21 @@ namespace CBApp1
                             }
                         }
 
+                        // hour ema lengths
+                        List<int> hourLengths = new List<int>( config.HourDoubleEmaLengths );
+                        hourLengths.Add( config.HourSingleEmaLength );
+                        int[] hourLengthsArray = hourLengths.ToArray();
+
                         // Hour emas
                         CalculateAllEmas( hourCandles,
                                           ref hourEmas,
                                           ref hourEmaSlopes,
                                           ref calculatedHourEmas,
-                                          config.HourDoubleEmaLengths
+                                          hourLengthsArray
                                          );
-  
+
+
+                        
                     }
                 });
             }
@@ -840,7 +847,7 @@ namespace CBApp1
                         Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
                         Dictionary<int, Ema> currentFiveMinEmaSlopes = new Dictionary<int, Ema>();
 
-                        CalculateNewestEmaSlope( product,
+                        CalculateNewestEmaAndSlope( product,
                                                  ref currentFiveMinEmas,
                                                  ref currentFiveMinEmaSlopes,
                                                  ref currentFiveMinCandles,
@@ -871,12 +878,12 @@ namespace CBApp1
             }
         }
 
-        private void CalculateNewestEmaSlope( string product,
-                                              ref Dictionary<int, Ema> currentEmas,
-                                              ref Dictionary<int, Ema> currentEmaSlopes,
-                                              ref ConcurrentDictionary<string, Candle> currentCandles,
-                                              ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> prevEmas,
-                                              ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> fiveMinEmaSlopes )
+        private void CalculateNewestEmaAndSlope( string product,
+                                                 ref Dictionary<int, Ema> currentEmas,
+                                                 ref Dictionary<int, Ema> currentEmaSlopes,
+                                                 ref ConcurrentDictionary<string, Candle> currentCandles,
+                                                 ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> prevEmas,
+                                                 ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes )
         {
             try
             {
@@ -938,7 +945,41 @@ namespace CBApp1
                 Console.WriteLine( e.StackTrace );
                 Console.WriteLine( e.Message );
             }
-            
+        }
+
+        private Ema CalculateNewestEmaSlope( string product,
+                                             ConcurrentDictionary<string, Candle> currentCandles,
+                                             ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> prevEmas,
+                                             ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes )
+        {
+            try
+            {
+                Ema lastEma = null;
+                Ema newEmaSlope = null;
+                double emaPrice;
+
+                foreach( int period in prevEmas[ product ].Keys )
+                {
+
+                    double k = 2.0 / (period + 1);
+
+                    prevEmas[ product ][ period ].TryPeek( out lastEma );
+
+                    emaPrice = (currentCandles[ product ].Avg * k) + (lastEma.Price * (1 - k));
+
+                    newEmaSlope = new Ema( period,
+                                           emaPrice - lastEma.Price,
+                                           currentCandles[ product ].Time );
+                }
+
+                return newEmaSlope;
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+                return null;
+            }
         }
 
         private void DoubleEmaAnalysis()
@@ -954,14 +995,96 @@ namespace CBApp1
             }
         }
 
-        private SingleEmaAnalysisResult SingleEmaAnalysis()
+        private SingleEmaAnalysisResult SingleEmaAnalyseProduct( SingleEmaAnalysisSettings sSett, SingleEmaAnalysisResult inResult )
         {
             try
             {
+                string product = sSett.Product;
 
+                int length = sSett.EmaLength;
 
+                LimitedDateTimeList<Ema> prevEmaSlopes;
+
+                SingleEmaAnalysisResult result = null;
+
+                if( inResult != null )
+                {
+                    result = inResult;
+                }
+
+                prevEmaSlopes = new LimitedDateTimeList<Ema>( sSett.PrevEmaSlopes[ product ][ sSett.EmaLength ], sSett.PrevEmaSlopes[ product ][ sSett.EmaLength ].Count );
+
+                Ema newestEmaSlope = CalculateNewestEmaSlope( product, sSett.CurrentCandles, sSett.PrevEmas, sSett.PrevEmaSlopes );
+                Ema currEmaSlope = newestEmaSlope;
+
+                double newestSlopeRate = newestEmaSlope - prevEmaSlopes.Newest;
+                double currSlopeRate = newestSlopeRate;
+
+                double tOneAverage = 0;
+                int count = 0;
+
+                if( result == null )
+                {
+                    for( int i = 0; i < prevEmaSlopes.Count; i++ )
+                    {
+                        // go backwards, add rates of change, increase count, find zero, calculate average
+                        if( result == null )
+                        {
+                            if( currEmaSlope >= 0 )
+                            {
+                                result.Trend = true;
+                            }
+                            else
+                            {
+                                result.Trend = false;
+                            }
+
+                            tOneAverage += currSlopeRate;
+                            count++;
+
+                            currEmaSlope = prevEmaSlopes.GetRemoveNewest();
+                            currSlopeRate = currEmaSlope - currSlopeRate;
+                        }
+                        else
+                        {
+                            // check if slope passed through zero, otherwise continue
+
+                            if( result.Trend == false )
+                            {
+                                if( currEmaSlope >= 0 )
+                                {
+                                    tOneAverage = tOneAverage / count;
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                if( currEmaSlope < 0 )
+                                {
+                                    tOneAverage = tOneAverage / count;
+                                    break;
+                                }
+                            }
+
+                            tOneAverage += currSlopeRate;
+                            count++;
+
+                            currEmaSlope = prevEmaSlopes.GetRemoveNewest();
+                            currSlopeRate = currEmaSlope - currSlopeRate;
+                        }
+                    }
+
+                    result = new SingleEmaAnalysisResult();
+
+                }
+                else
+                {
+
+                }
+                
 
                 return null;
+
             }
             catch( Exception e )
             {
@@ -1488,7 +1611,7 @@ namespace CBApp1
                             {
                                 if( newestShortEma >= newestLongEma )
                                 {
-                                    // Emas crossed
+                                    // PrevEmas crossed
                                     result = null;
                                     DoubleEmaAnalyseProduct( aSett, null );
                                 }
@@ -1497,7 +1620,7 @@ namespace CBApp1
                             {
                                 if( newestShortEma <= newestLongEma )
                                 {
-                                    // Emas crossed
+                                    // PrevEmas crossed
                                     result = null;
                                     DoubleEmaAnalyseProduct( aSett, null );
                                 }
@@ -1732,7 +1855,7 @@ namespace CBApp1
                     {
                         if( newestShortEma >= newestLongEma )
                         {
-                            // Emas crossed
+                            // PrevEmas crossed
                             result = null;
                             results[ product ] = null;
                         }
@@ -1741,7 +1864,7 @@ namespace CBApp1
                     {
                         if( newestShortEma <= newestLongEma )
                         {
-                            // Emas crossed
+                            // PrevEmas crossed
                             result = null;
                             results[ product ] = null;
                         }
