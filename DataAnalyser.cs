@@ -1009,19 +1009,6 @@ namespace CBApp1
             }
         }
 
-        private void DoubleEmaAnalysis()
-        {
-            try
-            {
-
-            }
-            catch( Exception e )
-            {
-                Console.WriteLine( e.StackTrace );
-                Console.WriteLine( e.Message );
-            }
-        }
-
         private SingleEmaAnalysisResult SingleEmaAnalyseProduct( SingleEmaAnalysisSettings sSett, SingleEmaAnalysisResult inResult )
         {
             try
@@ -1045,6 +1032,7 @@ namespace CBApp1
                 Ema newestEma = CalculateNewestEma( product, sSett.CurrentCandles, sSett.PrevEmas );
                 Ema newestEmaSlope = CalculateNewestEmaSlope( product, sSett.CurrentCandles, sSett.PrevEmas, sSett.PrevEmaSlopes );
                 Ema currEmaSlope = newestEmaSlope;
+                Ema prevEmaSlope = null;
 
                 double newestSlopeRate = newestEmaSlope - prevEmaSlopes.Newest;
                 double currSlopeRate = newestSlopeRate;
@@ -1072,6 +1060,7 @@ namespace CBApp1
                             result.LastUpdate = newestEmaSlope.Time;
                             result.SlopeRates.AddFirst( currSlopeRate );
 
+                            prevEmaSlope = currEmaSlope;
                             currEmaSlope = prevEmaSlopes.GetRemoveNewest();
                         }
                         else
@@ -1095,9 +1084,10 @@ namespace CBApp1
                                 }
                             }
 
-                            currSlopeRate = currEmaSlope - currSlopeRate;
+                            currSlopeRate = currEmaSlope - prevEmaSlope;
                             result.SlopeRates.AddLast( currSlopeRate );
 
+                            prevEmaSlope = currEmaSlope;
                             currEmaSlope = prevEmaSlopes.GetRemoveNewest();
                         }
                     }
@@ -1144,8 +1134,7 @@ namespace CBApp1
                 {
                     if( result.LastUpdate < newestEmaSlope.Time )
                     {
-                        currSlopeRate = newestEmaSlope - prevEmaSlopes.Newest;
-                        result.SlopeRates.AddLast( currSlopeRate );
+                        result.SlopeRates.AddFirst( currSlopeRate );
                     }
                     else if( result.SlopeRates.First.Value != newestSlopeRate )
                     {
@@ -1153,7 +1142,7 @@ namespace CBApp1
                     }
 
 
-                    // time to make decisions...
+                    // make decisions...
 
                     if( sSett.BTrigger )
                     {

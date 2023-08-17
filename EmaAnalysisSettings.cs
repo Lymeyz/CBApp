@@ -122,24 +122,30 @@ namespace CBApp1
         /// 
         /// </summary>
         /// <param name="product"></param>
-        /// <param name="sOSP"></param>
-        /// <param name="bS1"></param>
-        /// <param name="bS2"></param>
-        /// <param name="sS1"></param>
-        /// <param name="sS2"></param>
-        /// <param name="bTrigger"></param>
-        /// <param name="strigger"></param>
+        /// <param name="sOffSP">Selloff slope %</param>
+        /// <param name="sOffSSP">Selloff slope rate %</param>
+        /// <param name="bS1">Buy slope %</param>
+        /// <param name="bS2">Buy slope rate %</param>
+        /// <param name="bPeakRP">% return from bottom for sell</param>
+        /// <param name="sS1">Sell slope %</param>
+        /// <param name="sS2">Sell slope rate %</param>
+        /// <param name="sPeakRP">% return from peak for sell</param>
+        /// <param name="bTrigger">True --> analysis can suggest buys</param>
+        /// <param name="strigger">True --> analysis can suggest sells</param>
+        /// <param name="sOffTrigger">True --> analysis can suggest selloff</param>
+        /// <param name="emaLength">Length of ema to be used</param>
         /// <param name="currentCandles"></param>
-        /// <param name="currEmas"></param>
-        /// <param name="currEmaSlopes"></param>
+        /// <param name="emas"></param>
         /// <param name="emaSlopes"></param>
         public SingleEmaAnalysisSettings( string product,
-                                          double sOSP,
-                                          double sOSSP,
+                                          double sOffSP,
+                                          double sOffSSP,
                                           double bS1,
                                           double bS2,
+                                          double bPeakRP,
                                           double sS1,
                                           double sS2,
+                                          double sPeakRP,
                                           bool bTrigger,
                                           bool strigger,
                                           bool sOffTrigger,
@@ -150,12 +156,14 @@ namespace CBApp1
                                           )
         {
             Product = product;
-            SOffSP = sOSP;
-            SOffSSP = sOSSP;
+            SOffSP = sOffSP;
+            SOffSSP = sOffSSP;
             BS1 = bS1;
             BS2 = bS2;
+            BPeakRP = bPeakRP;
             SS1 = sS1;
             SS2 = sS2;
+            SPeakRP = sPeakRP;
             BTrigger = bTrigger;
             STrigger = strigger;
             SOffTrigger = sOffTrigger;
@@ -170,8 +178,10 @@ namespace CBApp1
         public double SOffSSP { get; }
         public double BS1 { get; }
         public double BS2 { get; }
+        public double BPeakRP { get; }
         public double SS1 { get; }
         public double SS2 { get; }
+        public double SPeakRP { get; }
         public bool BTrigger { get; }
         public bool STrigger { get; }
         public bool SOffTrigger { get; }
