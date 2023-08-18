@@ -499,11 +499,11 @@ namespace CBApp1
 
                     // emas
                     CalculateAllEmas( fiveMinCandles,
-                                     ref fiveMinEmas,
-                                     ref fiveMinEmaSlopes,
-                                     ref calculatedFiveMinEmas,
-                                     config.FiveMinDoubleEmaLengths[0],
-                                     config.FiveMinDoubleEmaLengths[1] );
+                                      ref fiveMinEmas,
+                                      ref fiveMinEmaSlopes,
+                                      ref calculatedFiveMinEmas,
+                                      config.FiveMinDoubleEmaLengths[0],
+                                      config.FiveMinDoubleEmaLengths[1] );
 
                     if( e.updatedLong )
                     {
@@ -794,82 +794,118 @@ namespace CBApp1
 
 
                 // test double ema analysis
-                DoubleEmaAnalysisResult fiveMinDoubleEmaResult;
-                DoubleEmaAnalysisSettings fiveMinDoubleEmaSetting;
-                foreach( var pair in fiveMinEmas.Where( p => p.Value != null ) )
+                //DoubleEmaAnalysisResult fiveMinDoubleEmaResult;
+                //DoubleEmaAnalysisSettings fiveMinDoubleEmaSetting;
+                //foreach( var pair in fiveMinEmas.Where( p => p.Value != null ) )
+                //{
+                //    string product = pair.Key;
+                //    if( currentFiveMinCandles.ContainsKey( product ) )
+                //    {
+                //        Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
+
+                //        CalculateNewestEma( product, ref currentFiveMinEmas, currentFiveMinCandles, fiveMinEmas);
+
+                //        fiveMinDoubleEmaSetting = new DoubleEmaAnalysisSettings( product,
+                //                                                             false,
+                //                                                             0.06,
+                //                                                             0.01,
+                //                                                             0.003,
+                //                                                             0.6,
+                //                                                             0.97,
+                //                                                             true,
+                //                                                             true,
+                //                                                             config.FiveMinDoubleEmaLengths,
+                //                                                             ref currentFiveMinCandles,
+                //                                                             ref currentFiveMinEmas,
+                //                                                             ref fiveMinEmas );
+
+                //        if( doubleEmaResults[ "fiveMin" ].ContainsKey( product ) )
+                //        {
+                //            fiveMinDoubleEmaResult = doubleEmaResults[ "fiveMin" ][ product ];
+                //        }
+                //        else
+                //        {
+                //            fiveMinDoubleEmaResult = null;
+                //        }
+
+                //        fiveMinDoubleEmaResult = DoubleEmaAnalyseProduct( fiveMinDoubleEmaSetting, fiveMinDoubleEmaResult );
+
+                //        if( fiveMinDoubleEmaResult != null )
+                //        {
+                //            doubleEmaResults[ "fiveMin" ][ product ] = fiveMinDoubleEmaResult;
+                //        }
+                //    }
+                //}
+
+                //// Test double ema slope analysis
+                //foreach( var pair in fiveMinEmaSlopes.Where( p => p.Value != null ) )
+                //{
+                //    string product = pair.Key;
+
+                //    if( currentFiveMinCandles.ContainsKey( product ) )
+                //    {
+                //        Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
+                //        Dictionary<int, Ema> currentFiveMinEmaSlopes = new Dictionary<int, Ema>();
+
+                //        CalculateNewestEmaAndSlope( product,
+                //                                 ref currentFiveMinEmas,
+                //                                 ref currentFiveMinEmaSlopes,
+                //                                 ref currentFiveMinCandles,
+                //                                 ref fiveMinEmas,
+                //                                 ref fiveMinEmaSlopes );
+
+                //        DoubleEmaAnalysisSettings fiveMinDoubleEmaSlopeSetting =
+                //            new DoubleEmaAnalysisSettings( product,
+                //                                          true,
+                //                                          0.04,
+                //                                          0.15,
+                //                                          true,
+                //                                          true,
+                //                                          config.FiveMinDoubleEmaLengths,
+                //                                          ref currentFiveMinCandles,
+                //                                          ref currentFiveMinEmas,
+                //                                          ref currentFiveMinEmaSlopes,
+                //                                          ref fiveMinEmas );
+
+                //        DoubleEmaAnalyseProduct( fiveMinDoubleEmaSlopeSetting, null );
+                //    }
+                //}
+
+                // test single ema analysis
+                SingleEmaAnalysisSettings hourSingleEmaSettings;
+                SingleEmaAnalysisResult hourSingleEmaResult;
+
+                foreach( var pair in hourEmas.Where( p => p.Value != null ) )
                 {
                     string product = pair.Key;
-                    if( currentFiveMinCandles.ContainsKey( product ) )
+                    if( currentHourCandles.ContainsKey( product ) )
                     {
-                        Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
-
-                        CalculateNewestEma( product, ref currentFiveMinEmas, currentFiveMinCandles, fiveMinEmas);
-
-                        fiveMinDoubleEmaSetting = new DoubleEmaAnalysisSettings( product,
-                                                                             false,
-                                                                             0.06,
-                                                                             0.01,
-                                                                             0.003,
-                                                                             0.6,
-                                                                             0.97,
-                                                                             true,
-                                                                             true,
-                                                                             config.FiveMinDoubleEmaLengths,
-                                                                             ref currentFiveMinCandles,
-                                                                             ref currentFiveMinEmas,
-                                                                             ref fiveMinEmas );
-
-                        if( doubleEmaResults[ "fiveMin" ].ContainsKey( product ) )
-                        {
-                            fiveMinDoubleEmaResult = doubleEmaResults[ "fiveMin" ][ product ];
-                        }
-                        else
-                        {
-                            fiveMinDoubleEmaResult = null;
-                        }
-
-                        fiveMinDoubleEmaResult = DoubleEmaAnalyseProduct( fiveMinDoubleEmaSetting, fiveMinDoubleEmaResult );
-
-                        if( fiveMinDoubleEmaResult != null )
-                        {
-                            doubleEmaResults[ "fiveMin" ][ product ] = fiveMinDoubleEmaResult;
-                        }
+                        hourSingleEmaSettings = new SingleEmaAnalysisSettings( product,
+                                                                               -1,
+                                                                               -1,
+                                                                               -1,
+                                                                               -1,
+                                                                               0.0012,
+                                                                               0.0025,
+                                                                               false,
+                                                                               0.004,
+                                                                               -1,
+                                                                               -1,
+                                                                               -1,
+                                                                               false,
+                                                                               -1,
+                                                                               -1,
+                                                                               true,
+                                                                               false,
+                                                                               false,
+                                                                               45,
+                                                                               ref currentHourCandles,
+                                                                               ref hourEmas,
+                                                                               ref hourEmaSlopes );
+                        SingleEmaAnalyseProduct( hourSingleEmaSettings, null );
                     }
                 }
 
-                // Test double ema slope analysis
-                foreach( var pair in fiveMinEmaSlopes.Where( p => p.Value != null ) )
-                {
-                    string product = pair.Key;
-
-                    if( currentFiveMinCandles.ContainsKey( product ) )
-                    {
-                        Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
-                        Dictionary<int, Ema> currentFiveMinEmaSlopes = new Dictionary<int, Ema>();
-
-                        CalculateNewestEmaAndSlope( product,
-                                                 ref currentFiveMinEmas,
-                                                 ref currentFiveMinEmaSlopes,
-                                                 ref currentFiveMinCandles,
-                                                 ref fiveMinEmas,
-                                                 ref fiveMinEmaSlopes );
-
-                        DoubleEmaAnalysisSettings fiveMinDoubleEmaSlopeSetting =
-                            new DoubleEmaAnalysisSettings( product,
-                                                          true,
-                                                          0.04,
-                                                          0.15,
-                                                          true,
-                                                          true,
-                                                          config.FiveMinDoubleEmaLengths,
-                                                          ref currentFiveMinCandles,
-                                                          ref currentFiveMinEmas,
-                                                          ref currentFiveMinEmaSlopes,
-                                                          ref fiveMinEmas );
-
-                        DoubleEmaAnalyseProduct( fiveMinDoubleEmaSlopeSetting, null );
-                    }
-                }
             }
             catch( Exception e )
             {
@@ -1083,8 +1119,6 @@ namespace CBApp1
                     result = inResult;
                 }
 
-                //prevEmaSlopes = new LimitedDateTimeList<Ema>( sSett.PrevEmaSlopes[ product ][ sSett.EmaLength ], sSett.PrevEmaSlopes[ product ][ sSett.EmaLength ].Count );
-
                 Ema newestEma = CalculateNewestEma( product, sSett.CurrentCandles, sSett.PrevEmas );
                 Ema newestEmaSlope = CalculateNewestEmaSlope( product, sSett.CurrentCandles, sSett.PrevEmas, sSett.PrevEmaSlopes );
                 Ema currEmaSlope = newestEmaSlope;
@@ -1100,13 +1134,15 @@ namespace CBApp1
 
                 if( result == null )
                 {
-                    result = new SingleEmaAnalysisResult();
 
-                    for( int i = 0; i < sSett.PrevEmaSlopes.Count; i++ )
+                    int count = sSett.PrevEmaSlopes.Count;
+                    for( int i = 0; i < count; i++ )
                     {
                         // go backwards, add rates of change, increase count, find zero, calculate average
                         if( result == null )
                         {
+                            result = new SingleEmaAnalysisResult();
+
                             if( currEmaSlope >= 0 )
                             {
                                 result.Trend = true;
@@ -1147,11 +1183,14 @@ namespace CBApp1
                                 }
                             }
 
-                            currSlopeRate = currEmaSlope - prevEmaSlope;
+                            currSlopeRate = prevEmaSlope - currEmaSlope;
                             result.SlopeRates.AddLast( currSlopeRate );
 
                             prevEmaSlope = currEmaSlope;
                             currEmaSlope = sSett.PrevEmaSlopes.GetRemoveNewest();
+
+                            prevEma = currEma;
+                            currEma = sSett.PrevEmas.GetRemoveNewest();
                         }
                     }
 
@@ -1205,8 +1244,9 @@ namespace CBApp1
 
                     if( sSett.BTrigger )
                     {
-                        if( sSett.BS1 != -1 && (newestEmaSlope >= 0 ||
-                            newestEmaSlope >= sSett.BS1 * newestEma) )
+                        if( (sSett.BS1 != -1 && (newestEmaSlope >= 0 ||
+                            newestEmaSlope >= sSett.BS1 * newestEma) ) ||
+                            sSett.BS2Override )
                         {
                             if( sSett.BS2 != -1 &&
                                 ( result.SlopeRateAverage > 0 && result.SlopeRateAverage > sSett.BS2 * newestEmaSlope ) )
@@ -1223,12 +1263,10 @@ namespace CBApp1
                             }
                             else
                             {
-                                if( sSett.BPeakRP != -1 )
+                                if( sSett.BPeakRP != -1 &&
+                                    ( newestEma.Price > result.StartPrice * sSett.BPeakRP ) )
                                 {
-                                    if( newestEma.Price > result.StartPrice * sSett.BPeakRP )
-                                    {
-                                        result.BuyOk = true;
-                                    }
+                                    result.BuyOk = true;
                                 }
                                 else
                                 {

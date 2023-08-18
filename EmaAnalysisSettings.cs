@@ -145,10 +145,12 @@ namespace CBApp1
                                           double sOffPeakWindow,
                                           double bS1,
                                           double bS2,
+                                          bool bS2Override,
                                           double bPeakRP,
                                           double bPeakWindow,
                                           double sS1,
                                           double sS2,
+                                          bool sS2Override,
                                           double sPeakRP,
                                           double sPeakWindow,
                                           bool bTrigger,
@@ -167,10 +169,12 @@ namespace CBApp1
             SOffPeakWindow = sOffPeakWindow;
             BS1 = bS1;
             BS2 = bS2;
+            BS2Override = bS2Override;
             BPeakRP = bPeakRP;
             BPeakWindow = bPeakWindow;
             SS1 = sS1;
             SS2 = sS2;
+            SS2Override = sS2Override;
             SPeakRP = sPeakRP;
             SPeakWindow = sPeakWindow;
             BTrigger = bTrigger;
@@ -178,8 +182,6 @@ namespace CBApp1
             SOffTrigger = sOffTrigger;
             EmaLength = emaLength;
             CurrentCandles = currentCandles;
-            Emas = emas;
-            EmaSlopes = emaSlopes;
             PrevEmas = new LimitedDateTimeList<Ema>( emas[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
             PrevEmaSlopes = new LimitedDateTimeList<Ema>( emaSlopes[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
         }
@@ -191,10 +193,12 @@ namespace CBApp1
         public double SOffPeakWindow { get; }
         public double BS1 { get; }
         public double BS2 { get; }
+        public bool BS2Override { get; }
         public double BPeakRP { get; }
         public double BPeakWindow { get; }
         public double SS1 { get; }
         public double SS2 { get; }
+        public bool SS2Override { get; }
         public double SPeakRP { get; }
         public double SPeakWindow { get; }
         public bool BTrigger { get; }
@@ -203,8 +207,6 @@ namespace CBApp1
         public int EmaLength { get; }
 
         public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
-        public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> Emas { get; }
-        public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> EmaSlopes { get; }
         public LimitedDateTimeList<Ema> PrevEmas { get; set; }
         public LimitedDateTimeList<Ema> PrevEmaSlopes { get; set; }
     }
