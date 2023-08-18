@@ -37,7 +37,7 @@ namespace CBApp1
         }
 
         public bool Trend { get; set; } // true = short ema over long ema, positive
-        public double RateAverage
+        public double SlopeRateAverage
         {
             get
             {
@@ -60,19 +60,13 @@ namespace CBApp1
                 
             }
         }
-        public int RateAverageCount
-        {
-            get
-            {
-                return SlopeRates.Count;
-            }
-        }
         public LinkedList<double> SlopeRates { get; set; }
         public bool SellOk { get; set; }
         public bool BuyOk { get; set; }
         public bool SellOff { get; set; }
         public bool Complete { get; set; }
         public double Price { get; set; }
+        public double StartPrice { get; set; } 
         public DateTime Time { get; set; } // start of trend
         public DateTime LastUpdate { get; set; }
 

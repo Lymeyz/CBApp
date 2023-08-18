@@ -497,7 +497,7 @@ namespace CBApp1
                         }
                     }
 
-                    // prevEmas
+                    // emas
                     CalculateAllEmas( fiveMinCandles,
                                      ref fiveMinEmas,
                                      ref fiveMinEmaSlopes,
@@ -974,6 +974,32 @@ namespace CBApp1
             }
         }
 
+        private Ema CalculateNewestEma( string product,
+                                        ConcurrentDictionary<string, Candle> currentCandles,
+                                        LimitedDateTimeList<Ema> prevEmas )
+        {
+            try
+            {
+                Ema newestEma = prevEmas.Newest;
+                int length = newestEma.Length;
+
+                double k = 2.0 / (length + 1);
+                double emaPrice;
+
+                emaPrice = (currentCandles[ product ].Avg * k) + (newestEma.Price * (1 - k));
+
+                newestEma = new Ema( length, emaPrice, currentCandles[ product ].Time );
+
+                return newestEma;
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+                return null;
+            }
+        }
+
         private Ema CalculateNewestEmaSlope( string product,
                                              ConcurrentDictionary<string, Candle> currentCandles,
                                              ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> prevEmas,
@@ -1009,6 +1035,36 @@ namespace CBApp1
             }
         }
 
+        private Ema CalculateNewestEmaSlope( string product,
+                                             ConcurrentDictionary<string, Candle> currentCandles,
+                                             LimitedDateTimeList<Ema> emas,
+                                             LimitedDateTimeList<Ema> emaSlopes )
+        {
+            try
+            {
+                Ema lastEma = emas.Newest;
+                Ema newEmaSlope = emaSlopes.Newest;
+                int length = lastEma.Length;
+                double emaPrice;
+
+                double k = 2.0 / (length + 1);
+
+                emaPrice = (currentCandles[ product ].Avg * k) + (lastEma.Price * (1 - k));
+
+                newEmaSlope = new Ema( length,
+                                       emaPrice - lastEma.Price,
+                                       currentCandles[ product ].Time );
+
+                return newEmaSlope;
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+                return null;
+            }
+        }
+
         private SingleEmaAnalysisResult SingleEmaAnalyseProduct( SingleEmaAnalysisSettings sSett, SingleEmaAnalysisResult inResult )
         {
             try
@@ -1017,7 +1073,7 @@ namespace CBApp1
 
                 int length = sSett.EmaLength;
 
-                LimitedDateTimeList<Ema> prevEmaSlopes;
+                //LimitedDateTimeList<Ema> prevEmaSlopes;
 
                 SingleEmaAnalysisResult result = null;
                 SingleEmaAnalysisResult outResult = null;
@@ -1027,23 +1083,26 @@ namespace CBApp1
                     result = inResult;
                 }
 
-                prevEmaSlopes = new LimitedDateTimeList<Ema>( sSett.PrevEmaSlopes[ product ][ sSett.EmaLength ], sSett.PrevEmaSlopes[ product ][ sSett.EmaLength ].Count );
+                //prevEmaSlopes = new LimitedDateTimeList<Ema>( sSett.PrevEmaSlopes[ product ][ sSett.EmaLength ], sSett.PrevEmaSlopes[ product ][ sSett.EmaLength ].Count );
 
                 Ema newestEma = CalculateNewestEma( product, sSett.CurrentCandles, sSett.PrevEmas );
                 Ema newestEmaSlope = CalculateNewestEmaSlope( product, sSett.CurrentCandles, sSett.PrevEmas, sSett.PrevEmaSlopes );
                 Ema currEmaSlope = newestEmaSlope;
                 Ema prevEmaSlope = null;
+                Ema currEma = newestEma;
+                Ema prevEma = null;
 
-                double newestSlopeRate = newestEmaSlope - prevEmaSlopes.Newest;
+                double newestSlopeRate = newestEmaSlope - sSett.PrevEmaSlopes.Newest;
                 double currSlopeRate = newestSlopeRate;
 
                 DateTime tStartTime = DateTime.MinValue;
+                double peakEmaPrice = -1;
 
                 if( result == null )
                 {
                     result = new SingleEmaAnalysisResult();
 
-                    for( int i = 0; i < prevEmaSlopes.Count; i++ )
+                    for( int i = 0; i < sSett.PrevEmaSlopes.Count; i++ )
                     {
                         // go backwards, add rates of change, increase count, find zero, calculate average
                         if( result == null )
@@ -1061,7 +1120,9 @@ namespace CBApp1
                             result.SlopeRates.AddFirst( currSlopeRate );
 
                             prevEmaSlope = currEmaSlope;
-                            currEmaSlope = prevEmaSlopes.GetRemoveNewest();
+                            currEmaSlope = sSett.PrevEmaSlopes.GetRemoveNewest();
+                            prevEma = currEma;
+                            currEma = sSett.PrevEmas.GetRemoveNewest();
                         }
                         else
                         {
@@ -1071,6 +1132,7 @@ namespace CBApp1
                             {
                                 if( currEmaSlope >= 0 )
                                 {
+                                    peakEmaPrice = currEma.Price;
                                     tStartTime = currEmaSlope.Time;
                                     break;
                                 }
@@ -1079,6 +1141,7 @@ namespace CBApp1
                             {
                                 if( currEmaSlope < 0 )
                                 {
+                                    peakEmaPrice = currEma.Price;
                                     tStartTime = currEmaSlope.Time;
                                     break;
                                 }
@@ -1088,13 +1151,15 @@ namespace CBApp1
                             result.SlopeRates.AddLast( currSlopeRate );
 
                             prevEmaSlope = currEmaSlope;
-                            currEmaSlope = prevEmaSlopes.GetRemoveNewest();
+                            currEmaSlope = sSett.PrevEmaSlopes.GetRemoveNewest();
                         }
                     }
 
 
-                    if( tStartTime != DateTime.MinValue )
+                    if( tStartTime != DateTime.MinValue &&
+                        peakEmaPrice != -1)
                     {
+                        result.StartPrice = peakEmaPrice;
                         result.Time = tStartTime;
                     }
                     else
@@ -1111,10 +1176,7 @@ namespace CBApp1
                             result = null;
                             outResult = SingleEmaAnalyseProduct( sSett, null );
                         }
-                        else
-                        {
 
-                        }
                     }
                     else
                     {
@@ -1123,10 +1185,7 @@ namespace CBApp1
                             result = null;
                             outResult = SingleEmaAnalyseProduct( sSett, null );
                         }
-                        else
-                        {
 
-                        }
                     }
                 }
 
@@ -1146,29 +1205,49 @@ namespace CBApp1
 
                     if( sSett.BTrigger )
                     {
-                        if( newestEmaSlope >= 0 ||
-                            newestEmaSlope >= sSett.BS1 * newestEma )
+                        if( sSett.BS1 != -1 && (newestEmaSlope >= 0 ||
+                            newestEmaSlope >= sSett.BS1 * newestEma) )
                         {
-                            if( true )
+                            if( sSett.BS2 != -1 &&
+                                ( result.SlopeRateAverage > 0 && result.SlopeRateAverage > sSett.BS2 * newestEmaSlope ) )
                             {
-
+                                if( sSett.BPeakRP != -1 &&
+                                        (newestEma.Price > result.StartPrice * sSett.BPeakRP) )
+                                {
+                                    result.BuyOk = true;
+                                }
+                                else
+                                {
+                                    result.BuyOk = true;
+                                }
                             }
-
-
+                            else
+                            {
+                                if( sSett.BPeakRP != -1 )
+                                {
+                                    if( newestEma.Price > result.StartPrice * sSett.BPeakRP )
+                                    {
+                                        result.BuyOk = true;
+                                    }
+                                }
+                                else
+                                {
+                                    result.BuyOk = true;
+                                }
+                            }
                         }
-                    }
-                    else
-                    {
-
                     }
 
                     if( sSett.STrigger )
                     {
 
+                        // do peak return option
+
                     }
 
                     if( sSett.SOffTrigger )
                     {
+                        // do peak return option
 
                     }
                 }

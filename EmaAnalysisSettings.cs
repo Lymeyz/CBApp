@@ -124,6 +124,7 @@ namespace CBApp1
         /// <param name="product"></param>
         /// <param name="sOffSP">Selloff slope %</param>
         /// <param name="sOffSSP">Selloff slope rate %</param>
+        /// <param name="sOffPeakRP">% return from peak for selloff</param>
         /// <param name="bS1">Buy slope %</param>
         /// <param name="bS2">Buy slope rate %</param>
         /// <param name="bPeakRP">% return from bottom for sell</param>
@@ -140,12 +141,16 @@ namespace CBApp1
         public SingleEmaAnalysisSettings( string product,
                                           double sOffSP,
                                           double sOffSSP,
+                                          double sOffPeakRP,
+                                          double sOffPeakWindow,
                                           double bS1,
                                           double bS2,
                                           double bPeakRP,
+                                          double bPeakWindow,
                                           double sS1,
                                           double sS2,
                                           double sPeakRP,
+                                          double sPeakWindow,
                                           bool bTrigger,
                                           bool strigger,
                                           bool sOffTrigger,
@@ -158,37 +163,49 @@ namespace CBApp1
             Product = product;
             SOffSP = sOffSP;
             SOffSSP = sOffSSP;
+            SOffPeakRP = sOffPeakRP;
+            SOffPeakWindow = sOffPeakWindow;
             BS1 = bS1;
             BS2 = bS2;
             BPeakRP = bPeakRP;
+            BPeakWindow = bPeakWindow;
             SS1 = sS1;
             SS2 = sS2;
             SPeakRP = sPeakRP;
+            SPeakWindow = sPeakWindow;
             BTrigger = bTrigger;
             STrigger = strigger;
             SOffTrigger = sOffTrigger;
             EmaLength = emaLength;
             CurrentCandles = currentCandles;
-            PrevEmas = emas;
-            PrevEmaSlopes = emaSlopes;
+            Emas = emas;
+            EmaSlopes = emaSlopes;
+            PrevEmas = new LimitedDateTimeList<Ema>( emas[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
+            PrevEmaSlopes = new LimitedDateTimeList<Ema>( emaSlopes[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
         }
 
         public string Product { get; }
         public double SOffSP { get; }
         public double SOffSSP { get; }
+        public double SOffPeakRP { get; }
+        public double SOffPeakWindow { get; }
         public double BS1 { get; }
         public double BS2 { get; }
         public double BPeakRP { get; }
+        public double BPeakWindow { get; }
         public double SS1 { get; }
         public double SS2 { get; }
         public double SPeakRP { get; }
+        public double SPeakWindow { get; }
         public bool BTrigger { get; }
         public bool STrigger { get; }
         public bool SOffTrigger { get; }
         public int EmaLength { get; }
 
         public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
-        public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> PrevEmas { get; }
-        public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> PrevEmaSlopes { get; }
+        public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> Emas { get; }
+        public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> EmaSlopes { get; }
+        public LimitedDateTimeList<Ema> PrevEmas { get; set; }
+        public LimitedDateTimeList<Ema> PrevEmaSlopes { get; set; }
     }
 }
