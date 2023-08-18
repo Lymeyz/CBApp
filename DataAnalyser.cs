@@ -890,10 +890,10 @@ namespace CBApp1
                                                                                false,
                                                                                0.004,
                                                                                -1,
-                                                                               -1,
-                                                                               -1,
+                                                                               0.0012,
+                                                                               0.0025,
                                                                                false,
-                                                                               -1,
+                                                                               0.004,
                                                                                -1,
                                                                                true,
                                                                                false,
@@ -1239,35 +1239,52 @@ namespace CBApp1
                         result.UpdateSlopeRateAverage( newestSlopeRate );
                     }
 
+                    result.BuyOk = false;
+                    result.SellOk = false;
+                    result.SellOff = false;
+
+
 
                     // make decisions...
-
                     if( sSett.BTrigger )
                     {
+                        // simple slope or override
                         if( (sSett.BS1 != -1 && (newestEmaSlope >= 0 ||
                             newestEmaSlope >= sSett.BS1 * newestEma) ) ||
                             sSett.BS2Override )
                         {
+                            // slope rate 
                             if( sSett.BS2 != -1 &&
                                 ( result.SlopeRateAverage > 0 && result.SlopeRateAverage > sSett.BS2 * newestEmaSlope ) )
                             {
+                                // slope rate and peak return
                                 if( sSett.BPeakRP != -1 &&
-                                        (newestEma.Price > result.StartPrice * sSett.BPeakRP) )
+                                        ( newestEma.Price > result.StartPrice * sSett.BPeakRP ) )
                                 {
-                                    result.BuyOk = true;
+                                    // peak return window
+                                    if( sSett.BPeakWindow != -1 && ( newestEma.Price < ( result.StartPrice * ( sSett.BPeakRP + sSett.BPeakWindow ) ) ) )
+                                    {
+                                        result.BuyOk = true;
+                                    }
+                                    else
+                                    {
+                                        result.BuyOk = true;
+                                    }
                                 }
                                 else
                                 {
                                     result.BuyOk = true;
                                 }
                             }
+                            // simple slope
                             else
                             {
-                                if( sSett.BPeakRP != -1 &&
-                                    ( newestEma.Price > result.StartPrice * sSett.BPeakRP ) )
+                                // simple slope and peak return
+                                if( sSett.BPeakWindow != -1 && ( newestEma.Price < ( result.StartPrice * ( sSett.BPeakRP + sSett.BPeakWindow) ) ) )
                                 {
                                     result.BuyOk = true;
                                 }
+                                // only simple slope
                                 else
                                 {
                                     result.BuyOk = true;
@@ -1278,19 +1295,119 @@ namespace CBApp1
 
                     if( sSett.STrigger )
                     {
-
-                        // do peak return option
-
+                        // simple slope and slope rate or override
+                        if( ( sSett.SS1 != -1 && ( newestEmaSlope <= 0 || 
+                            newestEmaSlope <= sSett.SS1 * newestEma ) ) || 
+                            sSett.SS2Override )
+                        {
+                            // slope rate
+                            if( sSett.SS2 != -1 && 
+                                ( result.SlopeRateAverage <= sSett.SS2 * newestEmaSlope ) )
+                            {
+                                // peak return
+                                if( sSett.SPeakRP != -1 && 
+                                    ( newestEma.Price < result.StartPrice * sSett.SPeakRP ) )
+                                {
+                                    // peak return window
+                                    if( sSett.SPeakWindow != -1 && 
+                                        ( newestEma.Price > ( result.StartPrice * ( sSett.SPeakRP + sSett.SPeakWindow ) ) ) )
+                                    {
+                                        result.SellOk = true;
+                                    }
+                                    else
+                                    {
+                                        result.SellOk = true;
+                                    }
+                                }
+                                else
+                                {
+                                    result.SellOk = true;
+                                }
+                            }
+                            // simple slope
+                            else
+                            {
+                                // peak return
+                                if( sSett.SPeakRP != -1 && 
+                                        ( newestEma.Price < result.StartPrice * sSett.SPeakRP ) )
+                                {
+                                    // peak return window
+                                    if( sSett.SPeakWindow != -1 &&
+                                        ( newestEma.Price > ( result.StartPrice * ( sSett.SPeakRP + sSett.SPeakWindow ) ) ) )
+                                    {
+                                        result.SellOk = true;
+                                    }
+                                    else
+                                    {
+                                        result.SellOk = true;
+                                    }
+                                }
+                                else
+                                {
+                                    result.SellOk = true;
+                                }
+                            }
+                        }
                     }
 
                     if( sSett.SOffTrigger )
                     {
-                        // do peak return option
+                        // simple slope and slope rate or override
+                        if( ( sSett.SOffSP != -1 && (newestEmaSlope < 0 ||
+                            newestEmaSlope <= sSett.SOffSP * newestEma ) ) )
+                        {
+                            // slope rate
+                            if( sSett.SOffSSP != -1 &&
+                                ( result.SlopeRateAverage <= sSett.SOffSSP * newestEmaSlope ) )
+                            {
+                                // peak return
+                                if( sSett.SOffPeakRP != -1 &&
+                                    ( newestEma.Price < result.StartPrice * sSett.SOffPeakRP ) )
+                                {
+                                    // peak return window
+                                    if( sSett.SOffPeakWindow != -1 &&
+                                        ( newestEma.Price > ( result.StartPrice * ( sSett.SOffPeakRP + sSett.SOffPeakWindow ) ) ) )
+                                    {
+                                        result.SellOff = true;
+                                    }
+                                    else
+                                    {
+                                        result.SellOff = true;
+                                    }
+                                }
+                                else
+                                {
+                                    result.SellOff = true;
+                                }
+                            }
+                            // simple slope
+                            else
+                            {
+                                // peak return
+                                if( sSett.SOffPeakRP != -1 &&
+                                        (newestEma.Price < result.StartPrice * sSett.SOffPeakRP) )
+                                {
+                                    // peak return window
+                                    if( sSett.SOffPeakWindow != -1 &&
+                                        (newestEma.Price > (result.StartPrice * (sSett.SOffPeakRP + sSett.SOffPeakWindow))) )
+                                    {
+                                        result.SellOk = true;
+                                    }
+                                    else
+                                    {
+                                        result.SellOk = true;
+                                    }
+                                }
+                                else
+                                {
+                                    result.SellOk = true;
+                                }
+                            }
+                        }
 
                     }
                 }
                 
-
                 return outResult;
 
             }
