@@ -1419,7 +1419,8 @@ namespace CBApp1
             }
         }
 
-        private void AnalyseVolatilities( ref Dictionary<string, Queue<Candle>> candles )
+        // Find peaks based on analysis of emas and do a
+        private void VolatilityAnalysis( VolatilityAnalysisSettings volSett )
         {
             try
             {
