@@ -104,7 +104,7 @@ namespace CBApp1
 
                 int count = ((sleepTime - 1) * 60) + (60 - now.Second);
 
-                Console.WriteLine($"Waiting {count} seconds");
+                Console.WriteLine($"UTC {DateTime.UtcNow} : Waiting {count} seconds until next 5 minute mark to synchronize");
                 while (count != 0)
                 {
 
