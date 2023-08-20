@@ -13,16 +13,19 @@ namespace CBApp1
                                            int volatilityLength,
                                            bool slopeBased,
                                            int[] lengths,
+                                           ref ConcurrentDictionary<string, Candle> currentCandles,
+                                           ref Dictionary<string, Queue<Candle>> candles,
                                            ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emas,
                                            ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes )
         {
             VolatilityLength = volatilityLength;
             SlopeBased = slopeBased;
             Lengths = lengths;
-
+            CurrentCandles = currentCandles;
+            Candles = new LimitedDateTimeList<Candle>( candles[ product ], candles[ product ].Count );
             if( !slopeBased )
             {
-
+                
                 Emas = new Dictionary<int, LimitedDateTimeList<Ema>>();
 
                 for( int i = 0; i < 2; i++ )
@@ -42,7 +45,8 @@ namespace CBApp1
         public int VolatilityLength { get; }
         public bool SlopeBased { get; }
         public int[] Lengths { get; }
-
+        public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
+        public LimitedDateTimeList<Candle> Candles { get; }
         public Dictionary<int, LimitedDateTimeList<Ema>> Emas { get; set; }
         public LimitedDateTimeList<Ema> EmaSlopes { get; set; }
     }

@@ -1424,6 +1424,107 @@ namespace CBApp1
         {
             try
             {
+                string product = volSett.Product;
+
+
+                VolatilityAnalysisResult result = null;
+                LinkedList<double> peaks = null;
+
+                Candle newestCandle = null;
+                Candle currentCandle = null;
+                Ema newestShortEma = null;
+                Ema newestLongEma = null;
+                Ema currentShortEma = null;
+                Ema currentLongEma = null;
+
+                if( !volSett.SlopeBased )
+                {
+                    int shortLength = volSett.Lengths[ 0 ];
+                    int longLength = volSett.Lengths[ 1 ];
+                    // calculate current emas
+                    newestCandle = volSett.CurrentCandles[ product ];
+                    currentCandle = newestCandle;
+                    newestShortEma = this.CalculateNewestEma( product, volSett.CurrentCandles, volSett.Emas[ shortLength ] );
+                    newestLongEma = this.CalculateNewestEma( product, volSett.CurrentCandles, volSett.Emas[ longLength ] );
+                    currentShortEma = newestShortEma;
+                    currentLongEma = newestLongEma;
+
+                    // go through emas from newest to oldest
+                    bool trend;
+                    double peakDiff = -1;
+                    double peak = -1;
+
+                    for( int i = 0; i < volSett.Emas[ shortLength ].Count; i++ )
+                    {
+                        if( peaks == null )
+                        {
+                            peaks = new LinkedList<double>();
+
+                            if( currentShortEma < currentLongEma )
+                            {
+                                peak = currentCandle.Low;
+                                trend = false;
+                            }
+                            else if( currentShortEma >= currentLongEma )
+                            {
+                                peak = currentCandle.High;
+                                trend = true;
+                            }
+                        }
+                        else
+                        {
+
+                            if( trend = false )
+                            {
+                                if( currentShortEma > currentLongEma )
+                                {
+                                    // new trend
+                                    peaks.AddLast( peak );
+                                    peak = -1;
+                                    trend = true;
+                                }
+                                else
+                                {
+                                    if( currentCandle.Low < peak )
+                                    {
+                                        peak = currentCandle.Low;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if( currentShortEma < currentLongEma )
+                                {
+                                    peaks.AddLast( peak );
+                                    peak = -1;
+                                    trend = false;
+                                }
+                                else
+                                {
+                                    if( currentCandle.High > peak )
+                                    {
+                                        peak = currentCandle.High;
+                                    }
+                                }
+                            }
+
+
+                        }
+
+                        currentCandle = volSett.Candles.GetRemoveNewest();
+                        currentShortEma = volSett.Emas[ shortLength ].GetRemoveNewest();
+                        currentLongEma = volSett.Emas[ longLength ].GetRemoveNewest();
+                    }
+
+
+                }
+                else
+                {
+
+                }
+
+
+
 
             }
             catch( Exception e )

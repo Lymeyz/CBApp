@@ -123,6 +123,7 @@
     <Compile Include="NonBlockingConsole.cs" />
     <Compile Include="PrelO.cs" />
     <Compile Include="Tick.cs" />
+    <Compile Include="VolatilityAnalysisResult.cs" />
     <Compile Include="VolatilityAnalysisSettings.cs" />
     <Compile Include="WsMessage.cs" />
     <Compile Include="TimedObjectComp.cs" />
