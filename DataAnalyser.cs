@@ -898,6 +898,7 @@ namespace CBApp1
                                                                                true,
                                                                                true,
                                                                                true,
+                                                                               6,
                                                                                45,
                                                                                ref currentHourCandles,
                                                                                ref hourEmas,
@@ -1141,7 +1142,7 @@ namespace CBApp1
                         // go backwards, add rates of change, increase count, find zero, calculate average
                         if( result == null )
                         {
-                            result = new SingleEmaAnalysisResult();
+                            result = new SingleEmaAnalysisResult(sSett.SlopeRateAvgLength);
 
                             if( currEmaSlope >= 0 )
                             {
@@ -1473,7 +1474,6 @@ namespace CBApp1
                         }
                         else
                         {
-
                             if( trend = false )
                             {
                                 if( currentShortEma > currentLongEma )
@@ -1507,8 +1507,6 @@ namespace CBApp1
                                     }
                                 }
                             }
-
-
                         }
 
                         currentCandle = volSett.Candles.GetRemoveNewest();
@@ -1516,7 +1514,10 @@ namespace CBApp1
                         currentLongEma = volSett.Emas[ longLength ].GetRemoveNewest();
                     }
 
+                    // do ema of difference between peaks...
 
+                    LinkedListNode<double> node1 = peaks.Last;
+                    LinkedListNode<double> node2 = peaks.Last;
                 }
                 else
                 {

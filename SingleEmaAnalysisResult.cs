@@ -8,7 +8,7 @@ namespace CBApp1
 {
     public class SingleEmaAnalysisResult
     {
-        public SingleEmaAnalysisResult()
+        public SingleEmaAnalysisResult(int slopeRateAverageLength )
         {
             Complete = false;
             SellOff = false;
@@ -17,8 +17,8 @@ namespace CBApp1
             Time = DateTime.MinValue;
             LastUpdate = DateTime.MinValue;
             SlopeRates = new LinkedList<double>();
-            count = 0;
             average = 0;
+            SlopeRateAverageLength = slopeRateAverageLength;
         }
 
         public void UpdateSlopeRateAverage(double slopeRate)
@@ -26,7 +26,6 @@ namespace CBApp1
             try
             {
                 SlopeRates.RemoveFirst();
-                count--;
                 SlopeRates.AddFirst( slopeRate );
             }
             catch( Exception e )
@@ -41,17 +40,21 @@ namespace CBApp1
         {
             get
             {
-                if( SlopeRates.Count > count )
+                if( SlopeRates.Count > SlopeRateAverageLength )
                 {
+                    for( int i = 0; i < SlopeRates.Count - SlopeRateAverageLength; i++ )
+                    {
+                        SlopeRates.RemoveLast();
+                    }
+
                     average = 0;
-                    count = SlopeRates.Count;
 
                     foreach( var rate in SlopeRates )
                     {
                         average += rate;
                     }
 
-                    return average / count;
+                    return average / SlopeRateAverageLength;
                 }
                 else
                 {
@@ -69,8 +72,8 @@ namespace CBApp1
         public double StartPrice { get; set; } 
         public DateTime Time { get; set; } // start of trend
         public DateTime LastUpdate { get; set; }
+        public int SlopeRateAverageLength { get; }
 
         private double average;
-        private int count;
     }
 }
