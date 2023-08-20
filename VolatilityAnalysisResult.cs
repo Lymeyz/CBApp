@@ -8,13 +8,17 @@ namespace CBApp1
 {
     public class VolatilityAnalysisResult
     {
-        public VolatilityAnalysisResult(string product, LinkedList<double> peaks)
+        public VolatilityAnalysisResult(string product, LinkedList<double> peaks, LinkedList<double> emaVolatilities, double LatestVolEma)
         {
             Product = product;
             Peaks = peaks;
+            EmaVolatilities = emaVolatilities;
+            CurrentEmaVolatility = LatestVolEma;
         }
 
         public string Product { get; }
         public LinkedList<double> Peaks { get; }
+        public LinkedList<double> EmaVolatilities { get; }
+        public double CurrentEmaVolatility { get; }
     }
 }

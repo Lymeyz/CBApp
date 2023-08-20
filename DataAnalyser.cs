@@ -874,6 +874,8 @@ namespace CBApp1
                 // test single ema analysis
                 SingleEmaAnalysisSettings hourSingleEmaSettings;
                 SingleEmaAnalysisResult hourSingleEmaResult;
+                VolatilityAnalysisSettings hourVolSettings;
+                VolatilityAnalysisResult hourVolResult;
 
                 foreach( var pair in hourEmas.Where( p => p.Value != null ) )
                 {
@@ -903,7 +905,21 @@ namespace CBApp1
                                                                                ref currentHourCandles,
                                                                                ref hourEmas,
                                                                                ref hourEmaSlopes );
-                        SingleEmaAnalyseProduct( hourSingleEmaSettings, null );
+                        hourSingleEmaResult = SingleEmaAnalyseProduct( hourSingleEmaSettings, null );
+
+                        if( hourSingleEmaResult != null )
+                        {
+                            hourVolSettings = 
+                                new VolatilityAnalysisSettings( product,
+                                                               4,
+                                                               true,
+                                                               new int[] { 45 },
+                                                               hourSingleEmaSettings.CurrentCandles,
+                                                               ref hourCandles,
+                                                               null,
+                                                               hourEmaSlopes );
+                            hourVolResult = VolatilityAnalysis( hourVolSettings );
+                        }
                     }
                 }
 
@@ -1080,6 +1096,36 @@ namespace CBApp1
             try
             {
                 Ema lastEma = emas.Newest;
+                Ema newEmaSlope = emaSlopes.Newest;
+                int length = lastEma.Length;
+                double emaPrice;
+
+                double k = 2.0 / (length + 1);
+
+                emaPrice = (currentCandles[ product ].Avg * k) + (lastEma.Price * (1 - k));
+
+                newEmaSlope = new Ema( length,
+                                       emaPrice - lastEma.Price,
+                                       currentCandles[ product ].Time );
+
+                return newEmaSlope;
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+                return null;
+            }
+        }
+
+        private Ema CalculateNewestEmaSlope( string product,
+                                             ConcurrentDictionary<string, Candle> currentCandles,
+                                             Ema forLastSlopeCalc,
+                                             LimitedDateTimeList<Ema> emaSlopes )
+        {
+            try
+            {
+                Ema lastEma = forLastSlopeCalc;
                 Ema newEmaSlope = emaSlopes.Newest;
                 int length = lastEma.Length;
                 double emaPrice;
@@ -1421,12 +1467,11 @@ namespace CBApp1
         }
 
         // Find peaks based on analysis of emas and do a
-        private void VolatilityAnalysis( VolatilityAnalysisSettings volSett )
+        private VolatilityAnalysisResult VolatilityAnalysis( VolatilityAnalysisSettings volSett )
         {
             try
             {
                 string product = volSett.Product;
-
 
                 VolatilityAnalysisResult result = null;
                 LinkedList<double> peaks = null;
@@ -1437,6 +1482,8 @@ namespace CBApp1
                 Ema newestLongEma = null;
                 Ema currentShortEma = null;
                 Ema currentLongEma = null;
+
+                DateTime lastSwitch = DateTime.MinValue;
 
                 if( !volSett.SlopeBased )
                 {
@@ -1484,6 +1531,7 @@ namespace CBApp1
                                     peaks.AddLast( peak );
                                     peak = -1;
                                     trend = true;
+                                    lastSwitch = currentCandle.Time;
                                 }
                                 else
                                 {
@@ -1500,6 +1548,7 @@ namespace CBApp1
                                     peaks.AddLast( peak );
                                     peak = -1;
                                     trend = false;
+                                    lastSwitch = currentCandle.Time;
                                 }
                                 else
                                 {
@@ -1515,55 +1564,159 @@ namespace CBApp1
                         currentShortEma = volSett.Emas[ shortLength ].GetRemoveNewest();
                         currentLongEma = volSett.Emas[ longLength ].GetRemoveNewest();
                     }
-
-                    // do ema of difference between peaks...
-
-                    LinkedListNode<double> node1 = peaks.Last.Next;
-                    LinkedListNode<double> node2 = peaks.Last;
-                    double peakDiff = Math.Abs(node1.Value-node2.Value);
-
-                    int count = 0;
-                    double k = 2.0 / (volSett.VolatilityLength + 1);
-                    double SMA = peakDiff;
-
-
-                    do
-                    {
-                        // seed ema calculation with first {vSett.volatilityLength} peakdiffs
-                        count++;
-
-                        if( count < volSett.VolatilityLength )
-                        {
-                            SMA += peakDiff;
-                        }
-                        else if( count == volSett.VolatilityLength )
-                        {
-
-                        }
-
-
-
-                        node2 = node1;
-                        node1 = node1.Next;
-                        peakDiff = Math.Abs( node1.Value - node2.Value );
-                    } while( node1.Next != null );
                 }
                 else
                 {
+                    int shortLength = volSett.Lengths[ 0 ];
+                    int longLength = volSett.Lengths[ 1 ];
 
+                    newestCandle = volSett.CurrentCandles[ product ];
+                    currentCandle = newestCandle;
 
+                    // calculate current emas
+                    Ema newestEmaSlope = 
+                        CalculateNewestEmaSlope( product, volSett.CurrentCandles, volSett.LastSlopeEma, volSett.EmaSlopes);
+                    Ema currentEmaSlope = newestEmaSlope;
 
+                    // go through emas from newest to oldest
+                    bool trend = false;
+                    double peak = -1;
 
+                    for( int i = 0; i < volSett.EmaSlopes.Count; i++ )
+                    {
+                        if( peaks == null )
+                        {
+                            peaks = new LinkedList<double>();
+
+                            if( newestEmaSlope < 0 )
+                            {
+                                peak = currentCandle.Avg;
+                                trend = false;
+                            }
+                            else if( newestEmaSlope >= 0 )
+                            {
+                                peak = currentCandle.Avg;
+                                trend = true;
+                            }
+                        }
+                        else
+                        {
+                            if( trend == false )
+                            {
+                                if( currentEmaSlope >= 0 )
+                                {
+                                    // new trend
+                                    peaks.AddLast( peak );
+                                    peak = -1;
+                                    trend = true;
+                                    lastSwitch = currentCandle.Time;
+                                }
+                                else
+                                {
+                                    if( currentCandle.Avg < peak )
+                                    {
+                                        peak = currentCandle.Avg;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if( currentEmaSlope < 0 )
+                                {
+                                    peaks.AddLast( peak );
+                                    peak = -1;
+                                    trend = false;
+                                    lastSwitch = currentCandle.Time;
+                                }
+                                else
+                                {
+                                    if( currentCandle.Avg > peak )
+                                    {
+                                        peak = currentCandle.Avg;
+                                    }
+                                }
+                            }
+                        }
+
+                        currentCandle = volSett.Candles.GetRemoveNewest();
+                        currentEmaSlope = volSett.EmaSlopes.GetRemoveNewest();
+                    }
                 }
 
+                if( peaks != null )
+                {
+                    // do ema of difference between peaks...
+                    if( peaks.Count < volSett.VolatilityLength * 2 )
+                    {
+                        LinkedListNode<double> node1 = peaks.Last.Next;
+                        LinkedListNode<double> node2 = peaks.Last;
+                        double peakDiff = Math.Abs( node1.Value - node2.Value );
 
+                        int count = 0;
+                        double k = 2.0 / (volSett.VolatilityLength + 1);
+                        double SMA = peakDiff;
+                        double currEma = -1;
+                        double prevEma = -1;
 
+                        LinkedList<double> volEmas = new LinkedList<double>();
 
+                        do
+                        {
+                            count++;
+
+                            if( count < volSett.VolatilityLength )
+                            {
+                                SMA += peakDiff;
+                            }
+                            else if( count == volSett.VolatilityLength )
+                            {
+                                SMA += peakDiff;
+                                SMA = SMA / count;
+                            }
+                            else if( count == volSett.VolatilityLength + 1 )
+                            {
+                                currEma = (peakDiff * k) + (SMA * (1 - k));
+                                volEmas.AddFirst( currEma );
+                                prevEma = currEma;
+                            }
+                            else
+                            {
+                                currEma = (peakDiff * k) + (prevEma * (1 - k));
+                                volEmas.AddFirst( currEma );
+                                prevEma = currEma;
+                            }
+
+                            node2 = node1;
+                            node1 = node1.Next;
+                            peakDiff = Math.Abs( node1.Value - node2.Value );
+
+                        } while( node1.Next != null );
+
+                        double latestEmaVol = -1;
+                        if( volSett.CurrentCandles[ product ].Time != lastSwitch )
+                        {
+                            
+                        }
+
+                        if( latestEmaVol != -1 )
+                        {
+                            result = new VolatilityAnalysisResult( volSett.Product, peaks, volEmas, latestEmaVol );
+                        }
+                        else
+                        {
+                            result = new VolatilityAnalysisResult( volSett.Product, peaks, volEmas, volEmas.First.Value );
+                        }
+                        
+                    }
+                }
+
+                return result;
             }
             catch( Exception e )
             {
                 Console.WriteLine( e.Message );
                 Console.WriteLine( e.StackTrace );
+                return null;
             }
         }
 
