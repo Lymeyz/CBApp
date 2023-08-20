@@ -485,7 +485,8 @@ namespace CBApp1
 
                 double matchPrice = double.Parse( match.Price, new CultureInfo( "En-Us" ) );
 
-                if( !(Math.Abs( matchPrice - currentCandle.High ) > 0.01*currentCandle.High ) )
+                if( !(Math.Abs( matchPrice - currentCandle.High ) > 0.012*currentCandle.High ) &&
+                    !(Math.Abs( matchPrice - currentCandle.Low ) > 0.012 * currentCandle.Low) )
                 {
                     newCandle = new Candle( currentCandle.Time, 0, 0, 0, 0, 0 );
                     newCandle.Close = double.Parse( match.Price, new CultureInfo( "En-Us" ) );

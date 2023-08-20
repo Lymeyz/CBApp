@@ -886,7 +886,7 @@ namespace CBApp1
                                                                                0.009,
                                                                                0.009,
                                                                                0.0012,
-                                                                               0.0025,
+                                                                               0.008,
                                                                                false,
                                                                                0.004,
                                                                                0.006,
@@ -898,7 +898,7 @@ namespace CBApp1
                                                                                true,
                                                                                true,
                                                                                true,
-                                                                               6,
+                                                                               10,
                                                                                45,
                                                                                ref currentHourCandles,
                                                                                ref hourEmas,
@@ -1184,7 +1184,7 @@ namespace CBApp1
                                 }
                             }
 
-                            currSlopeRate = prevEmaSlope - currEmaSlope;
+                            currSlopeRate =currEmaSlope - prevEmaSlope;
                             result.SlopeRates.AddLast( currSlopeRate );
 
                             prevEmaSlope = currEmaSlope;
@@ -1442,17 +1442,19 @@ namespace CBApp1
                 {
                     int shortLength = volSett.Lengths[ 0 ];
                     int longLength = volSett.Lengths[ 1 ];
-                    // calculate current emas
+
                     newestCandle = volSett.CurrentCandles[ product ];
                     currentCandle = newestCandle;
+
+                    // calculate current emas
                     newestShortEma = this.CalculateNewestEma( product, volSett.CurrentCandles, volSett.Emas[ shortLength ] );
                     newestLongEma = this.CalculateNewestEma( product, volSett.CurrentCandles, volSett.Emas[ longLength ] );
+
                     currentShortEma = newestShortEma;
                     currentLongEma = newestLongEma;
 
                     // go through emas from newest to oldest
-                    bool trend;
-                    double peakDiff = -1;
+                    bool trend = false;
                     double peak = -1;
 
                     for( int i = 0; i < volSett.Emas[ shortLength ].Count; i++ )
@@ -1463,18 +1465,18 @@ namespace CBApp1
 
                             if( currentShortEma < currentLongEma )
                             {
-                                peak = currentCandle.Low;
+                                peak = currentCandle.Avg;
                                 trend = false;
                             }
                             else if( currentShortEma >= currentLongEma )
                             {
-                                peak = currentCandle.High;
+                                peak = currentCandle.Avg;
                                 trend = true;
                             }
                         }
                         else
                         {
-                            if( trend = false )
+                            if( trend == false )
                             {
                                 if( currentShortEma > currentLongEma )
                                 {
@@ -1485,9 +1487,9 @@ namespace CBApp1
                                 }
                                 else
                                 {
-                                    if( currentCandle.Low < peak )
+                                    if( currentCandle.Avg < peak )
                                     {
-                                        peak = currentCandle.Low;
+                                        peak = currentCandle.Avg;
                                     }
                                 }
                             }
@@ -1501,9 +1503,9 @@ namespace CBApp1
                                 }
                                 else
                                 {
-                                    if( currentCandle.High > peak )
+                                    if( currentCandle.Avg > peak )
                                     {
-                                        peak = currentCandle.High;
+                                        peak = currentCandle.Avg;
                                     }
                                 }
                             }
@@ -1516,11 +1518,41 @@ namespace CBApp1
 
                     // do ema of difference between peaks...
 
-                    LinkedListNode<double> node1 = peaks.Last;
+                    LinkedListNode<double> node1 = peaks.Last.Next;
                     LinkedListNode<double> node2 = peaks.Last;
+                    double peakDiff = Math.Abs(node1.Value-node2.Value);
+
+                    int count = 0;
+                    double k = 2.0 / (volSett.VolatilityLength + 1);
+                    double SMA = peakDiff;
+
+
+                    do
+                    {
+                        // seed ema calculation with first {vSett.volatilityLength} peakdiffs
+                        count++;
+
+                        if( count < volSett.VolatilityLength )
+                        {
+                            SMA += peakDiff;
+                        }
+                        else if( count == volSett.VolatilityLength )
+                        {
+
+                        }
+
+
+
+                        node2 = node1;
+                        node1 = node1.Next;
+                        peakDiff = Math.Abs( node1.Value - node2.Value );
+                    } while( node1.Next != null );
                 }
                 else
                 {
+
+
+
 
                 }
 

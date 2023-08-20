@@ -105,7 +105,7 @@ namespace CBApp1
                         {
                             copy = new Candle( longCandles[ product ] );
                             longProductCandles[ product ].Enqueue( copy );
-                            TrimToHours( product, 168, ref shortProductCandles );
+                            TrimToHours( product, 300, ref shortProductCandles );
                         }
                     }
                     
@@ -128,10 +128,10 @@ namespace CBApp1
                                                               .AddMinutes( -DateTime.UtcNow.Minute )
                                                               .AddSeconds(-DateTime.UtcNow.Second);
 
-                        AddHistoricCandles( product, ref longProductCandles, 168, "ONE_HOUR", DateTime.UtcNow.AddDays( -7 ), longEndTime );
+                        AddHistoricCandles( product, ref longProductCandles, 300, "ONE_HOUR", DateTime.UtcNow.AddDays( -12 ), longEndTime );
 
                         // construct partial candle for last hour
-                        Candle longCandle = ConstructLongCandle( product, ref shortProductCandles, 168 );
+                        Candle longCandle = ConstructLongCandle( product, ref shortProductCandles );
 
                         ConstructedLongCandleEventArgs args = new ConstructedLongCandleEventArgs();
                         args.ProductId = product;
@@ -141,7 +141,7 @@ namespace CBApp1
 
                         fetchedHistoric[product] = true;
                         TrimToHours(product, 24, ref shortProductCandles);
-                        TrimToHours( product, 168, ref longProductCandles );
+                        TrimToHours( product, 300, ref longProductCandles );
 
                         constructedCandleCollections = true;
                     }
@@ -158,12 +158,11 @@ namespace CBApp1
         }
 
         private Candle ConstructLongCandle( string product,
-                                           ref ConcurrentDictionary<string, ConcurrentQueue<Candle>> shortProductCandles,
-                                           int candleCount )
+                                           ref ConcurrentDictionary<string, ConcurrentQueue<Candle>> shortProductCandles )
         {
             try
             {
-                LimitedDateTimeList<Candle> currShortCandles = new LimitedDateTimeList<Candle>( shortProductCandles[ product], 300 );
+                LimitedDateTimeList<Candle> currShortCandles = new LimitedDateTimeList<Candle>( shortProductCandles[ product], shortProductCandles[ product].Count );
                 DateTime latestCandleTime = currShortCandles.Newest.Time;
                 DateTime latestHourTime = latestCandleTime.AddMinutes( -latestCandleTime.Minute ).AddSeconds( -latestCandleTime.Second );
 

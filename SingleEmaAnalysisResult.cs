@@ -54,10 +54,21 @@ namespace CBApp1
                         average += rate;
                     }
 
-                    return average / SlopeRateAverageLength;
+                    average = average / SlopeRateAverageLength;
+
+                    return average;
                 }
                 else
                 {
+                    average = 0;
+
+                    foreach( var rate in SlopeRates )
+                    {
+                        average += rate;
+                    }
+
+                    average = average / SlopeRateAverageLength;
+
                     return average;
                 }
                 
