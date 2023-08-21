@@ -16,8 +16,10 @@ namespace CBApp1
                                            ConcurrentDictionary<string, Candle> currentCandles,
                                            ref Dictionary<string, Queue<Candle>> candles,
                                            ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emas,
-                                           ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes )
+                                           ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes,
+                                           Ema latestEma)
         {
+            Product = product;
             VolatilityLength = volatilityLength;
             SlopeBased = slopeBased;
             Lengths = lengths;
@@ -40,7 +42,8 @@ namespace CBApp1
                     emaSlopes[ product ][ Lengths[ 0 ]].Count );
                 Ema lastSlopeHolder;
                 emaSlopes[ product ][ lengths[ 0 ] ].TryPeek( out lastSlopeHolder );
-                LastSlopeEma = lastSlopeHolder;
+                LastEma = latestEma;
+                LastEmaSlope = lastSlopeHolder;
             }
         }
 
@@ -51,7 +54,8 @@ namespace CBApp1
         public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
         public LimitedDateTimeList<Candle> Candles { get; }
         public Dictionary<int, LimitedDateTimeList<Ema>> Emas { get; set; }
-        public Ema LastSlopeEma { get;  }
+        public Ema LastEma { get; }
+        public Ema LastEmaSlope { get;  }
         public LimitedDateTimeList<Ema> EmaSlopes { get; set; }
     }
 }

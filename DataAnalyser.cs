@@ -740,7 +740,7 @@ namespace CBApp1
                                                                                true,
                                                                                true,
                                                                                true,
-                                                                               0.5,
+                                                                               0.25,
                                                                                45,
                                                                                ref currentHourCandles,
                                                                                ref hourEmas,
@@ -749,6 +749,8 @@ namespace CBApp1
 
                         if( hourSingleEmaResult != null )
                         {
+                            Ema latestEma;
+                            hourEmas[ product ][ 45 ].TryPeek( out latestEma );
                             hourVolSettings = 
                                 new VolatilityAnalysisSettings( product,
                                                                4,
@@ -757,7 +759,9 @@ namespace CBApp1
                                                                hourSingleEmaSettings.CurrentCandles,
                                                                ref hourCandles,
                                                                null,
-                                                               hourEmaSlopes );
+                                                               hourEmaSlopes,
+                                                               latestEma
+                                                               );
 
                             hourVolResult = VolatilityAnalysis( hourVolSettings );
                         }
@@ -961,13 +965,13 @@ namespace CBApp1
 
         private Ema CalculateNewestEmaSlope( string product,
                                              ConcurrentDictionary<string, Candle> currentCandles,
-                                             Ema forLastSlopeCalc,
+                                             Ema lastEma,
                                              LimitedDateTimeList<Ema> emaSlopes )
         {
             try
             {
-                Ema lastEma = forLastSlopeCalc;
-                Ema newEmaSlope = emaSlopes.Newest;
+                Ema lastEmaSlope = emaSlopes.Newest;
+                Ema newestEmaSlope;
                 int length = lastEma.Length;
                 double emaPrice;
 
@@ -975,11 +979,11 @@ namespace CBApp1
 
                 emaPrice = (currentCandles[ product ].Avg * k) + (lastEma.Price * (1 - k));
 
-                newEmaSlope = new Ema( length,
+                newestEmaSlope = new Ema( length,
                                        emaPrice - lastEma.Price,
                                        currentCandles[ product ].Time );
 
-                return newEmaSlope;
+                return newestEmaSlope;
             }
             catch( Exception e )
             {
@@ -1426,22 +1430,20 @@ namespace CBApp1
                 }
                 else
                 {
-                    int shortLength = volSett.Lengths[ 0 ];
-                    int longLength = volSett.Lengths[ 1 ];
-
                     newestCandle = volSett.CurrentCandles[ product ];
                     currentCandle = newestCandle;
 
                     // calculate current emas
                     Ema newestEmaSlope = 
-                        CalculateNewestEmaSlope( product, volSett.CurrentCandles, volSett.LastSlopeEma, volSett.EmaSlopes);
+                        CalculateNewestEmaSlope( product, volSett.CurrentCandles, volSett.LastEma, volSett.EmaSlopes);
                     Ema currentEmaSlope = newestEmaSlope;
 
                     // go through emas from newest to oldest
                     bool trend = false;
                     double peak = -1;
+                    int count = volSett.EmaSlopes.Count;
 
-                    for( int i = 0; i < volSett.EmaSlopes.Count; i++ )
+                    for( int i = 0; i < count; i++ )
                     {
                         if( peaks == null )
                         {
@@ -1466,7 +1468,7 @@ namespace CBApp1
                                 {
                                     // new trend
                                     peaks.AddLast( peak );
-                                    peak = -1;
+                                    peak = currentCandle.Avg;
                                     trend = true;
                                     lastSwitch = currentCandle.Time;
                                 }
@@ -1483,7 +1485,7 @@ namespace CBApp1
                                 if( currentEmaSlope < 0 )
                                 {
                                     peaks.AddLast( peak );
-                                    peak = -1;
+                                    peak = currentCandle.Avg;
                                     trend = false;
                                     lastSwitch = currentCandle.Time;
                                 }
@@ -1505,9 +1507,9 @@ namespace CBApp1
                 if( peaks != null )
                 {
                     // do ema of difference between peaks...
-                    if( peaks.Count < volSett.VolatilityLength * 2 )
+                    if( peaks.Count > volSett.VolatilityLength * 2 )
                     {
-                        LinkedListNode<double> node1 = peaks.Last.Next;
+                        LinkedListNode<double> node1 = peaks.Last.Previous;
                         LinkedListNode<double> node2 = peaks.Last;
                         double peakDiff = Math.Abs( node1.Value - node2.Value );
 
@@ -1546,10 +1548,10 @@ namespace CBApp1
                             }
 
                             node2 = node1;
-                            node1 = node1.Next;
+                            node1 = node1.Previous;
                             peakDiff = Math.Abs( node1.Value - node2.Value );
 
-                        } while( node1.Next != null );
+                        } while( node1.Previous != null );
 
                         double latestEmaVol = -1;
                         if( volSett.CurrentCandles[ product ].Time != lastSwitch )
