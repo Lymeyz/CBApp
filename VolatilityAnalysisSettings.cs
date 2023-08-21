@@ -36,10 +36,10 @@ namespace CBApp1
             }
             else
             {
-                EmaSlopes = new LimitedDateTimeList<Ema>( emaSlopes[ product ][ Lengths[ 0 ] ], 
-                    emas[ product ][ Lengths[ 0 ] ].Count );
+                EmaSlopes = new LimitedDateTimeList<Ema>( emaSlopes[ product ][ Lengths[ 0 ] ],
+                    emaSlopes[ product ][ Lengths[ 0 ]].Count );
                 Ema lastSlopeHolder;
-                emas[ product ][ lengths[ 0 ] ].TryPeek( out lastSlopeHolder );
+                emaSlopes[ product ][ lengths[ 0 ] ].TryPeek( out lastSlopeHolder );
                 LastSlopeEma = lastSlopeHolder;
             }
         }

@@ -378,101 +378,6 @@ namespace CBApp1
             }
         }
 
-        //build or update slope-collection
-        // FINISH THIS
-        private void SlopesAndMinMax(string product, Queue<Candle> candles)
-        {
-            try
-            {
-                //Find all tangentlines between highest and lowest price 
-                //of each individual candle...
-                LimitedDateTimeList<SlopeCandle> newSlopes;
-                Stack<SlopeCandle> newSlopeStack;
-                Candle candle1;
-                Candle candle2;
-                double max;
-                double min;
-                double minVolume;
-                double maxVolume;
-                int count;
-
-                //get current slope stack
-                newSlopes = new LimitedDateTimeList<SlopeCandle>(shortSlopes[product], 300);
-
-                //oldest candles
-                candle1 = candles.Dequeue();
-                candle2 = candles.Dequeue();
-                max = Math.Max(candle1.High, candle2.High);
-                min = Math.Min(candle1.Low, candle2.Low);
-                minVolume = Math.Min(candle1.Volume, candle2.Volume);
-                maxVolume = Math.Max(candle1.Volume, candle2.Volume);
-                count = candles.Count;
-
-                newSlopeStack = new Stack<SlopeCandle>();
-
-                //build new slope collection
-                //OBS ACCOUNT FOR ALREADY EXISTING SLOPES.
-                for (int i = 0; i < count + 1; i++)
-                {
-
-                    if (Math.Max(candle1.High, candle2.High) > max)
-                    {
-                        max = Math.Max(candle1.High, candle2.High);
-                    }
-                    if (Math.Min(candle1.Low, candle2.Low) < min)
-                    {
-                        min = Math.Min(candle1.Low, candle2.Low);
-                    }
-                    if (Math.Max(candle1.Volume, candle2.Volume) > maxVolume)
-                    {
-                        maxVolume = Math.Max(candle1.Volume, candle2.Volume);
-                    }
-                    if (Math.Min(candle1.Volume, candle2.Volume) < minVolume)
-                    {
-                        minVolume = Math.Min(candle1.Volume, candle2.Volume);
-                    }
-
-                    //candles hanteras från nyast till äldst
-                    if (newSlopes.Count != 0)
-                    {
-                        if (newSlopes.Newest.Time < candle1.Time)
-                        {
-                            newSlopes.AddValue(new SlopeCandle(candle2.High - candle1.High,
-                                                            candle2.Low - candle1.Low,
-                                                            candle2.Volume - candle1.Volume,
-                                                                candle1.Time));
-                        }
-                    }
-                    else
-                    {
-                        newSlopes.AddValue(new SlopeCandle(candle2.High - candle1.High,
-                                                        candle2.Low - candle1.Low,
-                                                        candle2.Volume - candle1.Volume,
-                                                            candle1.Time));
-                    }
-
-
-                    if (candles.Count != 0)
-                    {
-                        candle1 = candle2;
-                        candle2 = candles.Dequeue();
-                    }
-
-                }
-
-                shortSlopes[product] = new ConcurrentStack<SlopeCandle>();
-                while (newSlopes.Count != 0)
-                {
-                    shortSlopes[product].Push(newSlopes.GetRemoveOldest());
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.Message);
-                Console.WriteLine(e.StackTrace);
-            }
-        }
-
         private async void UpdatedProductCandles(object sender, UpdatedProductCandlesEventArgs e )
         {
             try
@@ -542,71 +447,6 @@ namespace CBApp1
             {
                 Console.WriteLine(ex.Message);
                 Console.WriteLine(ex.StackTrace);
-            }
-        }
-
-        private void FindMinMaxes( Dictionary<string, Queue<Candle>> currentAnalyserCandles,
-                                   ref ConcurrentDictionary<string, HighLow> minMaxes,
-                                  int hours )
-        {
-            LimitedDateTimeList<Candle> currCandles;
-            //LinkedList<double> topList;
-            //LinkedList<double> minList;
-
-            int count;
-            Candle candle1;
-            Candle candle2;
-            double min;
-            double max;
-            double volMin;
-            double volMax;
-            foreach (string product in currentAnalyserCandles.Keys)
-            {
-                //topList = new LinkedList<double>();
-                //minList = new LinkedList<double>();
-
-                currCandles = new LimitedDateTimeList<Candle>( currentAnalyserCandles[ product], 300);
-                candle1 = currCandles.GetRemoveNewest();
-                candle2 = currCandles.GetRemoveNewest();
-
-                min = Math.Min(candle1.Avg, candle2.Avg);
-                max = Math.Max(candle1.Avg, candle2.Avg);
-                volMin = Math.Min(candle1.Volume, candle2.Volume);
-                volMax = Math.Max(candle1.Volume, candle2.Volume);
-
-                count = currCandles.Count;
-                for (int i = 0; i < count; i++)
-                {
-                    if (max < Math.Max(candle1.Avg, candle2.Avg))
-                    {
-                        max = Math.Max(candle1.Avg, candle2.Avg);
-                    }
-
-                    if (min > Math.Min(candle1.Avg, candle2.Avg))
-                    {
-                        min = Math.Min(candle1.Avg, candle2.Avg);
-                    }
-
-                    if (volMax < Math.Max(candle1.Volume, candle2.Volume))
-                    {
-                        volMax = Math.Max(candle1.Volume, candle2.Volume);
-                    }
-
-                    if (volMin > Math.Min(candle1.Volume, candle2.Volume))
-                    {
-                        volMin = Math.Min(candle1.Volume, candle2.Volume);
-                    }
-
-                    if (candle2.Time < DateTime.UtcNow.AddHours(-hours))
-                    {
-                        break;
-                    }
-
-                    candle1 = candle2;
-                    candle2 = currCandles.GetRemoveNewest();
-                }
-
-                minMaxes[ product] = new HighLow(max, min, volMax, volMin);
             }
         }
 
@@ -900,7 +740,7 @@ namespace CBApp1
                                                                                true,
                                                                                true,
                                                                                true,
-                                                                               65,
+                                                                               0.5,
                                                                                45,
                                                                                ref currentHourCandles,
                                                                                ref hourEmas,
@@ -1189,7 +1029,7 @@ namespace CBApp1
                         // go backwards, add rates of change, increase count, find zero, calculate average
                         if( result == null )
                         {
-                            result = new SingleEmaAnalysisResult(sSett.SlopeRateAvgLength);
+                            result = new SingleEmaAnalysisResult( sSett.SlopeRateAvgP );
 
                             if( currEmaSlope >= 0 )
                             {
@@ -1232,11 +1072,8 @@ namespace CBApp1
                             }
 
                             currSlopeRate = prevEmaSlope - currEmaSlope;
-                            if( result.SlopeRates.Count < sSett.SlopeRateAvgLength )
-                            {
-                                result.SlopeRates.AddLast( currSlopeRate );
-                            }
-                            
+                            result.SlopeRates.AddLast( currSlopeRate );
+
                             prevEmaSlope = currEmaSlope;
                             currEmaSlope = sSett.PrevEmaSlopes.GetRemoveNewest();
 
@@ -1244,7 +1081,6 @@ namespace CBApp1
                             currEma = sSett.PrevEmas.GetRemoveNewest();
                         }
                     }
-
 
                     if( tStartTime != DateTime.MinValue &&
                         peakEmaPrice != -1)
@@ -1290,11 +1126,21 @@ namespace CBApp1
                         result.UpdateSlopeRateAverage( newestSlopeRate );
                     }
 
+                    result.SlopeRateAverageLength = Convert.ToInt32( Math.Round( sSett.SlopeRateAvgP * result.SlopeRates.Count, 0 ) );
+
+                    if( result.SlopeRates.Count > result.SlopeRateAverageLength )
+                    {
+                        int difference = result.SlopeRates.Count - result.SlopeRateAverageLength;
+                        for( int i = 0; i < difference; i++ )
+                        {
+                            result.SlopeRates.RemoveLast();
+                        }
+                    }
+
+
                     result.BuyOk = false;
                     result.SellOk = false;
                     result.SellOff = false;
-
-
 
                     // make decisions...
                     if( sSett.BTrigger )
@@ -1461,9 +1307,15 @@ namespace CBApp1
 
                     }
                 }
+                if( result != null )
+                {
+                    if( result.BuyOk || result.SellOk || result.SellOff )
+                    {
+                        outResult = result;
+                    }
+                }
                 
                 return outResult;
-
             }
             catch( Exception e )
             {
