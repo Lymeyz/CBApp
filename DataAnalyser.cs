@@ -880,7 +880,7 @@ namespace CBApp1
                 foreach( var pair in hourEmas.Where( p => p.Value != null ) )
                 {
                     string product = pair.Key;
-                    if( currentHourCandles.ContainsKey( product ) )
+                    if( currentHourCandles.ContainsKey( product ) && (product == "BTC-EUR" || product == "ETH-EUR"))
                     {
                         hourSingleEmaSettings = new SingleEmaAnalysisSettings( product,
                                                                                0.0024,
@@ -889,18 +889,18 @@ namespace CBApp1
                                                                                0.009,
                                                                                0.0012,
                                                                                0.008,
-                                                                               false,
+                                                                               true,
                                                                                0.004,
                                                                                0.006,
-                                                                               0.0012,
-                                                                               0.0025,
+                                                                               0.0005,
+                                                                               0.0075,
                                                                                false,
                                                                                0.004,
                                                                                0.004,
                                                                                true,
                                                                                true,
                                                                                true,
-                                                                               10,
+                                                                               65,
                                                                                45,
                                                                                ref currentHourCandles,
                                                                                ref hourEmas,
@@ -918,6 +918,7 @@ namespace CBApp1
                                                                ref hourCandles,
                                                                null,
                                                                hourEmaSlopes );
+
                             hourVolResult = VolatilityAnalysis( hourVolSettings );
                         }
                     }
@@ -1230,9 +1231,12 @@ namespace CBApp1
                                 }
                             }
 
-                            currSlopeRate =currEmaSlope - prevEmaSlope;
-                            result.SlopeRates.AddLast( currSlopeRate );
-
+                            currSlopeRate = prevEmaSlope - currEmaSlope;
+                            if( result.SlopeRates.Count < sSett.SlopeRateAvgLength )
+                            {
+                                result.SlopeRates.AddLast( currSlopeRate );
+                            }
+                            
                             prevEmaSlope = currEmaSlope;
                             currEmaSlope = sSett.PrevEmaSlopes.GetRemoveNewest();
 
@@ -1301,8 +1305,9 @@ namespace CBApp1
                             sSett.BS2Override )
                         {
                             // slope rate 
+                            double slopeAbs = Math.Abs( newestEmaSlope.Price );
                             if( sSett.BS2 != -1 &&
-                                ( result.SlopeRateAverage > 0 && result.SlopeRateAverage > sSett.BS2 * newestEmaSlope ) )
+                                ( result.SlopeRateAverage > 0 && result.SlopeRateAverage > sSett.BS2 * slopeAbs ) )
                             {
                                 // slope rate and peak return
                                 if( sSett.BPeakRP != -1 &&
@@ -1324,7 +1329,7 @@ namespace CBApp1
                                 }
                             }
                             // simple slope
-                            else
+                            else if( !sSett.BS2Override )
                             {
                                 // simple slope and peak return
                                 if( sSett.BPeakWindow != -1 && ( newestEma.Price < ( result.StartPrice * ( sSett.BPeakRP + sSett.BPeakWindow) ) ) )
@@ -1343,9 +1348,11 @@ namespace CBApp1
                     if( sSett.STrigger )
                     {
                         // simple slope and slope rate or override
-                        if( ( sSett.SS1 != -1 && ( newestEmaSlope <= 0 || 
+                        if( ( sSett.SS1 != -1 && 
+                            
+                            ( newestEmaSlope >= 0 || 
                             newestEmaSlope <= sSett.SS1 * newestEma ) ) || 
-                            sSett.SS2Override )
+                            sSett.SS2Override)
                         {
                             // slope rate
                             if( sSett.SS2 != -1 && 
