@@ -1338,6 +1338,8 @@ namespace CBApp1
 
                 VolatilityAnalysisResult result = null;
                 LinkedList<double> peaks = null;
+                LinkedList<DateTime> peakTimes = null;
+                LinkedList<DateTime> switchTimes = null;
 
                 Candle newestCandle = null;
                 Candle currentCandle = null;
@@ -1441,6 +1443,8 @@ namespace CBApp1
                     // go through emas from newest to oldest
                     bool trend = false;
                     double peak = -1;
+                    DateTime peakTime = DateTime.MinValue;
+                    DateTime switchTime = DateTime.MinValue;
                     int count = volSett.EmaSlopes.Count;
 
                     for( int i = 0; i < count; i++ )
@@ -1448,14 +1452,18 @@ namespace CBApp1
                         if( peaks == null )
                         {
                             peaks = new LinkedList<double>();
+                            peakTimes = new LinkedList<DateTime>();
+                            switchTimes = new LinkedList<DateTime>();
 
                             if( newestEmaSlope < 0 )
                             {
+                                peakTime = currentCandle.Time;
                                 peak = currentCandle.Avg;
                                 trend = false;
                             }
                             else if( newestEmaSlope >= 0 )
                             {
+                                peakTime = currentCandle.Time;
                                 peak = currentCandle.Avg;
                                 trend = true;
                             }
@@ -1466,17 +1474,23 @@ namespace CBApp1
                             {
                                 if( currentEmaSlope >= 0 )
                                 {
-                                    // new trend
+                                    peakTimes.AddLast( peakTime );
                                     peaks.AddLast( peak );
+                                    switchTimes.AddLast( currentCandle.Time );
                                     peak = currentCandle.Avg;
+                                    peakTime = currentCandle.Time;
                                     trend = true;
-                                    lastSwitch = currentCandle.Time;
+                                    if( currentCandle.Time > lastSwitch )
+                                    {
+                                        lastSwitch = currentCandle.Time;
+                                    }
                                 }
                                 else
                                 {
                                     if( currentCandle.Avg < peak )
                                     {
                                         peak = currentCandle.Avg;
+                                        peakTime = currentCandle.Time;
                                     }
                                 }
                             }
@@ -1484,16 +1498,25 @@ namespace CBApp1
                             {
                                 if( currentEmaSlope < 0 )
                                 {
+                                    peakTimes.AddLast( peakTime );
                                     peaks.AddLast( peak );
+                                    switchTimes.AddLast( currentCandle.Time );
                                     peak = currentCandle.Avg;
+                                    peakTime = currentCandle.Time;
+                                    
                                     trend = false;
-                                    lastSwitch = currentCandle.Time;
+                                    if( currentCandle.Time > lastSwitch )
+                                    {
+                                        lastSwitch = currentCandle.Time;
+                                    }
+                                    
                                 }
                                 else
                                 {
                                     if( currentCandle.Avg > peak )
                                     {
                                         peak = currentCandle.Avg;
+                                        peakTime = currentCandle.Time;
                                     }
                                 }
                             }
@@ -1556,7 +1579,11 @@ namespace CBApp1
                         double latestEmaVol = -1;
                         if( volSett.CurrentCandles[ product ].Time != lastSwitch )
                         {
-                            
+                            peakDiff = Math.Abs( volSett.CurrentCandles[product].Close - peaks.Last.Value );
+                            // calculate current volEma
+                            currEma = (peakDiff * k) + (prevEma * (1 - k));
+                            volEmas.AddFirst( currEma );
+                            prevEma = currEma;
                         }
 
                         if( latestEmaVol != -1 )
