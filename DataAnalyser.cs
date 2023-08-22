@@ -1474,12 +1474,20 @@ namespace CBApp1
                             {
                                 if( currentEmaSlope >= 0 )
                                 {
+
+                                    trend = true;
+
+                                    // trend switch, add peak, peaktime, switchtime
                                     peakTimes.AddLast( peakTime );
                                     peaks.AddLast( peak );
                                     switchTimes.AddLast( currentCandle.Time );
+
+                                    // set current peak to most recent candle
                                     peak = currentCandle.Avg;
                                     peakTime = currentCandle.Time;
-                                    trend = true;
+                                    
+
+                                    // most recent trend switch
                                     if( currentCandle.Time > lastSwitch )
                                     {
                                         lastSwitch = currentCandle.Time;
@@ -1487,6 +1495,7 @@ namespace CBApp1
                                 }
                                 else
                                 {
+                                    // if candle is lower than current peak, set current peak
                                     if( currentCandle.Avg < peak )
                                     {
                                         peak = currentCandle.Avg;
@@ -1498,21 +1507,27 @@ namespace CBApp1
                             {
                                 if( currentEmaSlope < 0 )
                                 {
+
+                                    trend = false;
+
+                                    // trend switch, add peak, peaktime, switchtime
                                     peakTimes.AddLast( peakTime );
                                     peaks.AddLast( peak );
                                     switchTimes.AddLast( currentCandle.Time );
+
+                                    // set peak to current candle
                                     peak = currentCandle.Avg;
                                     peakTime = currentCandle.Time;
                                     
-                                    trend = false;
+                                    // most recent trend switch
                                     if( currentCandle.Time > lastSwitch )
                                     {
                                         lastSwitch = currentCandle.Time;
                                     }
-                                    
                                 }
                                 else
                                 {
+                                    // if candle is higher than current peak, set current peak
                                     if( currentCandle.Avg > peak )
                                     {
                                         peak = currentCandle.Avg;
@@ -1522,6 +1537,7 @@ namespace CBApp1
                             }
                         }
 
+                        // Advance to next slope and candle
                         currentCandle = volSett.Candles.GetRemoveNewest();
                         currentEmaSlope = volSett.EmaSlopes.GetRemoveNewest();
                     }
@@ -1529,18 +1545,22 @@ namespace CBApp1
 
                 if( peaks != null )
                 {
-                    // do ema of difference between peaks...
+                    // Calculate ema of difference between peaks if there has been enough switches
                     if( peaks.Count > volSett.VolatilityLength * 2 )
                     {
+                        // Advance through list from oldest to newest, first two nodes
                         LinkedListNode<double> node1 = peaks.Last.Previous;
                         LinkedListNode<double> node2 = peaks.Last;
+
+                        // Calculate absolute value of difference between first peaks
                         double peakDiff = Math.Abs( node1.Value - node2.Value );
 
+                        // Initial values and k for EMA calculation
                         int count = 0;
-                        double k = 2.0 / (volSett.VolatilityLength + 1);
-                        double SMA = peakDiff;
+                        double SMA = 0;
                         double currEma = -1;
                         double prevEma = -1;
+                        double k = 2.0 / (volSett.VolatilityLength + 1);
 
                         LinkedList<double> volEmas = new LinkedList<double>();
 
@@ -1548,21 +1568,25 @@ namespace CBApp1
                         {
                             count++;
 
+                            // Add peakDiff to SMA for seeding 
                             if( count < volSett.VolatilityLength )
                             {
                                 SMA += peakDiff;
                             }
+                            // Calculate SMA
                             else if( count == volSett.VolatilityLength )
                             {
                                 SMA += peakDiff;
                                 SMA = SMA / count;
                             }
+                            // Calculate first EMA from SMA, add to list
                             else if( count == volSett.VolatilityLength + 1 )
                             {
                                 currEma = (peakDiff * k) + (SMA * (1 - k));
                                 volEmas.AddFirst( currEma );
                                 prevEma = currEma;
                             }
+                            // Calculate remaining EMAs and add to list
                             else
                             {
                                 currEma = (peakDiff * k) + (prevEma * (1 - k));
@@ -1570,29 +1594,32 @@ namespace CBApp1
                                 prevEma = currEma;
                             }
 
+                            // Advance through list from oldest to newest
                             node2 = node1;
                             node1 = node1.Previous;
+
+                            // Calculate absolute value of difference between peaks
                             peakDiff = Math.Abs( node1.Value - node2.Value );
 
                         } while( node1.Previous != null );
 
-                        double latestEmaVol = -1;
-                        if( volSett.CurrentCandles[ product ].Time != lastSwitch )
+                        double LatestVolEma = -1;
+                        if( volSett.CurrentCandles[ product ].Time > lastSwitch )
                         {
-                            peakDiff = Math.Abs( volSett.CurrentCandles[product].Close - peaks.Last.Value );
-                            // calculate current volEma
-                            currEma = (peakDiff * k) + (prevEma * (1 - k));
-                            volEmas.AddFirst( currEma );
+                            // Calculate current EMA as if it is a peak, using .Close
+                            peakDiff = Math.Abs( volSett.CurrentCandles[product].Close - peaks.First.Value );
+                            LatestVolEma = (peakDiff * k) + (currEma * (1 - k));
+                            //volEmas.AddFirst( LatestVolEma );
                             prevEma = currEma;
                         }
 
-                        if( latestEmaVol != -1 )
+                        if( LatestVolEma != -1 )
                         {
-                            result = new VolatilityAnalysisResult( volSett.Product, peaks, volEmas, latestEmaVol );
+                            result = new VolatilityAnalysisResult( volSett.Product, peaks, volEmas, LatestVolEma, peakTimes, switchTimes );
                         }
                         else
                         {
-                            result = new VolatilityAnalysisResult( volSett.Product, peaks, volEmas, volEmas.First.Value );
+                            result = new VolatilityAnalysisResult( volSett.Product, peaks, volEmas, volEmas.First.Value, peakTimes, switchTimes );
                         }
                         
                     }
