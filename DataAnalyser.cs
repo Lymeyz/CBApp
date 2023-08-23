@@ -586,7 +586,7 @@ namespace CBApp1
                             await Task.Run(() =>
                             {
                                 //AnalyseData();
-                                AnalyseDataNew();
+                                AnalysisFunctionsTests();
                             });
                             analysisRunning = false;
                         }
@@ -606,10 +606,9 @@ namespace CBApp1
                 Console.WriteLine(ex.StackTrace);
                 Console.WriteLine(ex.Message);
             }
-            
         }
 
-        private void AnalyseDataNew()
+        private void AnalysisFunctionsTests()
         {
             try
             {
@@ -1396,13 +1395,15 @@ namespace CBApp1
                             if( currentShortEma < currentLongEma )
                             {
                                 peakTime = currentCandle.Time;
-                                peak = currentCandle.Avg;
+                                // close or avg
+                                peak = currentCandle.Close;
                                 trend = false;
                             }
                             else if( currentShortEma >= currentLongEma )
                             {
                                 peakTime = currentCandle.Time;
-                                peak = currentCandle.Avg;
+                                // close or avg
+                                peak = currentCandle.Close;
                                 trend = true;
                             }
                         }
@@ -1500,13 +1501,15 @@ namespace CBApp1
                             if( newestEmaSlope < 0 )
                             {
                                 peakTime = currentCandle.Time;
-                                peak = currentCandle.Avg;
+                                // close or avg
+                                peak = currentCandle.Close;
                                 trend = false;
                             }
                             else if( newestEmaSlope >= 0 )
                             {
                                 peakTime = currentCandle.Time;
-                                peak = currentCandle.Avg;
+                                // close or avg
+                                peak = currentCandle.Close;
                                 trend = true;
                             }
                         }

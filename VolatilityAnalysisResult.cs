@@ -14,11 +14,15 @@ namespace CBApp1
             Peaks = peaks;
             EmaVolatilities = emaVolatilities;
             CurrentEmaVolatility = LatestVolEma;
+            PeakTimes = peakTimes;
+            SwitchTimes = switchTimes;
         }
 
         public string Product { get; }
         public LinkedList<double> Peaks { get; }
         public LinkedList<double> EmaVolatilities { get; }
         public double CurrentEmaVolatility { get; }
+        public LinkedList<DateTime> PeakTimes { get; }
+        public LinkedList<DateTime> SwitchTimes { get; }
     }
 }
