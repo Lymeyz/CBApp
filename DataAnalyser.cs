@@ -159,10 +159,10 @@ namespace CBApp1
                     ks[period] = 2.0 / (period + 1.0);
                 }
 
-                // check if there are previously calculated emas
+                // check if there are previously calculated lastEma
                 if (currEmas == null)
                 {
-                    // no old emas, initialize currEmas
+                    // no old lastEma, initialize currEmas
                     currEmas = new Dictionary<int, LimitedDateTimeList<Ema>>();
                     // initalize currEmaSlopes
                     currEmaSlopes = new Dictionary<int, LimitedDateTimeList<Ema>>();
@@ -175,7 +175,7 @@ namespace CBApp1
                 }
                 else
                 {
-                    // there are old emas, find latest emas
+                    // there are old lastEma, find latest lastEma
                     latestEmas = new Dictionary<int, Ema>();
                     foreach (int period in periods)
                     {
@@ -186,7 +186,7 @@ namespace CBApp1
                     }
                 }
 
-                // if no old emas, calculate SMA of each first length
+                // if no old lastEma, calculate SMA of each first length
                 // then proceed with ema-calculation
                 if (latestEmas == null)
                 {
@@ -402,7 +402,7 @@ namespace CBApp1
                         }
                     }
 
-                    // emas
+                    // lastEma
                     CalculateAllEmas( fiveMinCandles,
                                       ref fiveMinEmas,
                                       ref fiveMinEmaSlopes,
@@ -430,7 +430,7 @@ namespace CBApp1
                         hourLengths.Add( config.HourSingleEmaLength );
                         int[] hourLengthsArray = hourLengths.ToArray();
 
-                        // Hour emas
+                        // Hour lastEma
                         CalculateAllEmas( hourCandles,
                                           ref hourEmas,
                                           ref hourEmaSlopes,
@@ -456,9 +456,9 @@ namespace CBApp1
             LimitedDateTimeList<Ema> currEmaSlopes;
             Ema currEma;
             Ema currSlope;
-            //for each period, print 10 emas and 10 emaslopes next to eachother
+            //for each period, print 10 lastEma and 10 emaslopes next to eachother
             Console.WriteLine("");
-            Console.WriteLine($"emas and emaslopes for {product}");
+            Console.WriteLine($"lastEma and emaslopes for {product}");
             foreach (int period in fiveMinEmas[product].Keys)
             {
                 currEmas = new LimitedDateTimeList<Ema>(fiveMinEmas[product][period], 300);
@@ -620,7 +620,7 @@ namespace CBApp1
                 // calculate volatility between crosses or zero slopes
 
                 // if volatility high enough and slope positive enough
-                // analyse ema/emas for timing
+                // analyse ema/lastEma for timing
                 // input: volatility and long ema results + volatilitySettings + longEmaSettings + 
 
                 // short
@@ -630,52 +630,69 @@ namespace CBApp1
                 // calculate volatility between crosses or zero slopes
 
                 // if volatility high enough and slope positive enough
-                // analyse ema/emas for timing
+                // analyse ema/lastEma for timing
 
 
                 // test double ema analysis
-                //DoubleEmaAnalysisResult fiveMinDoubleEmaResult;
-                //DoubleEmaAnalysisSettings fiveMinDoubleEmaSetting;
-                //foreach( var pair in fiveMinEmas.Where( p => p.Value != null ) )
-                //{
-                //    string product = pair.Key;
-                //    if( currentFiveMinCandles.ContainsKey( product ) )
-                //    {
-                //        Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
+                DoubleEmaAnalysisResult fiveMinDoubleEmaResult;
+                DoubleEmaAnalysisSettings fiveMinDoubleEmaSetting;
+                foreach( var pair in fiveMinEmas.Where( p => p.Value != null ) )
+                {
+                    string product = pair.Key;
+                    if( currentFiveMinCandles.ContainsKey( product ) )
+                    {
+                        Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
 
-                //        CalculateNewestEma( product, ref currentFiveMinEmas, currentFiveMinCandles, fiveMinEmas);
+                        CalculateNewestEma( product, ref currentFiveMinEmas, currentFiveMinCandles, fiveMinEmas );
 
-                //        fiveMinDoubleEmaSetting = new DoubleEmaAnalysisSettings( product,
-                //                                                             false,
-                //                                                             0.06,
-                //                                                             0.01,
-                //                                                             0.003,
-                //                                                             0.6,
-                //                                                             0.97,
-                //                                                             true,
-                //                                                             true,
-                //                                                             config.FiveMinDoubleEmaLengths,
-                //                                                             ref currentFiveMinCandles,
-                //                                                             ref currentFiveMinEmas,
-                //                                                             ref fiveMinEmas );
+                        fiveMinDoubleEmaSetting = new DoubleEmaAnalysisSettings( product,
+                                                                                 false,
+                                                                                 0.06,
+                                                                                 0.01,
+                                                                                 0.003,
+                                                                                 0.6,
+                                                                                 0.97,
+                                                                                 true,
+                                                                                 true,
+                                                                                 config.FiveMinDoubleEmaLengths,
+                                                                                 ref currentFiveMinCandles,
+                                                                                 ref currentFiveMinEmas,
+                                                                                 ref fiveMinEmas );
 
-                //        if( doubleEmaResults[ "fiveMin" ].ContainsKey( product ) )
-                //        {
-                //            fiveMinDoubleEmaResult = doubleEmaResults[ "fiveMin" ][ product ];
-                //        }
-                //        else
-                //        {
-                //            fiveMinDoubleEmaResult = null;
-                //        }
+                        if( doubleEmaResults[ "fiveMin" ].ContainsKey( product ) )
+                        {
+                            fiveMinDoubleEmaResult = doubleEmaResults[ "fiveMin" ][ product ];
+                        }
+                        else
+                        {
+                            fiveMinDoubleEmaResult = null;
+                        }
 
-                //        fiveMinDoubleEmaResult = DoubleEmaAnalyseProduct( fiveMinDoubleEmaSetting, fiveMinDoubleEmaResult );
+                        fiveMinDoubleEmaResult = DoubleEmaAnalyseProduct( fiveMinDoubleEmaSetting, fiveMinDoubleEmaResult );
 
-                //        if( fiveMinDoubleEmaResult != null )
-                //        {
-                //            doubleEmaResults[ "fiveMin" ][ product ] = fiveMinDoubleEmaResult;
-                //        }
-                //    }
-                //}
+                        if( fiveMinDoubleEmaResult != null )
+                        {
+                            doubleEmaResults[ "fiveMin" ][ product ] = fiveMinDoubleEmaResult;
+                        }
+                    }
+
+                    if( product == "BTC-EUR" )
+                    {
+                        if( doubleEmaResults[ "fiveMin" ][ product ] != null )
+                        {
+                            VolatilityAnalysisSettings volSett = new VolatilityAnalysisSettings( product,
+                                                                                                 5,
+                                                                                                 false,
+                                                                                                 config.FiveMinDoubleEmaLengths,
+                                                                                                 currentFiveMinCandles,
+                                                                                                 ref fiveMinCandles,
+                                                                                                 fiveMinEmas,
+                                                                                                 null,
+                                                                                                 null );
+                            VolatilityAnalysisResult volRes = VolatilityAnalysis( volSett );
+                        }
+                    }
+                }
 
                 //// Test double ema slope analysis
                 //foreach( var pair in fiveMinEmaSlopes.Where( p => p.Value != null ) )
@@ -741,7 +758,7 @@ namespace CBApp1
                                                                                true,
                                                                                true,
                                                                                0.25,
-                                                                               45,
+                                                                               config.HourSingleEmaLength,
                                                                                ref currentHourCandles,
                                                                                ref hourEmas,
                                                                                ref hourEmaSlopes );
@@ -753,7 +770,7 @@ namespace CBApp1
                             hourEmas[ product ][ 45 ].TryPeek( out latestEma );
                             hourVolSettings = 
                                 new VolatilityAnalysisSettings( product,
-                                                               4,
+                                                               5,
                                                                true,
                                                                new int[] { 45 },
                                                                hourSingleEmaSettings.CurrentCandles,
@@ -813,11 +830,11 @@ namespace CBApp1
         }
 
         /// <summary>
-        /// Inputs current candles and previously calculated emas,
-        /// returns current emas into currentEmas referenced in parameters
+        /// Inputs current candles and previously calculated lastEma,
+        /// returns current lastEma into currentEmas referenced in parameters
         /// </summary>
         /// <param name="product"></param>
-        /// <param name="currentEmas">To input current emas</param>
+        /// <param name="currentEmas">To input current lastEma</param>
         /// <param name="currentCandles"></param>
         /// <param name="prevEmas"></param>
         private void CalculateNewestEma( string product,
@@ -872,21 +889,20 @@ namespace CBApp1
             }
         }
 
-        private Ema CalculateNewestEma( string product,
-                                        ConcurrentDictionary<string, Candle> currentCandles,
-                                        LimitedDateTimeList<Ema> prevEmas )
+        private Ema CalculateNewestEma( Candle currentCandle,
+                                        Ema prevEma )
         {
             try
             {
-                Ema newestEma = prevEmas.Newest;
+                Ema newestEma = prevEma;
                 int length = newestEma.Length;
 
                 double k = 2.0 / (length + 1);
                 double emaPrice;
 
-                emaPrice = (currentCandles[ product ].Avg * k) + (newestEma.Price * (1 - k));
+                emaPrice = (currentCandle.Avg * k) + (newestEma.Price * (1 - k));
 
-                newestEma = new Ema( length, emaPrice, currentCandles[ product ].Time );
+                newestEma = new Ema( length, emaPrice, currentCandle.Time );
 
                 return newestEma;
             }
@@ -933,25 +949,22 @@ namespace CBApp1
             }
         }
 
-        private Ema CalculateNewestEmaSlope( string product,
-                                             ConcurrentDictionary<string, Candle> currentCandles,
-                                             LimitedDateTimeList<Ema> emas,
-                                             LimitedDateTimeList<Ema> emaSlopes )
+        private Ema CalculateNewestEmaSlope( Candle currentCandle,
+                                             Ema lastEma )
         {
             try
             {
-                Ema lastEma = emas.Newest;
-                Ema newEmaSlope = emaSlopes.Newest;
+                Ema newEmaSlope;
                 int length = lastEma.Length;
                 double emaPrice;
 
                 double k = 2.0 / (length + 1);
 
-                emaPrice = (currentCandles[ product ].Avg * k) + (lastEma.Price * (1 - k));
+                emaPrice = ( currentCandle.Avg * k) + (lastEma.Price * (1 - k));
 
                 newEmaSlope = new Ema( length,
                                        emaPrice - lastEma.Price,
-                                       currentCandles[ product ].Time );
+                                       currentCandle.Time );
 
                 return newEmaSlope;
             }
@@ -1011,8 +1024,8 @@ namespace CBApp1
                     result = inResult;
                 }
 
-                Ema newestEma = CalculateNewestEma( product, sSett.CurrentCandles, sSett.PrevEmas );
-                Ema newestEmaSlope = CalculateNewestEmaSlope( product, sSett.CurrentCandles, sSett.PrevEmas, sSett.PrevEmaSlopes );
+                Ema newestEma = CalculateNewestEma( sSett.CurrentCandles[product], sSett.PrevEmas.Newest );
+                Ema newestEmaSlope = CalculateNewestEmaSlope( sSett.CurrentCandles[product], sSett.PrevEmas.Newest );
                 Ema currEmaSlope = newestEmaSlope;
                 Ema prevEmaSlope = null;
                 Ema currEma = newestEma;
@@ -1329,7 +1342,7 @@ namespace CBApp1
             }
         }
 
-        // Find peaks based on analysis of emas and do a
+        // Find peaks based on analysis of lastEma and do a
         private VolatilityAnalysisResult VolatilityAnalysis( VolatilityAnalysisSettings volSett )
         {
             try
@@ -1358,30 +1371,37 @@ namespace CBApp1
                     newestCandle = volSett.CurrentCandles[ product ];
                     currentCandle = newestCandle;
 
-                    // calculate current emas
-                    newestShortEma = this.CalculateNewestEma( product, volSett.CurrentCandles, volSett.Emas[ shortLength ] );
-                    newestLongEma = this.CalculateNewestEma( product, volSett.CurrentCandles, volSett.Emas[ longLength ] );
+                    // calculate current lastEma
+                    newestShortEma = CalculateNewestEma( newestCandle, volSett.Emas[ shortLength ].Newest );
+                    newestLongEma = CalculateNewestEma( newestCandle, volSett.Emas[ longLength ].Newest );
 
                     currentShortEma = newestShortEma;
                     currentLongEma = newestLongEma;
 
-                    // go through emas from newest to oldest
+                    // go through lastEma from newest to oldest
                     bool trend = false;
                     double peak = -1;
+                    DateTime peakTime = DateTime.MinValue;
 
-                    for( int i = 0; i < volSett.Emas[ shortLength ].Count; i++ )
+                    int count = volSett.Emas[ longLength ].Count;
+
+                    for( int i = 0; i < count ; i++ )
                     {
                         if( peaks == null )
                         {
                             peaks = new LinkedList<double>();
+                            peakTimes = new LinkedList<DateTime>();
+                            switchTimes = new LinkedList<DateTime>();
 
                             if( currentShortEma < currentLongEma )
                             {
+                                peakTime = currentCandle.Time;
                                 peak = currentCandle.Avg;
                                 trend = false;
                             }
                             else if( currentShortEma >= currentLongEma )
                             {
+                                peakTime = currentCandle.Time;
                                 peak = currentCandle.Avg;
                                 trend = true;
                             }
@@ -1392,17 +1412,29 @@ namespace CBApp1
                             {
                                 if( currentShortEma > currentLongEma )
                                 {
-                                    // new trend
-                                    peaks.AddLast( peak );
-                                    peak = -1;
+
                                     trend = true;
-                                    lastSwitch = currentCandle.Time;
+
+                                    // trend switch, add peak, peaktime, switchtime
+                                    switchTimes.AddLast( currentCandle.Time );
+                                    peakTimes.AddLast( peakTime );
+                                    peaks.AddLast( peak );
+
+                                    // current peak to most recent candle
+                                    peak = currentCandle.Avg;
+                                    peakTime = DateTime.MinValue;
+
+                                    if( currentCandle.Time > lastSwitch )
+                                    {
+                                        lastSwitch = currentCandle.Time;
+                                    }
                                 }
                                 else
                                 {
                                     if( currentCandle.Avg < peak )
                                     {
                                         peak = currentCandle.Avg;
+                                        peakTime = currentCandle.Time;
                                     }
                                 }
                             }
@@ -1410,16 +1442,26 @@ namespace CBApp1
                             {
                                 if( currentShortEma < currentLongEma )
                                 {
-                                    peaks.AddLast( peak );
-                                    peak = -1;
                                     trend = false;
-                                    lastSwitch = currentCandle.Time;
+
+                                    peakTimes.AddLast( peakTime );
+                                    switchTimes.AddLast( currentCandle.Time );
+                                    peaks.AddLast( peak );
+
+                                    peak = currentCandle.Avg;
+                                    peakTime = DateTime.MinValue;
+
+                                    if( currentCandle.Time > lastSwitch )
+                                    {
+                                        lastSwitch = currentCandle.Time;
+                                    }
                                 }
                                 else
                                 {
                                     if( currentCandle.Avg > peak )
                                     {
                                         peak = currentCandle.Avg;
+                                        peakTime = currentCandle.Time;
                                     }
                                 }
                             }
@@ -1435,12 +1477,12 @@ namespace CBApp1
                     newestCandle = volSett.CurrentCandles[ product ];
                     currentCandle = newestCandle;
 
-                    // calculate current emas
+                    // calculate current lastEma
                     Ema newestEmaSlope = 
                         CalculateNewestEmaSlope( product, volSett.CurrentCandles, volSett.LastEma, volSett.EmaSlopes);
                     Ema currentEmaSlope = newestEmaSlope;
 
-                    // go through emas from newest to oldest
+                    // go through lastEma from newest to oldest
                     bool trend = false;
                     double peak = -1;
                     DateTime peakTime = DateTime.MinValue;
@@ -1601,21 +1643,33 @@ namespace CBApp1
                             // Calculate absolute value of difference between peaks
                             peakDiff = Math.Abs( node1.Value - node2.Value );
 
+                            if( node1.Previous == null )
+                            {
+                                currEma = (peakDiff * k) + (prevEma * (1 - k));
+                                volEmas.AddFirst( currEma );
+                                prevEma = currEma;
+                            }
+
                         } while( node1.Previous != null );
 
-                        double LatestVolEma = -1;
-                        if( volSett.CurrentCandles[ product ].Time > lastSwitch )
+                        double latestVolEma = -1;
+                        if( volSett.CurrentCandles[ product ].Time > lastSwitch 
+                            && volSett.CurrentCandles[ product ].Time > peakTimes.First.Value )
                         {
                             // Calculate current EMA as if it is a peak, using .Close
                             peakDiff = Math.Abs( volSett.CurrentCandles[product].Close - peaks.First.Value );
-                            LatestVolEma = (peakDiff * k) + (currEma * (1 - k));
-                            //volEmas.AddFirst( LatestVolEma );
+                            latestVolEma = (peakDiff * k) + (currEma * (1 - k));
+                            //volEmas.AddFirst( latestVolEma );
                             prevEma = currEma;
                         }
-
-                        if( LatestVolEma != -1 )
+                        else
                         {
-                            result = new VolatilityAnalysisResult( volSett.Product, peaks, volEmas, LatestVolEma, peakTimes, switchTimes );
+                            latestVolEma = volEmas.First.Value;
+                        }
+
+                        if( latestVolEma != -1 )
+                        {
+                            result = new VolatilityAnalysisResult( volSett.Product, peaks, volEmas, latestVolEma, peakTimes, switchTimes );
                         }
                         else
                         {
@@ -1724,15 +1778,15 @@ namespace CBApp1
 
                                 // do short analysis
 
-                                // Analyse emas up to {time} minutes back in time.
+                                // Analyse lastEma up to {time} minutes back in time.
                                 // Look for shorter ema under longer ema with
                                 // increasing distance, flag this. A watching
                                 // function will wait for the turn, assess viability
                                 // in relation to pricing situation and in case of
                                 // positive assessment raise an event for OrderDirector
 
-                                // if currentCandles[product]!=null
-                                // if emas[product][period] != null
+                                // if currentCandle[product]!=null
+                                // if lastEma[product][period] != null
                                 // calculate currentEmas[product]
                                 // if(currentTrend[product]==null
                                 // begin going back in time to find start 
@@ -2730,7 +2784,7 @@ namespace CBApp1
                         pre.PeakTime = newestShortEma.Time;
                     }
 
-                    // Check current emas
+                    // Check current lastEma
 
                     if( pre.B == true )
                     {
@@ -2936,7 +2990,7 @@ namespace CBApp1
         // b sg if !in (max - (30% of (max-min)))
         // && if short < long
         // && if short-long<((short-longMAX)*0.95)
-        // && sum of 50 last emaSlopes ! <0
+        // && sum of 50 last lastEmaSlope ! <0
 
         // s sg if !in Abs(min +(30% of (max-min)))
         private async void ShortCandleUpdateEvent(Object source, ShortCandleUpdateEventArgs e)

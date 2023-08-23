@@ -44,7 +44,7 @@ namespace CBApp1
 
                 DataHandler dataHandler = new DataHandler(ref aTimer, ref writer, ref auth, ref reqMaker, products);
 
-                AnalyserConfiguration analyserConfig = new AnalyserConfiguration( new int[] { 4, 8 },
+                AnalyserConfiguration analyserConfig = new AnalyserConfiguration( new int[] { 6, 26 },
                                                                                   new int[] { 6, 12 },
                                                                                   55,
                                                                                   45,
