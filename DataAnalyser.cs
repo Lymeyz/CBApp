@@ -745,22 +745,25 @@ namespace CBApp1
                                                                                0.009,
                                                                                0.0012,
                                                                                0.008,
+                                                                               false,
                                                                                true,
                                                                                0.004,
                                                                                0.006,
-                                                                               0.0005,
-                                                                               0.0075,
+                                                                               0.0009,
+                                                                               -0.3,
+                                                                               false,
                                                                                false,
                                                                                0.004,
                                                                                0.004,
                                                                                true,
                                                                                true,
                                                                                true,
-                                                                               0.25,
+                                                                               0.4,
                                                                                config.HourSingleEmaLength,
                                                                                ref currentHourCandles,
                                                                                ref hourEmas,
                                                                                ref hourEmaSlopes );
+
                         hourSingleEmaResult = SingleEmaAnalyseProduct( hourSingleEmaSettings, null );
 
                         if( hourSingleEmaResult != null )
@@ -1162,14 +1165,16 @@ namespace CBApp1
                     if( sSett.BTrigger )
                     {
                         // simple slope or override
-                        if( (sSett.BS1 != -1 && (newestEmaSlope >= 0 ||
+                        if( (sSett.BS1 != -1 && 
+                            (newestEmaSlope >= 0 ||
                             newestEmaSlope >= sSett.BS1 * newestEma) ) ||
                             sSett.BS2Override )
                         {
                             // slope rate 
                             double slopeAbs = Math.Abs( newestEmaSlope.Price );
                             if( sSett.BS2 != -1 &&
-                                ( result.SlopeRateAverage > 0 && result.SlopeRateAverage > sSett.BS2 * slopeAbs ) )
+                                ( result.SlopeRateAverage > 0 && result.SlopeRateAverage > sSett.BS2 * slopeAbs ) &&
+                                !sSett.OnlyBS1 )
                             {
                                 // slope rate and peak return
                                 if( sSett.BPeakRP != -1 &&
@@ -1211,14 +1216,14 @@ namespace CBApp1
                     {
                         // simple slope and slope rate or override
                         if( ( sSett.SS1 != -1 && 
-                            
                             ( newestEmaSlope >= 0 || 
                             newestEmaSlope <= sSett.SS1 * newestEma ) ) || 
-                            sSett.SS2Override)
+                            sSett.OnlySS2)
                         {
                             // slope rate
-                            if( sSett.SS2 != -1 && 
-                                ( result.SlopeRateAverage <= sSett.SS2 * newestEmaSlope ) )
+                            if( sSett.SS2 != -1 &&
+                                ( result.SlopeRateAverage <= sSett.SS2 * newestEmaSlope ) &&
+                                !sSett.OnlySS1 )
                             {
                                 // peak return
                                 if( sSett.SPeakRP != -1 && 
@@ -1241,7 +1246,7 @@ namespace CBApp1
                                 }
                             }
                             // simple slope
-                            else
+                            else if( sSett.OnlyBS1 )
                             {
                                 // peak return
                                 if( sSett.SPeakRP != -1 && 
@@ -1297,7 +1302,7 @@ namespace CBApp1
                                 }
                             }
                             // simple slope
-                            else
+                            else if( sSett.OnlySS1 )
                             {
                                 // peak return
                                 if( sSett.SOffPeakRP != -1 &&

@@ -145,12 +145,14 @@ namespace CBApp1
                                           double sOffPeakWindow,
                                           double bS1,
                                           double bS2,
-                                          bool bS2Override,
+                                          bool onlyBS1,
+                                          bool onlyBS2,
                                           double bPeakRP,
                                           double bPeakWindow,
                                           double sS1,
                                           double sS2,
-                                          bool sS2Override,
+                                          bool onlySS1,
+                                          bool onlySS2,
                                           double sPeakRP,
                                           double sPeakWindow,
                                           bool bTrigger,
@@ -170,12 +172,14 @@ namespace CBApp1
             SOffPeakWindow = sOffPeakWindow;
             BS1 = bS1;
             BS2 = bS2;
-            BS2Override = bS2Override;
+            OnlyBS1 = onlyBS1;
+            BS2Override = onlyBS2;
             BPeakRP = bPeakRP;
             BPeakWindow = bPeakWindow;
             SS1 = sS1;
             SS2 = sS2;
-            SS2Override = sS2Override;
+            OnlySS1 = onlySS1;
+            OnlySS2 = onlySS2;
             SPeakRP = sPeakRP;
             SPeakWindow = sPeakWindow;
             BTrigger = bTrigger;
@@ -195,12 +199,14 @@ namespace CBApp1
         public double SOffPeakWindow { get; }
         public double BS1 { get; }
         public double BS2 { get; }
+        public bool OnlyBS1 { get; }
         public bool BS2Override { get; }
         public double BPeakRP { get; }
         public double BPeakWindow { get; }
         public double SS1 { get; }
         public double SS2 { get; }
-        public bool SS2Override { get; }
+        public bool OnlySS1 { get; }
+        public bool OnlySS2 { get; }
         public double SPeakRP { get; }
         public double SPeakWindow { get; }
         public bool BTrigger { get; }
