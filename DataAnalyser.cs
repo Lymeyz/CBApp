@@ -1652,30 +1652,7 @@ namespace CBApp1
 
                         } while( node1.Previous != null );
 
-                        double latestVolEma = -1;
-                        if( volSett.CurrentCandles[ product ].Time > lastSwitch 
-                            && volSett.CurrentCandles[ product ].Time > peakTimes.First.Value )
-                        {
-                            // Calculate current EMA as if it is a peak, using .Close
-                            peakDiff = Math.Abs( volSett.CurrentCandles[product].Close - peaks.First.Value );
-                            latestVolEma = (peakDiff * k) + (currEma * (1 - k));
-                            //volEmas.AddFirst( latestVolEma );
-                            prevEma = currEma;
-                        }
-                        else
-                        {
-                            latestVolEma = volEmas.First.Value;
-                        }
-
-                        if( latestVolEma != -1 )
-                        {
-                            result = new VolatilityAnalysisResult( volSett.Product, peaks, volEmas, latestVolEma, peakTimes, switchTimes );
-                        }
-                        else
-                        {
-                            result = new VolatilityAnalysisResult( volSett.Product, peaks, volEmas, volEmas.First.Value, peakTimes, switchTimes );
-                        }
-                        
+                        result = new VolatilityAnalysisResult( volSett.Product, peaks, volEmas, volEmas.First.Value, peakTimes, switchTimes );
                     }
                 }
 
