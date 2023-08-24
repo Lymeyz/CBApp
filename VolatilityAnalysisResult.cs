@@ -8,9 +8,10 @@ namespace CBApp1
 {
     public class VolatilityAnalysisResult
     {
-        public VolatilityAnalysisResult(string product, LinkedList<double> peaks, LinkedList<double> emaVolatilities, double LatestVolEma, LinkedList<DateTime> peakTimes, LinkedList<DateTime> switchTimes )
+        public VolatilityAnalysisResult(string product, int emaLength, LinkedList<double> peaks, LinkedList<double> emaVolatilities, double LatestVolEma, LinkedList<DateTime> peakTimes, LinkedList<DateTime> switchTimes )
         {
             Product = product;
+            EmaLength = emaLength;
             Peaks = peaks;
             EmaVolatilities = emaVolatilities;
             CurrentEmaVolatility = LatestVolEma;
@@ -19,6 +20,7 @@ namespace CBApp1
         }
 
         public string Product { get; }
+        public int EmaLength { get; }
         public LinkedList<double> Peaks { get; }
         public LinkedList<double> EmaVolatilities { get; }
         public double CurrentEmaVolatility { get; }

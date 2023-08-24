@@ -11,7 +11,7 @@ namespace CBApp1
     {
         public VolatilityAnalysisSettings( string product,
                                            bool slopeBased,
-                                           int[] lengths,
+                                           int length,
                                            ConcurrentDictionary<string, Candle> currentCandles,
                                            ref Dictionary<string, Queue<Candle>> candles,
                                            ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emas,
@@ -20,7 +20,8 @@ namespace CBApp1
         {
             Product = product;
             SlopeBased = slopeBased;
-            Lengths = lengths;
+            Length = length;
+            IgnoreAfterPeak = length / 4;
             CurrentCandles = currentCandles;
             Candles = new LimitedDateTimeList<Candle>( candles[ product ], candles[ product ].Count );
             if( !slopeBased )
@@ -30,16 +31,16 @@ namespace CBApp1
 
                 for( int i = 0; i < 2; i++ )
                 {
-                    Emas[ Lengths[ i ] ] = new LimitedDateTimeList<Ema>( emas[ product ][ Lengths[ i ] ], 
-                        emas[ product ][ Lengths[ i ] ].Count );
+                    Emas[ Length ] = new LimitedDateTimeList<Ema>( emas[ product ][ Length ], 
+                        emas[ product ][ Length ].Count );
                 }
             }
             else
             {
-                EmaSlopes = new LimitedDateTimeList<Ema>( emaSlopes[ product ][ Lengths[ 0 ] ],
-                    emaSlopes[ product ][ Lengths[ 0 ]].Count );
+                EmaSlopes = new LimitedDateTimeList<Ema>( emaSlopes[ product ][ Length ],
+                    emaSlopes[ product ][ Length].Count );
                 Ema lastSlopeHolder;
-                emaSlopes[ product ][ lengths[ 0 ] ].TryPeek( out lastSlopeHolder );
+                emaSlopes[ product ][ length ].TryPeek( out lastSlopeHolder );
                 LastEma = latestEma;
                 LastEmaSlope = lastSlopeHolder;
             }
@@ -47,7 +48,8 @@ namespace CBApp1
 
         public string Product { get; set; }
         public bool SlopeBased { get; }
-        public int[] Lengths { get; }
+        public int Length { get; }
+        public int IgnoreAfterPeak { get; }
         public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
         public LimitedDateTimeList<Candle> Candles { get; }
         public Dictionary<int, LimitedDateTimeList<Ema>> Emas { get; set; }
