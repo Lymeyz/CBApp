@@ -46,10 +46,12 @@ namespace CBApp1
 
                 AnalyserConfiguration analyserConfig = new AnalyserConfiguration( new int[] { 6, 26 },
                                                                                   new int[] { 6, 12 },
-                                                                                  45,
-                                                                                  45,
+                                                                                  46,
+                                                                                  46,
                                                                                   200,
-                                                                                  72
+                                                                                  72,
+                                                                                  new int[] { 8, 56 },
+                                                                                  new int[] { 10, 40 }
                                                                                   );
 
                 DataAnalyser analyser = new DataAnalyser( ref dataHandler, ref aTimer, ref writer, analyserConfig);

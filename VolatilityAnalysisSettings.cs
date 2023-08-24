@@ -10,7 +10,6 @@ namespace CBApp1
     public class VolatilityAnalysisSettings
     {
         public VolatilityAnalysisSettings( string product,
-                                           int volatilityLength,
                                            bool slopeBased,
                                            int[] lengths,
                                            ConcurrentDictionary<string, Candle> currentCandles,
@@ -20,7 +19,6 @@ namespace CBApp1
                                            Ema latestEma)
         {
             Product = product;
-            VolatilityLength = volatilityLength;
             SlopeBased = slopeBased;
             Lengths = lengths;
             CurrentCandles = currentCandles;
@@ -48,7 +46,6 @@ namespace CBApp1
         }
 
         public string Product { get; set; }
-        public int VolatilityLength { get; }
         public bool SlopeBased { get; }
         public int[] Lengths { get; }
         public ConcurrentDictionary<string, Candle> CurrentCandles { get; }

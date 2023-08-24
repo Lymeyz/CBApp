@@ -66,6 +66,9 @@ namespace CBApp1
                 results[ product ] = null;
             }
 
+            fiveMinEmaRange = GenerateRange( config.FiveMinEmaRange[ 0 ], config.FiveMinEmaRange[ 1 ], 2 );
+            hourEmaRange = GenerateRange( config.HourEmaRange[ 0 ], config.HourEmaRange[ 1 ], 2 );
+
             analysisRunning = false;
         }
 
@@ -402,14 +405,25 @@ namespace CBApp1
                         }
                     }
 
-                    // lastEma
+                    //CalculateAllEmas( fiveMinCandles,
+                    //                  ref fiveMinEmas,
+                    //                  ref fiveMinEmaSlopes,
+                    //                  ref calculatedFiveMinEmas,
+                    //                  config.FiveMinDoubleEmaLengths[0],
+                    //                  config.FiveMinDoubleEmaLengths[1],
+                    //                  config.FiveMinSingleEmaLength);
+
+                    List<int> fiveMinEmaLengths = new List<int>();
+                    for( int i = config.FiveMinEmaRange[0]; i <= config.FiveMinEmaRange[1]; i+=2 )
+                    {
+                        fiveMinEmaLengths.Add( i );
+                    }
+
                     CalculateAllEmas( fiveMinCandles,
                                       ref fiveMinEmas,
                                       ref fiveMinEmaSlopes,
                                       ref calculatedFiveMinEmas,
-                                      config.FiveMinDoubleEmaLengths[0],
-                                      config.FiveMinDoubleEmaLengths[1],
-                                      config.FiveMinSingleEmaLength);
+                                      fiveMinEmaLengths.ToArray());
 
                     if( e.updatedLong )
                     {
@@ -426,21 +440,17 @@ namespace CBApp1
                             }
                         }
 
-                        // hour ema lengths
-                        List<int> hourLengths = new List<int>( config.HourDoubleEmaLengths );
-                        hourLengths.Add( config.HourSingleEmaLength );
-                        int[] hourLengthsArray = hourLengths.ToArray();
+                        List<int> hourEmaLengths = new List<int>();
+                        for( int i = config.HourEmaRange[ 0 ]; i <= config.HourEmaRange[ 1 ]; i += 2 )
+                        {
+                            hourEmaLengths.Add( i );
+                        }
 
-                        // Hour lastEma
                         CalculateAllEmas( hourCandles,
                                           ref hourEmas,
                                           ref hourEmaSlopes,
                                           ref calculatedHourEmas,
-                                          hourLengthsArray
-                                         );
-
-
-                        
+                                          hourEmaLengths.ToArray() );
                     }
                 });
             }
@@ -450,7 +460,6 @@ namespace CBApp1
                 Console.WriteLine(ex.StackTrace);
             }
         }
-
         private void PrintEmasAndEmaSlopes(string product)
         {
             LimitedDateTimeList<Ema> currEmas;
@@ -737,7 +746,7 @@ namespace CBApp1
                 //foreach( var pair in hourEmas.Where( p => p.Value != null ) )
                 //{
                 //    string product = pair.Key;
-                //    if( currentHourCandles.ContainsKey( product ) && (product == "BTC-EUR" || product == "ETH-EUR"))
+                //    if( currentHourCandles.ContainsKey( product ) && (product == "BTC-EUR" || product == "ETH-EUR") )
                 //    {
                 //        hourSingleEmaSettings = new SingleEmaAnalysisSettings( product,
                 //                                                               0.0024,
@@ -770,12 +779,12 @@ namespace CBApp1
                 //        if( hourSingleEmaResult != null )
                 //        {
                 //            Ema latestEma;
-                //            hourEmas[ product ][ 45 ].TryPeek( out latestEma );
-                //            hourVolSettings = 
+                //            hourEmas[ product ][ config.HourSingleEmaLength ].TryPeek( out latestEma );
+                //            hourVolSettings =
                 //                new VolatilityAnalysisSettings( product,
-                //                                               5,
                 //                                               true,
-                //                                               new int[] { 45 },
+                //                                               new int[] { config.HourSingleEmaLength },
+                //                                               5,
                 //                                               hourSingleEmaSettings.CurrentCandles,
                 //                                               ref hourCandles,
                 //                                               null,
@@ -826,25 +835,43 @@ namespace CBApp1
                                                                               ref fiveMinEmaSlopes );
                         fiveMinSingleResult = SingleEmaAnalyseProduct( fiveMinSingleSettings, null );
 
-                        if( fiveMinSingleResult != null )
-                        {
-                            Ema latestEma;
-                            fiveMinEmas[ product ][ config.FiveMinSingleEmaLength ].TryPeek( out latestEma );
-                            fiveMinVolSettings =
-                                new VolatilityAnalysisSettings( product,
-                                                                5,
-                                                                true,
-                                                                new int[] { config.FiveMinSingleEmaLength },
-                                                                fiveMinSingleSettings.CurrentCandles,
-                                                                ref fiveMinCandles,
-                                                                null,
-                                                                fiveMinEmaSlopes,
-                                                                latestEma );
-                            fiveMinVolResult = VolatilityAnalysis( fiveMinVolSettings );
-                        }
+                        //if( fiveMinSingleResult != null )
+                        //{
+                        //    Ema latestEma;
+                        //    fiveMinEmas[ product ][ config.FiveMinSingleEmaLength ].TryPeek( out latestEma );
+                        //    fiveMinVolSettings =
+                        //        new VolatilityAnalysisSettings( product,
+                        //                                        true,
+                        //                                        new int[] { config.FiveMinSingleEmaLength },
+                        //                                        fiveMinSingleSettings.CurrentCandles,
+                        //                                        ref fiveMinCandles,
+                        //                                        null,
+                        //                                        fiveMinEmaSlopes,
+                        //                                        latestEma );
+                        //    fiveMinVolResult = VolatilityAnalysis( fiveMinVolSettings );
+                        //}
                     }
 
 
+                }
+
+                // Test many emas vol analysis
+                foreach( var pair in fiveMinEmas.Where(p => p.Value != null ))
+                {
+                    string product = pair.Key;
+
+                    Ema latestEma;
+                    fiveMinEmas[ product ][ config.FiveMinSingleEmaLength ].TryPeek( out latestEma );
+                    fiveMinVolSettings =
+                        new VolatilityAnalysisSettings( product,
+                                                        true,
+                                                        fiveMinEmaRange,
+                                                        currentFiveMinCandles,
+                                                        ref fiveMinCandles,
+                                                        null,
+                                                        fiveMinEmaSlopes,
+                                                        latestEma );
+                    fiveMinVolResult = VolatilityAnalysis( fiveMinVolSettings );
                 }
             }
             catch( Exception e )
@@ -1419,6 +1446,7 @@ namespace CBApp1
 
                 Candle newestCandle = null;
                 Candle currentCandle = null;
+                Candle prevCandle = null;
                 Ema newestShortEma = null;
                 Ema newestLongEma = null;
                 Ema currentShortEma = null;
@@ -1541,7 +1569,7 @@ namespace CBApp1
                 {
                     newestCandle = volSett.CurrentCandles[ product ];
                     currentCandle = newestCandle;
-
+                    
                     // calculate current lastEma
                     Ema newestEmaSlope = 
                         CalculateNewestEmaSlope( product, volSett.CurrentCandles, volSett.LastEma, volSett.EmaSlopes);
@@ -1553,6 +1581,7 @@ namespace CBApp1
                     DateTime peakTime = DateTime.MinValue;
                     DateTime switchTime = DateTime.MinValue;
                     int count = volSett.EmaSlopes.Count;
+                    int sinceSwitch = 0;
 
                     for( int i = 0; i < count; i++ )
                     {
@@ -1564,98 +1593,103 @@ namespace CBApp1
 
                             if( newestEmaSlope < 0 )
                             {
-                                peakTime = currentCandle.Time;
-                                // close or avg
-                                peak = currentCandle.Close;
                                 trend = false;
                             }
                             else if( newestEmaSlope >= 0 )
                             {
-                                peakTime = currentCandle.Time;
-                                // close or avg
-                                peak = currentCandle.Close;
+                                //peakTime = currentCandle.Time;
+                                //// close or avg
+                                //peak = currentCandle.Close;
                                 trend = true;
                             }
+
+                            peakTime = currentCandle.Time;
+                            peak = currentCandle.Close;
+                            peakTimes.AddFirst( peakTime );
+                            peaks.AddFirst( peak );
                         }
                         else
                         {
                             if( trend == false )
                             {
-                                if( currentEmaSlope >= 0 )
+                                if( currentEmaSlope >= 0 && !(sinceSwitch < 6 ) )
                                 {
-
                                     trend = true;
+                                    sinceSwitch = 0;
+                                    
+                                    // set current peak to most recent candle
+                                    peak = prevCandle.Avg;
+                                    peakTime = prevCandle.Time;
 
                                     // trend switch, add peak, peaktime, switchtime
                                     peakTimes.AddLast( peakTime );
                                     peaks.AddLast( peak );
                                     switchTimes.AddLast( currentCandle.Time );
 
-                                    // set current peak to most recent candle
-                                    peak = currentCandle.Avg;
-                                    peakTime = currentCandle.Time;
-                                    
-
                                     // most recent trend switch
                                     if( currentCandle.Time > lastSwitch )
                                     {
-                                        lastSwitch = currentCandle.Time;
+                                        lastSwitch = prevCandle.Time;
                                     }
                                 }
-                                else
-                                {
-                                    // if candle is lower than current peak, set current peak
-                                    if( currentCandle.Avg < peak )
-                                    {
-                                        peak = currentCandle.Avg;
-                                        peakTime = currentCandle.Time;
-                                    }
-                                }
+                                //else
+                                //{
+                                //    // if candle is lower than current peak, set current peak
+                                //    if( currentCandle.Avg < peak )
+                                //    {
+                                //        peak = currentCandle.Avg;
+                                //        peakTime = currentCandle.Time;
+                                //    }
+                                //}
                             }
                             else
                             {
-                                if( currentEmaSlope < 0 )
+                                if( currentEmaSlope < 0 && !( sinceSwitch < 6) )
                                 {
 
                                     trend = false;
+                                    sinceSwitch = 0;
+
+                                    // set peak to current candle
+                                    peak = prevCandle.Avg;
+                                    peakTime = prevCandle.Time;
 
                                     // trend switch, add peak, peaktime, switchtime
                                     peakTimes.AddLast( peakTime );
                                     peaks.AddLast( peak );
                                     switchTimes.AddLast( currentCandle.Time );
 
-                                    // set peak to current candle
-                                    peak = currentCandle.Avg;
-                                    peakTime = currentCandle.Time;
-                                    
                                     // most recent trend switch
                                     if( currentCandle.Time > lastSwitch )
                                     {
                                         lastSwitch = currentCandle.Time;
                                     }
                                 }
-                                else
-                                {
-                                    // if candle is higher than current peak, set current peak
-                                    if( currentCandle.Avg > peak )
-                                    {
-                                        peak = currentCandle.Avg;
-                                        peakTime = currentCandle.Time;
-                                    }
-                                }
+                                //else
+                                //{
+                                //    // if candle is higher than current peak, set current peak
+                                //    if( currentCandle.Avg > peak )
+                                //    {
+                                //        peak = currentCandle.Avg;
+                                //        peakTime = currentCandle.Time;
+                                //    }
+                                //}
                             }
                         }
 
                         // Advance to next slope and candle
+                        prevCandle = currentCandle;
                         currentCandle = volSett.Candles.GetRemoveNewest();
                         currentEmaSlope = volSett.EmaSlopes.GetRemoveNewest();
+                        sinceSwitch++;
                     }
                 }
 
                 if( peaks != null )
                 {
+                    int volatilityLength = peaks.Count / 2;
                     // Calculate ema of difference between peaks if there has been enough switches
-                    if( peaks.Count > volSett.VolatilityLength * 2 )
+                    if( volatilityLength > 3 )
                     {
                         // Advance through list from oldest to newest, first two nodes
                         LinkedListNode<double> node1 = peaks.Last.Previous;
@@ -1669,7 +1703,7 @@ namespace CBApp1
                         double SMA = 0;
                         double currEma = -1;
                         double prevEma = -1;
-                        double k = 2.0 / (volSett.VolatilityLength + 1);
+                        double k = 2.0 / ( volatilityLength + 1 );
 
                         LinkedList<double> volEmas = new LinkedList<double>();
 
@@ -1678,18 +1712,18 @@ namespace CBApp1
                             count++;
 
                             // Add peakDiff to SMA for seeding 
-                            if( count < volSett.VolatilityLength )
+                            if( count < volatilityLength )
                             {
                                 SMA += peakDiff;
                             }
                             // Calculate SMA
-                            else if( count == volSett.VolatilityLength )
+                            else if( count == volatilityLength )
                             {
                                 SMA += peakDiff;
                                 SMA = SMA / count;
                             }
                             // Calculate first EMA from SMA, add to list
-                            else if( count == volSett.VolatilityLength + 1 )
+                            else if( count == volatilityLength + 1 )
                             {
                                 currEma = (peakDiff * k) + (SMA * (1 - k));
                                 volEmas.AddFirst( currEma );
@@ -2992,6 +3026,24 @@ namespace CBApp1
             }
         }
 
+        private int[] GenerateRange(int start, int end, int spaceing)
+        {
+            try
+            {
+                List<int> range = new List<int>();
+                for( int i = start; i <= end; i+=spaceing )
+                {
+                    range.Add( i );
+                }
+                return range.ToArray();
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.Message );
+                Console.WriteLine( e.StackTrace );
+                return null;
+            }
+        }
         public double CalculateProfit(string product, double buyP, double sellP, double size)
         {
             
@@ -3098,7 +3150,9 @@ namespace CBApp1
             }
         }
 
-        bool analysisRunning;
+        private bool analysisRunning;
+        private int[] fiveMinEmaRange;
+        private int[] hourEmaRange;
 
         private SynchronizedConsoleWriter writer;
         private readonly AnalyserConfiguration config;
@@ -3134,7 +3188,9 @@ namespace CBApp1
                                       int   fiveMinSingleEmaLength,
                                       int   hourSingleEmaLength,
                                       int   fiveMinCandleLowerLimit,
-                                      int   hourCandleLowerLimit
+                                      int   hourCandleLowerLimit,
+                                      int[] fiveMinEmaRange,
+                                      int[] hourEmaRange
                                       )
         {
             FiveMinDoubleEmaLengths = fiveMinDoubleEmaLengths;
@@ -3143,6 +3199,8 @@ namespace CBApp1
             HourSingleEmaLength = hourSingleEmaLength;
             FiveMinCandleLowerLimit = fiveMinCandleLowerLimit;
             HourCandleLowerLimit = hourCandleLowerLimit;
+            FiveMinEmaRange = fiveMinEmaRange;
+            HourEmaRange = hourEmaRange;
         }
 
         public int[] FiveMinDoubleEmaLengths { get; }
@@ -3151,5 +3209,7 @@ namespace CBApp1
         public int HourSingleEmaLength { get; }
         public int FiveMinCandleLowerLimit { get; }
         public int HourCandleLowerLimit { get; }
+        public int[] FiveMinEmaRange { get; }
+        public int[] HourEmaRange { get; }
     }
 }
