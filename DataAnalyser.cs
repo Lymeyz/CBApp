@@ -408,7 +408,8 @@ namespace CBApp1
                                       ref fiveMinEmaSlopes,
                                       ref calculatedFiveMinEmas,
                                       config.FiveMinDoubleEmaLengths[0],
-                                      config.FiveMinDoubleEmaLengths[1] );
+                                      config.FiveMinDoubleEmaLengths[1],
+                                      config.FiveMinSingleEmaLength);
 
                     if( e.updatedLong )
                     {
@@ -632,66 +633,66 @@ namespace CBApp1
                 // analyse ema/lastEma for timing
 
 
-                // test double ema analysis
-                DoubleEmaAnalysisResult fiveMinDoubleEmaResult;
-                DoubleEmaAnalysisSettings fiveMinDoubleEmaSetting;
-                foreach( var pair in fiveMinEmas.Where( p => p.Value != null ) )
-                {
-                    string product = pair.Key;
-                    if( currentFiveMinCandles.ContainsKey( product ) )
-                    {
-                        Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
+                //test double ema analysis
+                //DoubleEmaAnalysisResult fiveMinDoubleEmaResult;
+                //DoubleEmaAnalysisSettings fiveMinDoubleEmaSetting;
+                //foreach( var pair in fiveMinEmas.Where( p => p.Value != null ) )
+                //{
+                //    string product = pair.Key;
+                //    if( currentFiveMinCandles.ContainsKey( product ) )
+                //    {
+                //        Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
 
-                        CalculateNewestEma( product, ref currentFiveMinEmas, currentFiveMinCandles, fiveMinEmas );
+                //        CalculateNewestEma( product, ref currentFiveMinEmas, currentFiveMinCandles, fiveMinEmas );
 
-                        fiveMinDoubleEmaSetting = new DoubleEmaAnalysisSettings( product,
-                                                                                 false,
-                                                                                 0.06,
-                                                                                 0.01,
-                                                                                 0.003,
-                                                                                 0.6,
-                                                                                 0.97,
-                                                                                 true,
-                                                                                 true,
-                                                                                 config.FiveMinDoubleEmaLengths,
-                                                                                 ref currentFiveMinCandles,
-                                                                                 ref currentFiveMinEmas,
-                                                                                 ref fiveMinEmas );
+                //        fiveMinDoubleEmaSetting = new DoubleEmaAnalysisSettings( product,
+                //                                                                 false,
+                //                                                                 0.06,
+                //                                                                 0.01,
+                //                                                                 0.004,
+                //                                                                 0.6,
+                //                                                                 0.97,
+                //                                                                 true,
+                //                                                                 true,
+                //                                                                 config.FiveMinDoubleEmaLengths,
+                //                                                                 ref currentFiveMinCandles,
+                //                                                                 ref currentFiveMinEmas,
+                //                                                                 ref fiveMinEmas );
 
-                        if( doubleEmaResults[ "fiveMin" ].ContainsKey( product ) )
-                        {
-                            fiveMinDoubleEmaResult = doubleEmaResults[ "fiveMin" ][ product ];
-                        }
-                        else
-                        {
-                            fiveMinDoubleEmaResult = null;
-                        }
+                //        if( doubleEmaResults[ "fiveMin" ].ContainsKey( product ) )
+                //        {
+                //            fiveMinDoubleEmaResult = doubleEmaResults[ "fiveMin" ][ product ];
+                //        }
+                //        else
+                //        {
+                //            fiveMinDoubleEmaResult = null;
+                //        }
 
-                        fiveMinDoubleEmaResult = DoubleEmaAnalyseProduct( fiveMinDoubleEmaSetting, fiveMinDoubleEmaResult );
+                //        fiveMinDoubleEmaResult = DoubleEmaAnalyseProduct( fiveMinDoubleEmaSetting, fiveMinDoubleEmaResult );
 
-                        if( fiveMinDoubleEmaResult != null )
-                        {
-                            doubleEmaResults[ "fiveMin" ][ product ] = fiveMinDoubleEmaResult;
-                        }
-                    }
+                //        if( fiveMinDoubleEmaResult != null )
+                //        {
+                //            doubleEmaResults[ "fiveMin" ][ product ] = fiveMinDoubleEmaResult;
+                //        }
+                //    }
 
-                    if( product == "BTC-EUR" )
-                    {
-                        if( doubleEmaResults[ "fiveMin" ][ product ] != null )
-                        {
-                            VolatilityAnalysisSettings volSett = new VolatilityAnalysisSettings( product,
-                                                                                                 5,
-                                                                                                 false,
-                                                                                                 config.FiveMinDoubleEmaLengths,
-                                                                                                 currentFiveMinCandles,
-                                                                                                 ref fiveMinCandles,
-                                                                                                 fiveMinEmas,
-                                                                                                 null,
-                                                                                                 null );
-                            VolatilityAnalysisResult volRes = VolatilityAnalysis( volSett );
-                        }
-                    }
-                }
+                //    if( product == "BTC-EUR" )
+                //    {
+                //        if( doubleEmaResults[ "fiveMin" ][ product ] != null )
+                //        {
+                //            VolatilityAnalysisSettings volSett = new VolatilityAnalysisSettings( product,
+                //                                                                                 5,
+                //                                                                                 false,
+                //                                                                                 config.FiveMinDoubleEmaLengths,
+                //                                                                                 currentFiveMinCandles,
+                //                                                                                 ref fiveMinCandles,
+                //                                                                                 fiveMinEmas,
+                //                                                                                 null,
+                //                                                                                 null );
+                //            VolatilityAnalysisResult volRes = VolatilityAnalysis( volSett );
+                //        }
+                //    }
+                //}
 
                 //// Test double ema slope analysis
                 //foreach( var pair in fiveMinEmaSlopes.Where( p => p.Value != null ) )
@@ -728,65 +729,123 @@ namespace CBApp1
                 //}
 
                 // test single ema analysis
-                SingleEmaAnalysisSettings hourSingleEmaSettings;
-                SingleEmaAnalysisResult hourSingleEmaResult;
-                VolatilityAnalysisSettings hourVolSettings;
-                VolatilityAnalysisResult hourVolResult;
+                //SingleEmaAnalysisSettings hourSingleEmaSettings;
+                //SingleEmaAnalysisResult hourSingleEmaResult;
+                //VolatilityAnalysisSettings hourVolSettings;
+                //VolatilityAnalysisResult hourVolResult;
 
-                foreach( var pair in hourEmas.Where( p => p.Value != null ) )
+                //foreach( var pair in hourEmas.Where( p => p.Value != null ) )
+                //{
+                //    string product = pair.Key;
+                //    if( currentHourCandles.ContainsKey( product ) && (product == "BTC-EUR" || product == "ETH-EUR"))
+                //    {
+                //        hourSingleEmaSettings = new SingleEmaAnalysisSettings( product,
+                //                                                               0.0024,
+                //                                                               0.0014,
+                //                                                               0.009,
+                //                                                               0.009,
+                //                                                               0.0012,
+                //                                                               0.008,
+                //                                                               false,
+                //                                                               true,
+                //                                                               0.004,
+                //                                                               0.006,
+                //                                                               0.0007,
+                //                                                               -0.15,
+                //                                                               true,
+                //                                                               false,
+                //                                                               0.004,
+                //                                                               0.004,
+                //                                                               true,
+                //                                                               true,
+                //                                                               true,
+                //                                                               0.4,
+                //                                                               config.HourSingleEmaLength,
+                //                                                               ref currentHourCandles,
+                //                                                               ref hourEmas,
+                //                                                               ref hourEmaSlopes );
+
+                //        hourSingleEmaResult = SingleEmaAnalyseProduct( hourSingleEmaSettings, null );
+
+                //        if( hourSingleEmaResult != null )
+                //        {
+                //            Ema latestEma;
+                //            hourEmas[ product ][ 45 ].TryPeek( out latestEma );
+                //            hourVolSettings = 
+                //                new VolatilityAnalysisSettings( product,
+                //                                               5,
+                //                                               true,
+                //                                               new int[] { 45 },
+                //                                               hourSingleEmaSettings.CurrentCandles,
+                //                                               ref hourCandles,
+                //                                               null,
+                //                                               hourEmaSlopes,
+                //                                               latestEma
+                //                                               );
+
+                //            hourVolResult = VolatilityAnalysis( hourVolSettings );
+                //        }
+                //    }
+                //}
+
+                // test single ema analysis on fiveMins
+                SingleEmaAnalysisSettings fiveMinSingleSettings;
+                SingleEmaAnalysisResult fiveMinSingleResult;
+                VolatilityAnalysisSettings fiveMinVolSettings;
+                VolatilityAnalysisResult fiveMinVolResult;
+
+                foreach( var pair in fiveMinEmas.Where(p => p.Value != null) )
                 {
                     string product = pair.Key;
-                    if( currentHourCandles.ContainsKey( product ) && (product == "BTC-EUR" || product == "ETH-EUR"))
+                    if( currentFiveMinCandles.ContainsKey(product) )
                     {
-                        hourSingleEmaSettings = new SingleEmaAnalysisSettings( product,
-                                                                               0.0024,
-                                                                               0.0014,
-                                                                               0.009,
-                                                                               0.009,
-                                                                               0.0012,
-                                                                               0.008,
-                                                                               false,
-                                                                               true,
-                                                                               0.004,
-                                                                               0.006,
-                                                                               0.0009,
-                                                                               -0.3,
-                                                                               false,
-                                                                               false,
-                                                                               0.004,
-                                                                               0.004,
-                                                                               true,
-                                                                               true,
-                                                                               true,
-                                                                               0.4,
-                                                                               config.HourSingleEmaLength,
-                                                                               ref currentHourCandles,
-                                                                               ref hourEmas,
-                                                                               ref hourEmaSlopes );
+                        fiveMinSingleSettings = new SingleEmaAnalysisSettings( product,
+                                                                              0.0024,
+                                                                              0.0014,
+                                                                              0.009,
+                                                                              0.009,
+                                                                              0.0012,
+                                                                              0.008,
+                                                                              false,
+                                                                              true,
+                                                                              0.004,
+                                                                              0.006,
+                                                                              0.0009,
+                                                                              -0.3,
+                                                                              false,
+                                                                              false,
+                                                                              0.004,
+                                                                              0.004,
+                                                                              true,
+                                                                              true,
+                                                                              true,
+                                                                              0.4,
+                                                                              config.FiveMinSingleEmaLength,
+                                                                              ref currentFiveMinCandles,
+                                                                              ref fiveMinEmas,
+                                                                              ref fiveMinEmaSlopes );
+                        fiveMinSingleResult = SingleEmaAnalyseProduct( fiveMinSingleSettings, null );
 
-                        hourSingleEmaResult = SingleEmaAnalyseProduct( hourSingleEmaSettings, null );
-
-                        if( hourSingleEmaResult != null )
+                        if( fiveMinSingleResult != null )
                         {
                             Ema latestEma;
-                            hourEmas[ product ][ 45 ].TryPeek( out latestEma );
-                            hourVolSettings = 
+                            fiveMinEmas[ product ][ config.FiveMinSingleEmaLength ].TryPeek( out latestEma );
+                            fiveMinVolSettings =
                                 new VolatilityAnalysisSettings( product,
-                                                               5,
-                                                               true,
-                                                               new int[] { 45 },
-                                                               hourSingleEmaSettings.CurrentCandles,
-                                                               ref hourCandles,
-                                                               null,
-                                                               hourEmaSlopes,
-                                                               latestEma
-                                                               );
-
-                            hourVolResult = VolatilityAnalysis( hourVolSettings );
+                                                                5,
+                                                                true,
+                                                                new int[] { config.FiveMinSingleEmaLength },
+                                                                fiveMinSingleSettings.CurrentCandles,
+                                                                ref fiveMinCandles,
+                                                                null,
+                                                                fiveMinEmaSlopes,
+                                                                latestEma );
+                            fiveMinVolResult = VolatilityAnalysis( fiveMinVolSettings );
                         }
                     }
-                }
 
+
+                }
             }
             catch( Exception e )
             {
@@ -1196,7 +1255,7 @@ namespace CBApp1
                                 }
                             }
                             // simple slope
-                            else if( !sSett.BS2Override )
+                            else if( !sSett.OnlyBS1 )
                             {
                                 // simple slope and peak return
                                 if( sSett.BPeakWindow != -1 && ( newestEma.Price < ( result.StartPrice * ( sSett.BPeakRP + sSett.BPeakWindow) ) ) )
@@ -1246,7 +1305,7 @@ namespace CBApp1
                                 }
                             }
                             // simple slope
-                            else if( sSett.OnlyBS1 )
+                            else if( sSett.OnlySS1 )
                             {
                                 // peak return
                                 if( sSett.SPeakRP != -1 && 
@@ -2220,7 +2279,7 @@ namespace CBApp1
                                     result.Price = currentFiveMinCandles[ product ].Avg;
                                     // Delete perchance
                                     result.Complete = true;
-                                    writer.Write( $"Buy {product} at {result.Price} at {DateTime.UtcNow}" );
+                                    //writer.Write( $"Buy {product} at {result.Price} at {DateTime.UtcNow}" );
                                 }
                             }
                             else
@@ -2239,7 +2298,7 @@ namespace CBApp1
 
                                     // Delete perchance
                                     result.Complete = true;
-                                    writer.Write( $"Sell {product} at {result.Price} at {DateTime.UtcNow}" );
+                                    //writer.Write( $"Sell {product} at {result.Price} at {DateTime.UtcNow}" );
                                 }
                             }
                         }
