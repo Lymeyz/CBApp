@@ -12,6 +12,7 @@ namespace CBApp1
         public VolatilityAnalysisSettings( string product,
                                            bool slopeBased,
                                            int length,
+                                           double ignoreFactor,
                                            ConcurrentDictionary<string, Candle> currentCandles,
                                            ref Dictionary<string, Queue<Candle>> candles,
                                            ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emas,
@@ -21,7 +22,7 @@ namespace CBApp1
             Product = product;
             SlopeBased = slopeBased;
             Length = length;
-            double ignoreLength = 1 + (0.13 * length);
+            double ignoreLength = 1 + (ignoreFactor * length);
             IgnoreAfterPeak = Convert.ToInt32(Math.Round(ignoreLength, 0));
             CurrentCandles = currentCandles;
             Candles = new LimitedDateTimeList<Candle>( candles[ product ], candles[ product ].Count );

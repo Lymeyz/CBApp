@@ -51,7 +51,9 @@ namespace CBApp1
                                                                                   200,
                                                                                   72,
                                                                                   new int[] { 8, 76 },
-                                                                                  new int[] { 10, 40 }
+                                                                                  new int[] { 8, 40 },
+                                                                                  4,
+                                                                                  4
                                                                                   );
 
                 DataAnalyser analyser = new DataAnalyser( ref dataHandler, ref aTimer, ref writer, analyserConfig);

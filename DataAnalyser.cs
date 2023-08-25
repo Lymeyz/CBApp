@@ -66,8 +66,8 @@ namespace CBApp1
                 results[ product ] = null;
             }
 
-            fiveMinEmaRange = GenerateRange( config.FiveMinEmaRange[ 0 ], config.FiveMinEmaRange[ 1 ], 2 );
-            hourEmaRange = GenerateRange( config.HourEmaRange[ 0 ], config.HourEmaRange[ 1 ], 2 );
+            fiveMinEmaRange = GenerateRange( config.FiveMinEmaRange[ 0 ], config.FiveMinEmaRange[ 1 ], 4 );
+            hourEmaRange = GenerateRange( config.HourEmaRange[ 0 ], config.HourEmaRange[ 1 ], 4 );
 
             analysisRunning = false;
         }
@@ -414,7 +414,7 @@ namespace CBApp1
                     //                  config.FiveMinSingleEmaLength);
 
                     List<int> fiveMinEmaLengths = new List<int>();
-                    for( int i = config.FiveMinEmaRange[0]; i <= config.FiveMinEmaRange[1]; i+=2 )
+                    for( int i = config.FiveMinEmaRange[0]; i <= config.FiveMinEmaRange[1]; i+=config.FiveMinEmaSpread )
                     {
                         fiveMinEmaLengths.Add( i );
                     }
@@ -441,7 +441,7 @@ namespace CBApp1
                         }
 
                         List<int> hourEmaLengths = new List<int>();
-                        for( int i = config.HourEmaRange[ 0 ]; i <= config.HourEmaRange[ 1 ]; i += 2 )
+                        for( int i = config.HourEmaRange[ 0 ]; i <= config.HourEmaRange[ 1 ]; i += config.HourEmaSpread )
                         {
                             hourEmaLengths.Add( i );
                         }
@@ -869,20 +869,24 @@ namespace CBApp1
 
                     foreach( int length in fiveMinEmaRange )
                     {
-                        Ema latestEma;
-                        fiveMinEmas[ product ][ config.FiveMinSingleEmaLength ].TryPeek( out latestEma );
-                        fiveMinVolSettings =
-                            new VolatilityAnalysisSettings( product,
-                                                            true,
-                                                            length,
-                                                            currentFiveMinCandles,
-                                                            ref fiveMinCandles,
-                                                            null,
-                                                            fiveMinEmaSlopes,
-                                                            latestEma );
+                        if( fiveMinEmas[ product ][ length ] != null )
+                        {
+                            Ema latestEma;
+                            fiveMinEmas[ product ][ length ].TryPeek( out latestEma );
+                            fiveMinVolSettings =
+                                new VolatilityAnalysisSettings( product,
+                                                                true,
+                                                                length,
+                                                                0.13,
+                                                                currentFiveMinCandles,
+                                                                ref fiveMinCandles,
+                                                                null,
+                                                                fiveMinEmaSlopes,
+                                                                latestEma );
 
-                        fiveMinVolResult = VolatilityAnalysis( fiveMinVolSettings );
-                        fiveMinVolResults.Add( fiveMinVolResult );
+                            fiveMinVolResult = VolatilityAnalysis( fiveMinVolSettings );
+                            fiveMinVolResults.Add( fiveMinVolResult );
+                        }
                     }
 
                     foreach( var result in fiveMinVolResults )
@@ -3234,7 +3238,9 @@ namespace CBApp1
                                       int   fiveMinCandleLowerLimit,
                                       int   hourCandleLowerLimit,
                                       int[] fiveMinEmaRange,
-                                      int[] hourEmaRange
+                                      int[] hourEmaRange,
+                                      int fiveMinEmaSpread,
+                                      int hourEmaSpread
                                       )
         {
             FiveMinDoubleEmaLengths = fiveMinDoubleEmaLengths;
@@ -3245,6 +3251,8 @@ namespace CBApp1
             HourCandleLowerLimit = hourCandleLowerLimit;
             FiveMinEmaRange = fiveMinEmaRange;
             HourEmaRange = hourEmaRange;
+            FiveMinEmaSpread = fiveMinEmaSpread;
+            HourEmaSpread = hourEmaSpread;
         }
 
         public int[] FiveMinDoubleEmaLengths { get; }
@@ -3255,5 +3263,7 @@ namespace CBApp1
         public int HourCandleLowerLimit { get; }
         public int[] FiveMinEmaRange { get; }
         public int[] HourEmaRange { get; }
+        public int FiveMinEmaSpread { get; }
+        public int HourEmaSpread { get; }
     }
 }
