@@ -887,16 +887,20 @@ namespace CBApp1
 
                     foreach( var result in fiveMinVolResults )
                     {
-                        if( result.CurrentEmaVolatility > fiveMinHighestVol )
+                        if( result != null )
                         {
-                            fiveMinHighestVol = result.CurrentEmaVolatility;
-                            fiveMinBestLength = result.EmaLength;
-                        }
-                        if( result.EmaLength != fiveMinBestLength )
-                        {
-                            if( result.CurrentEmaVolatility > fiveMinSecHighestVol )
+                            if( result.CurrentEmaVolatility > fiveMinHighestVol )
                             {
-                                fiveMinSecondBest = result.EmaLength;
+                                fiveMinHighestVol = result.CurrentEmaVolatility;
+                                fiveMinBestLength = result.EmaLength;
+                            }
+                            if( result.EmaLength != fiveMinBestLength )
+                            {
+                                if( result.CurrentEmaVolatility > fiveMinSecHighestVol )
+                                {
+                                    fiveMinSecondBest = result.EmaLength;
+                                    fiveMinSecHighestVol = result.CurrentEmaVolatility;
+                                }
                             }
                         }
                     }
@@ -1652,7 +1656,7 @@ namespace CBApp1
                         {
                             if( trend == false )
                             {
-                                if( currentEmaSlope >= 0 && !(sinceSwitch < 6 ) )
+                                if( currentEmaSlope >= 0 && (sinceSwitch > volSett.IgnoreAfterPeak ) )
                                 {
                                     trend = true;
                                     sinceSwitch = 0;
@@ -1684,7 +1688,7 @@ namespace CBApp1
                             }
                             else
                             {
-                                if( currentEmaSlope < 0 && !( sinceSwitch < 6) )
+                                if( currentEmaSlope < 0 && ( sinceSwitch > volSett.IgnoreAfterPeak) )
                                 {
 
                                     trend = false;

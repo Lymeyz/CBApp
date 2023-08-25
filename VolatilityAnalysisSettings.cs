@@ -21,7 +21,8 @@ namespace CBApp1
             Product = product;
             SlopeBased = slopeBased;
             Length = length;
-            IgnoreAfterPeak = length / 4;
+            double ignoreLength = 1 + (0.13 * length);
+            IgnoreAfterPeak = Convert.ToInt32(Math.Round(ignoreLength, 0));
             CurrentCandles = currentCandles;
             Candles = new LimitedDateTimeList<Candle>( candles[ product ], candles[ product ].Count );
             if( !slopeBased )
