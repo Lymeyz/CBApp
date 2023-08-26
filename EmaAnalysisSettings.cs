@@ -160,6 +160,7 @@ namespace CBApp1
                                           bool sOffTrigger,
                                           double slopeRateAvgLength,
                                           int emaLength,
+                                          int minSlopeRates,
                                           ref ConcurrentDictionary<string, Candle> currentCandles,
                                           ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emas,
                                           ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes
@@ -187,6 +188,7 @@ namespace CBApp1
             SOffTrigger = sOffTrigger;
             SlopeRateAvgP = slopeRateAvgLength;
             EmaLength = emaLength;
+            MinSlopeRates = minSlopeRates;
             CurrentCandles = currentCandles;
             PrevEmas = new LimitedDateTimeList<Ema>( emas[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
             PrevEmaSlopes = new LimitedDateTimeList<Ema>( emaSlopes[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
@@ -214,7 +216,7 @@ namespace CBApp1
         public bool SOffTrigger { get; }
         public double SlopeRateAvgP { get; }
         public int EmaLength { get; }
-
+        public int MinSlopeRates { get; }
         public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
         public LimitedDateTimeList<Ema> PrevEmas { get; set; }
         public LimitedDateTimeList<Ema> PrevEmaSlopes { get; set; }

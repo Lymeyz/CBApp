@@ -952,6 +952,42 @@ namespace CBApp1
                             }
                         }
                     }
+
+                    SingleEmaAnalysisSettings hourSingleSettings;
+                    SingleEmaAnalysisResult hourSingleResult;
+                    
+
+                    if( currentHourCandles.ContainsKey( product ) && sortedHourResults != null )
+                    {
+                        int bestEma = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ].EmaLength;
+                        hourSingleSettings = new SingleEmaAnalysisSettings( product,
+                                                                              0.0024,
+                                                                              0.0014,
+                                                                              0.009,
+                                                                              0.009,
+                                                                              0.0012,
+                                                                              0.008,
+                                                                              false,
+                                                                              true,
+                                                                              0.004,
+                                                                              0.006,
+                                                                              0.0009,
+                                                                              -0.3,
+                                                                              false,
+                                                                              false,
+                                                                              0.004,
+                                                                              0.004,
+                                                                              true,
+                                                                              true,
+                                                                              true,
+                                                                              0.4,
+                                                                              bestEma,
+                                                                              10,
+                                                                              ref currentHourCandles,
+                                                                              ref hourEmas,
+                                                                              ref hourEmaSlopes );
+                        hourSingleResult = SingleEmaAnalyseProduct( hourSingleSettings, null );
+                    }
                 }
             }
             catch( Exception e )
@@ -1204,6 +1240,7 @@ namespace CBApp1
 
                 DateTime tStartTime = DateTime.MinValue;
                 double peakEmaPrice = -1;
+                bool foundPeak = false;
 
                 if( result == null )
                 {
@@ -1214,7 +1251,15 @@ namespace CBApp1
                         // go backwards, add rates of change, increase count, find zero, calculate average
                         if( result == null )
                         {
-                            result = new SingleEmaAnalysisResult( sSett.SlopeRateAvgP );
+                            if( ( sSett.EmaLength <= sSett.MinSlopeRates && result.SlopeRates.Count < sSett.MinSlopeRates) )
+                            {
+                                result = new SingleEmaAnalysisResult( sSett.MinSlopeRates );
+                            }
+                            else
+                            {
+                                result = new SingleEmaAnalysisResult( Convert.ToInt32( Math.Round( sSett.EmaLength * sSett.SlopeRateAvgP, 0 ) ) );
+                            }
+                            
 
                             if( currEmaSlope >= 0 )
                             {
@@ -1230,10 +1275,11 @@ namespace CBApp1
 
                             prevEmaSlope = currEmaSlope;
                             currEmaSlope = sSett.PrevEmaSlopes.GetRemoveNewest();
+
                             prevEma = currEma;
                             currEma = sSett.PrevEmas.GetRemoveNewest();
                         }
-                        else
+                        else if( !foundPeak )
                         {
                             // check if slope passed through zero, otherwise continue
 
@@ -1243,7 +1289,7 @@ namespace CBApp1
                                 {
                                     peakEmaPrice = currEma.Price;
                                     tStartTime = currEmaSlope.Time;
-                                    break;
+                                    foundPeak = true;
                                 }
                             }
                             else
@@ -1252,7 +1298,7 @@ namespace CBApp1
                                 {
                                     peakEmaPrice = currEma.Price;
                                     tStartTime = currEmaSlope.Time;
-                                    break;
+                                    foundPeak = true;
                                 }
                             }
 
@@ -1264,6 +1310,21 @@ namespace CBApp1
 
                             prevEma = currEma;
                             currEma = sSett.PrevEmas.GetRemoveNewest();
+                        }
+                        else if ( result.SlopeRates.Count < result.SlopeRateAverageLength )
+                        {
+                            currSlopeRate = prevEmaSlope - currEmaSlope;
+                            result.SlopeRates.AddLast( currSlopeRate );
+
+                            prevEmaSlope = currEmaSlope;
+                            currEmaSlope = sSett.PrevEmaSlopes.GetRemoveNewest();
+
+                            prevEma = currEma;
+                            currEma = sSett.PrevEmas.GetRemoveNewest();
+                        }
+                        else
+                        {
+                            break;
                         }
                     }
 
