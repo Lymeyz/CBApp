@@ -912,12 +912,46 @@ namespace CBApp1
 
                 VolatilityAnalysisSettings hourVolSettings;
                 VolatilityAnalysisResult hourVolResult;
+                List<VolatilityAnalysisResult> hourVolResults;
+                LinkedList<VolatilityAnalysisResult> sortedHourVolResults;
+                SortedList<double, VolatilityAnalysisResult> sortedHourResults;
+                int hourBestLength = 0;
+                int hourSecondBest = 0;
+                double hourHighestVol = 0;
+                double hourSecHighestVol = 0;
 
                 foreach( var pair in hourEmas.Where(p => p.Value != null) )
                 {
+                    string product = pair.Key;
+                    sortedHourVolResults = new LinkedList<VolatilityAnalysisResult>();
 
+                    sortedHourResults = new SortedList<double, VolatilityAnalysisResult>( new DComp() );
 
-
+                    if( hourCandles.ContainsKey( product ) && currentHourCandles.ContainsKey(product) && currentHourCandles[ product ] != null )
+                    {
+                        foreach( var length in hourEmaRange )
+                        {
+                            if( hourEmas[ product ][ length ] != null )
+                            {
+                                Ema latestEma;
+                                hourEmas[ product ][ length ].TryPeek( out latestEma );
+                                hourVolSettings = new VolatilityAnalysisSettings( product,
+                                                                                  true,
+                                                                                  length,
+                                                                                  0.13,
+                                                                                  currentHourCandles,
+                                                                                  ref hourCandles,
+                                                                                  null,
+                                                                                  hourEmaSlopes,
+                                                                                  latestEma );
+                                hourVolResult = VolatilityAnalysis( hourVolSettings );
+                                if( hourVolResult != null )
+                                {
+                                    sortedHourResults.Add( hourVolResult.CurrentEmaVolatility, hourVolResult );
+                                }
+                            }
+                        }
+                    }
                 }
             }
             catch( Exception e )
@@ -3265,5 +3299,20 @@ namespace CBApp1
         public int[] HourEmaRange { get; }
         public int FiveMinEmaSpread { get; }
         public int HourEmaSpread { get; }
+    }
+
+    public class DComp : IComparer<double>
+    {
+        public int Compare( double x, double y)
+        {
+            if( x.CompareTo(y) != 0 )
+            {
+                return x.CompareTo( y );
+            }
+            else
+            {
+                return 0;
+            }
+        }
     }
 }
