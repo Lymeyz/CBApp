@@ -961,31 +961,33 @@ namespace CBApp1
                     {
                         int bestEma = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ].EmaLength;
                         hourSingleSettings = new SingleEmaAnalysisSettings( product,
-                                                                              0.0024,
-                                                                              0.0014,
-                                                                              0.009,
-                                                                              0.009,
-                                                                              0.0012,
-                                                                              0.008,
-                                                                              false,
-                                                                              true,
-                                                                              0.004,
-                                                                              0.006,
-                                                                              0.0009,
-                                                                              -0.3,
-                                                                              false,
-                                                                              false,
-                                                                              0.004,
-                                                                              0.004,
-                                                                              true,
-                                                                              true,
-                                                                              true,
-                                                                              0.4,
-                                                                              bestEma,
-                                                                              10,
-                                                                              ref currentHourCandles,
-                                                                              ref hourEmas,
-                                                                              ref hourEmaSlopes );
+                                                                            false,
+                                                                            false,
+                                                                            0.00008,
+                                                                            0.0014,
+                                                                            0.009,
+                                                                            0.009,
+                                                                            0.0012,
+                                                                            0.008,
+                                                                            false,
+                                                                            true,
+                                                                            0.004,
+                                                                            0.006,
+                                                                            0.0009,
+                                                                            -0.3,
+                                                                            false,
+                                                                            false,
+                                                                            0.004,
+                                                                            0.004,
+                                                                            true,
+                                                                            true,
+                                                                            true,
+                                                                            0.4,
+                                                                            bestEma,
+                                                                            10,
+                                                                            ref currentHourCandles,
+                                                                            ref hourEmas,
+                                                                            ref hourEmaSlopes );
                         hourSingleResult = SingleEmaAnalyseProduct( hourSingleSettings, null );
                     }
                 }
@@ -1502,11 +1504,13 @@ namespace CBApp1
                     {
                         // simple slope and slope rate or override
                         if( ( sSett.SOffSP != -1 && (newestEmaSlope < 0 ||
-                            newestEmaSlope <= sSett.SOffSP * newestEma ) ) )
+                            newestEmaSlope <= sSett.SOffSP * newestEma ) ) ||
+                            sSett.OnlySOffSPP )
                         {
                             // slope rate
                             if( sSett.SOffSSP != -1 &&
-                                ( result.SlopeRateAverage <= sSett.SOffSSP * newestEmaSlope ) )
+                                ( result.SlopeRateAverage <= sSett.SOffSSP * newestEmaSlope ) &&
+                                !sSett.OnlySOffSP )
                             {
                                 // peak return
                                 if( sSett.SOffPeakRP != -1 &&
@@ -1529,7 +1533,7 @@ namespace CBApp1
                                 }
                             }
                             // simple slope
-                            else if( sSett.OnlySS1 )
+                            else if( sSett.OnlySOffSP )
                             {
                                 // peak return
                                 if( sSett.SOffPeakRP != -1 &&
@@ -1723,7 +1727,16 @@ namespace CBApp1
                     double peak = -1;
                     DateTime peakTime = DateTime.MinValue;
                     DateTime switchTime = DateTime.MinValue;
-                    int count = volSett.EmaSlopes.Count;
+                    int count;
+                    if( volSett.Candles.Count >= volSett.EmaSlopes.Count )
+                    {
+                        count = volSett.EmaSlopes.Count;
+                    }
+                    else
+                    {
+                        count = volSett.Candles.Count;
+                    }
+                    
                     int sinceSwitch = 0;
 
                     for( int i = 0; i < count; i++ )

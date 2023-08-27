@@ -139,6 +139,8 @@ namespace CBApp1
         /// <param name="emas"></param>
         /// <param name="emaSlopes"></param>
         public SingleEmaAnalysisSettings( string product,
+                                          bool onlySOffSP,
+                                          bool onlySOffSPP,
                                           double sOffSP,
                                           double sOffSSP,
                                           double sOffPeakRP,
@@ -167,6 +169,8 @@ namespace CBApp1
                                           )
         {
             Product = product;
+            OnlySOffSP = onlySOffSP;
+            OnlySOffSPP = onlySOffSPP;
             SOffSP = sOffSP;
             SOffSSP = sOffSSP;
             SOffPeakRP = sOffPeakRP;
@@ -190,11 +194,15 @@ namespace CBApp1
             EmaLength = emaLength;
             MinSlopeRates = minSlopeRates;
             CurrentCandles = currentCandles;
+            Emas = emas;
+            EmaSlopes = emaSlopes;
             PrevEmas = new LimitedDateTimeList<Ema>( emas[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
             PrevEmaSlopes = new LimitedDateTimeList<Ema>( emaSlopes[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
         }
 
         public string Product { get; }
+        public bool OnlySOffSP { get; }
+        public bool OnlySOffSPP { get; }
         public double SOffSP { get; }
         public double SOffSSP { get; }
         public double SOffPeakRP { get; }
@@ -218,6 +226,8 @@ namespace CBApp1
         public int EmaLength { get; }
         public int MinSlopeRates { get; }
         public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
+        public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> Emas { get; }
+        public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> EmaSlopes { get; }
         public LimitedDateTimeList<Ema> PrevEmas { get; set; }
         public LimitedDateTimeList<Ema> PrevEmaSlopes { get; set; }
     }
