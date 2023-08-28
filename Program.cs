@@ -47,11 +47,11 @@ namespace CBApp1
                 AnalyserConfiguration analyserConfig = new AnalyserConfiguration( new int[] { 6, 26 },
                                                                                   new int[] { 6, 12 },
                                                                                   46,
-                                                                                  46,
+                                                                                  52,
                                                                                   200,
                                                                                   72,
                                                                                   new int[] { 8, 76 },
-                                                                                  new int[] { 8, 40 },
+                                                                                  new int[] { 8, 52 },
                                                                                   4,
                                                                                   4
                                                                                   );

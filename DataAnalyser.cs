@@ -911,21 +911,59 @@ namespace CBApp1
                 //    }
                 //}
 
+                
+
+
                 VolatilityAnalysisSettings hourVolSettings;
                 VolatilityAnalysisResult hourVolResult;
                 SortedList<double, VolatilityAnalysisResult> sortedHourResults;
+                SingleEmaAnalysisResult hourLongAnalysisResult = null;
+                SingleEmaAnalysisSettings hourLongAnalysisSettings;
 
                 foreach( var pair in hourEmas.Where(p => p.Value != null) )
                 {
                     string product = pair.Key;
-
+                    
                     sortedHourResults = new SortedList<double, VolatilityAnalysisResult>( new DComp() );
 
-                    if( hourCandles.ContainsKey( product ) && currentHourCandles.ContainsKey(product) && currentHourCandles[ product ] != null )
+                    if( hourCandles.ContainsKey( product ) && currentHourCandles.ContainsKey( product ) && currentHourCandles[ product ] != null
+                        && hourEmas[ product ].ContainsKey( hourEmaRange[ hourEmaRange.Length - 1 ] ) )
                     {
+                        hourLongAnalysisSettings = new SingleEmaAnalysisSettings( product,
+                                                                                  false,
+                                                                                  false,
+                                                                                  -0.00068,
+                                                                                  -0.000021,
+                                                                                  0.009,
+                                                                                  0.009,
+                                                                                  -0.00047,
+                                                                                  0.0000021,
+                                                                                  false,
+                                                                                  false,
+                                                                                  0.004,
+                                                                                  0.0006,
+                                                                                  0.0001,
+                                                                                  -0.000034,
+                                                                                  false,
+                                                                                  false,
+                                                                                  0.004,
+                                                                                  0.004,
+                                                                                  true,
+                                                                                  true,
+                                                                                  true,
+                                                                                  0.4,
+                                                                                  hourEmaRange[ hourEmaRange.Length - 1 ],
+                                                                                  20,
+                                                                                  ref currentHourCandles,
+                                                                                  ref hourEmas,
+                                                                                  ref hourEmaSlopes );
+
+                        hourLongAnalysisResult = SingleEmaAnalyseProduct( hourLongAnalysisSettings, null );
+
                         foreach( var length in hourEmaRange )
                         {
-                            if( hourEmas[ product ][ length ] != null )
+                            if( hourEmas[ product ][ length ] != null &&
+                                !( length > 45 ) )
                             {
                                 Ema latestEma;
                                 hourEmas[ product ][ length ].TryPeek( out latestEma );
@@ -948,20 +986,23 @@ namespace CBApp1
                     }
 
                     SingleEmaAnalysisSettings hourSingleSettings;
-                    SingleEmaAnalysisResult hourSingleResult;
-                    
+                    SingleEmaAnalysisResult hourSingleResult = null;
+                    if( hourLongAnalysisResult.BuyOk || hourLongAnalysisResult.SellOk )
+                    {
+
+                    }
                     if( currentHourCandles.ContainsKey( product ) && sortedHourResults != null )
                     {
                         int bestEma = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ].EmaLength;
                         hourSingleSettings = new SingleEmaAnalysisSettings( product,
                                                                             false,
                                                                             false,
-                                                                            -0.0001,
+                                                                            -0.00044,
                                                                             0.0014,
                                                                             0.009,
                                                                             0.009,
                                                                             -0.00044, // -0.000031
-                                                                            0.132,
+                                                                            0.0000182,
                                                                             false,
                                                                             true,
                                                                             0.004,
@@ -974,7 +1015,7 @@ namespace CBApp1
                                                                             0.004,
                                                                             true,
                                                                             true,
-                                                                            true,
+                                                                            false,
                                                                             0.4,
                                                                             bestEma,
                                                                             20,
@@ -1448,7 +1489,7 @@ namespace CBApp1
                             // slope rate 
                             double slopeAbs = Math.Abs( newestEmaSlope.Price );
                             if( sSett.BS2 != -1 &&
-                                ( result.SlopeRateAverage > 0 && result.SlopeRateAverage > sSett.BS2 * slopeAbs ) &&
+                                ( result.SlopeRateAverage > sSett.BS2 * newestEma.Price ) &&
                                 !sSett.OnlyBS1 )
                             {
                                 // slope rate and peak return
@@ -1555,7 +1596,7 @@ namespace CBApp1
                         {
                             // slope rate
                             if( sSett.SOffSSP != -1 &&
-                                ( result.SlopeRateAverage <= sSett.SOffSSP * newestEmaSlope ) &&
+                                ( result.SlopeRateAverage <= sSett.SOffSSP * newestEma ) &&
                                 !sSett.OnlySOffSP )
                             {
                                 // peak return
