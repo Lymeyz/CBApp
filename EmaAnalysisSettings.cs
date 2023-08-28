@@ -231,4 +231,27 @@ namespace CBApp1
         public LimitedDateTimeList<Ema> PrevEmas { get; set; }
         public LimitedDateTimeList<Ema> PrevEmaSlopes { get; set; }
     }
+
+    public class SBuyingBehaviour
+    {
+        public SBuyingBehaviour()
+        {
+
+        }
+    }
+    public class SSellingBehaviour
+    {
+        public SSellingBehaviour()
+        {
+
+        }
+    }
+
+    public class SSellOffBehaviour
+    {
+        public SSellOffBehaviour()
+        {
+
+        }
+    }
 }

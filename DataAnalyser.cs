@@ -652,7 +652,7 @@ namespace CBApp1
                 //    {
                 //        Dictionary<int, Ema> currentFiveMinEmas = new Dictionary<int, Ema>();
 
-                //        CalculateNewestEma( product, ref currentFiveMinEmas, currentFiveMinCandles, fiveMinEmas );
+                //        CalculateNewestEmaHl2( product, ref currentFiveMinEmas, currentFiveMinCandles, fiveMinEmas );
 
                 //        fiveMinDoubleEmaSetting = new DoubleEmaAnalysisSettings( product,
                 //                                                                 false,
@@ -956,12 +956,12 @@ namespace CBApp1
                         hourSingleSettings = new SingleEmaAnalysisSettings( product,
                                                                             false,
                                                                             false,
-                                                                            0.00008,
+                                                                            -0.0001,
                                                                             0.0014,
                                                                             0.009,
                                                                             0.009,
-                                                                            0.0012,
-                                                                            0.008,
+                                                                            -0.00044, // -0.000031
+                                                                            0.132,
                                                                             false,
                                                                             true,
                                                                             0.004,
@@ -981,6 +981,7 @@ namespace CBApp1
                                                                             ref currentHourCandles,
                                                                             ref hourEmas,
                                                                             ref hourEmaSlopes );
+
                         hourSingleResult = SingleEmaAnalyseProduct( hourSingleSettings, null );
                     }
                 }
@@ -1088,7 +1089,7 @@ namespace CBApp1
             }
         }
 
-        private Ema CalculateNewestEma( Candle currentCandle,
+        private Ema CalculateNewestEmaHl2( Candle currentCandle,
                                         Ema prevEma )
         {
             try
@@ -1100,6 +1101,31 @@ namespace CBApp1
                 double emaPrice;
 
                 emaPrice = (currentCandle.Avg * k) + (newestEma.Price * (1 - k));
+
+                newestEma = new Ema( length, emaPrice, currentCandle.Time );
+
+                return newestEma;
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+                return null;
+            }
+        }
+
+        private Ema CalculateNewestEmaHlc2( Candle currentCandle,
+                                        Ema prevEma )
+        {
+            try
+            {
+                Ema newestEma = prevEma;
+                int length = newestEma.Length;
+
+                double k = 2.0 / (length + 1);
+                double emaPrice;
+
+                emaPrice = (((currentCandle.Avg + currentCandle.Close)/2) * k) + (newestEma.Price * (1 - k));
 
                 newestEma = new Ema( length, emaPrice, currentCandle.Time );
 
@@ -1148,7 +1174,7 @@ namespace CBApp1
             }
         }
 
-        private Ema CalculateNewestEmaSlope( Candle currentCandle,
+        private Ema CalculateNewestEmaSlopeHl2( Candle currentCandle,
                                              Ema lastEma )
         {
             try
@@ -1160,6 +1186,33 @@ namespace CBApp1
                 double k = 2.0 / (length + 1);
 
                 emaPrice = ( currentCandle.Avg * k) + (lastEma.Price * (1 - k));
+
+                newEmaSlope = new Ema( length,
+                                       emaPrice - lastEma.Price,
+                                       currentCandle.Time );
+
+                return newEmaSlope;
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.StackTrace );
+                Console.WriteLine( e.Message );
+                return null;
+            }
+        }
+
+        private Ema CalculateNewestEmaSlopeHlc2( Candle currentCandle,
+                                             Ema lastEma )
+        {
+            try
+            {
+                Ema newEmaSlope;
+                int length = lastEma.Length;
+                double emaPrice;
+
+                double k = 2.0 / (length + 1);
+
+                emaPrice = ( ( (currentCandle.Avg + currentCandle.Close ) / 2) * k) + ( lastEma.Price * ( 1 - k ) );
 
                 newEmaSlope = new Ema( length,
                                        emaPrice - lastEma.Price,
@@ -1223,8 +1276,8 @@ namespace CBApp1
                     result = inResult;
                 }
 
-                Ema newestEma = CalculateNewestEma( sSett.CurrentCandles[product], sSett.PrevEmas.Newest );
-                Ema newestEmaSlope = CalculateNewestEmaSlope( sSett.CurrentCandles[product], sSett.PrevEmas.Newest );
+                Ema newestEma = CalculateNewestEmaHlc2( sSett.CurrentCandles[product], sSett.PrevEmas.Newest );
+                Ema newestEmaSlope = CalculateNewestEmaSlopeHlc2( sSett.CurrentCandles[product], sSett.PrevEmas.Newest );
                 Ema currEmaSlope = newestEmaSlope;
                 Ema prevEmaSlope = null;
                 Ema currEma = newestEma;
@@ -1603,8 +1656,8 @@ namespace CBApp1
                 //    currentCandle = newestCandle;
 
                 //    // calculate current lastEma
-                //    newestShortEma = CalculateNewestEma( newestCandle, volSett.Emas[ shortLength ].Newest );
-                //    newestLongEma = CalculateNewestEma( newestCandle, volSett.Emas[ longLength ].Newest );
+                //    newestShortEma = CalculateNewestEmaHl2( newestCandle, volSett.Emas[ shortLength ].Newest );
+                //    newestLongEma = CalculateNewestEmaHl2( newestCandle, volSett.Emas[ longLength ].Newest );
 
                 //    currentShortEma = newestShortEma;
                 //    currentLongEma = newestLongEma;
