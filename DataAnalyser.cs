@@ -914,10 +914,6 @@ namespace CBApp1
                 VolatilityAnalysisSettings hourVolSettings;
                 VolatilityAnalysisResult hourVolResult;
                 SortedList<double, VolatilityAnalysisResult> sortedHourResults;
-                int hourBestLength = 0;
-                int hourSecondBest = 0;
-                double hourHighestVol = 0;
-                double hourSecHighestVol = 0;
 
                 foreach( var pair in hourEmas.Where(p => p.Value != null) )
                 {
@@ -971,7 +967,7 @@ namespace CBApp1
                                                                             0.004,
                                                                             0.0006,
                                                                             0.0001,
-                                                                            -0.000049,
+                                                                            -0.000034,
                                                                             false,
                                                                             false,
                                                                             0.004,
