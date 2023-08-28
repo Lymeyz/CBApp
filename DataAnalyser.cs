@@ -854,66 +854,65 @@ namespace CBApp1
 
 
                 //}
-                VolatilityAnalysisSettings fiveMinVolSettings;
-                VolatilityAnalysisResult fiveMinVolResult;
-                List<VolatilityAnalysisResult> fiveMinVolResults;
-                int fiveMinBestLength = 0;
-                int fiveMinSecondBest = 0;
-                double fiveMinHighestVol = 0;
-                double fiveMinSecHighestVol = 0;
-                // Test many emas vol analysis
-                foreach( var pair in fiveMinEmas.Where(p => p.Value != null ))
-                {
-                    string product = pair.Key;
-                    fiveMinVolResults = new List<VolatilityAnalysisResult>();
+                //VolatilityAnalysisSettings fiveMinVolSettings;
+                //VolatilityAnalysisResult fiveMinVolResult;
+                //List<VolatilityAnalysisResult> fiveMinVolResults;
+                //int fiveMinBestLength = 0;
+                //int fiveMinSecondBest = 0;
+                //double fiveMinHighestVol = 0;
+                //double fiveMinSecHighestVol = 0;
 
-                    foreach( int length in fiveMinEmaRange )
-                    {
-                        if( fiveMinEmas[ product ][ length ] != null )
-                        {
-                            Ema latestEma;
-                            fiveMinEmas[ product ][ length ].TryPeek( out latestEma );
-                            fiveMinVolSettings =
-                                new VolatilityAnalysisSettings( product,
-                                                                true,
-                                                                length,
-                                                                0.13,
-                                                                currentFiveMinCandles,
-                                                                ref fiveMinCandles,
-                                                                null,
-                                                                fiveMinEmaSlopes,
-                                                                latestEma );
+                //// Test many emas vol analysis
+                //foreach( var pair in fiveMinEmas.Where(p => p.Value != null ))
+                //{
+                //    string product = pair.Key;
+                //    fiveMinVolResults = new List<VolatilityAnalysisResult>();
 
-                            fiveMinVolResult = VolatilityAnalysis( fiveMinVolSettings );
-                            fiveMinVolResults.Add( fiveMinVolResult );
-                        }
-                    }
+                //    foreach( int length in fiveMinEmaRange )
+                //    {
+                //        if( fiveMinEmas[ product ][ length ] != null )
+                //        {
+                //            Ema latestEma;
+                //            fiveMinEmas[ product ][ length ].TryPeek( out latestEma );
+                //            fiveMinVolSettings =
+                //                new VolatilityAnalysisSettings( product,
+                //                                                true,
+                //                                                length,
+                //                                                0.13,
+                //                                                currentFiveMinCandles,
+                //                                                ref fiveMinCandles,
+                //                                                null,
+                //                                                fiveMinEmaSlopes,
+                //                                                latestEma );
 
-                    foreach( var result in fiveMinVolResults )
-                    {
-                        if( result != null )
-                        {
-                            if( result.CurrentEmaVolatility > fiveMinHighestVol )
-                            {
-                                fiveMinHighestVol = result.CurrentEmaVolatility;
-                                fiveMinBestLength = result.EmaLength;
-                            }
-                            if( result.EmaLength != fiveMinBestLength )
-                            {
-                                if( result.CurrentEmaVolatility > fiveMinSecHighestVol )
-                                {
-                                    fiveMinSecondBest = result.EmaLength;
-                                    fiveMinSecHighestVol = result.CurrentEmaVolatility;
-                                }
-                            }
-                        }
-                    }
-                }
+                //            fiveMinVolResult = VolatilityAnalysis( fiveMinVolSettings );
+                //            fiveMinVolResults.Add( fiveMinVolResult );
+                //        }
+                //    }
+
+                //    foreach( var result in fiveMinVolResults )
+                //    {
+                //        if( result != null )
+                //        {
+                //            if( result.CurrentEmaVolatility > fiveMinHighestVol )
+                //            {
+                //                fiveMinHighestVol = result.CurrentEmaVolatility;
+                //                fiveMinBestLength = result.EmaLength;
+                //            }
+                //            if( result.EmaLength != fiveMinBestLength )
+                //            {
+                //                if( result.CurrentEmaVolatility > fiveMinSecHighestVol )
+                //                {
+                //                    fiveMinSecondBest = result.EmaLength;
+                //                    fiveMinSecHighestVol = result.CurrentEmaVolatility;
+                //                }
+                //            }
+                //        }
+                //    }
+                //}
 
                 VolatilityAnalysisSettings hourVolSettings;
                 VolatilityAnalysisResult hourVolResult;
-                List<VolatilityAnalysisResult> hourVolResults;
-                LinkedList<VolatilityAnalysisResult> sortedHourVolResults;
                 SortedList<double, VolatilityAnalysisResult> sortedHourResults;
                 int hourBestLength = 0;
                 int hourSecondBest = 0;
@@ -923,7 +922,6 @@ namespace CBApp1
                 foreach( var pair in hourEmas.Where(p => p.Value != null) )
                 {
                     string product = pair.Key;
-                    sortedHourVolResults = new LinkedList<VolatilityAnalysisResult>();
 
                     sortedHourResults = new SortedList<double, VolatilityAnalysisResult>( new DComp() );
 
@@ -956,7 +954,6 @@ namespace CBApp1
                     SingleEmaAnalysisSettings hourSingleSettings;
                     SingleEmaAnalysisResult hourSingleResult;
                     
-
                     if( currentHourCandles.ContainsKey( product ) && sortedHourResults != null )
                     {
                         int bestEma = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ].EmaLength;
@@ -972,9 +969,9 @@ namespace CBApp1
                                                                             false,
                                                                             true,
                                                                             0.004,
-                                                                            0.006,
-                                                                            0.0009,
-                                                                            -0.3,
+                                                                            0.0006,
+                                                                            0.0001,
+                                                                            -0.000049,
                                                                             false,
                                                                             false,
                                                                             0.004,
@@ -984,7 +981,7 @@ namespace CBApp1
                                                                             true,
                                                                             0.4,
                                                                             bestEma,
-                                                                            10,
+                                                                            20,
                                                                             ref currentHourCandles,
                                                                             ref hourEmas,
                                                                             ref hourEmaSlopes );
@@ -1253,7 +1250,7 @@ namespace CBApp1
                         // go backwards, add rates of change, increase count, find zero, calculate average
                         if( result == null )
                         {
-                            if( ( sSett.EmaLength <= sSett.MinSlopeRates && result.SlopeRates.Count < sSett.MinSlopeRates) )
+                            if( sSett.EmaLength <= sSett.MinSlopeRates )
                             {
                                 result = new SingleEmaAnalysisResult( sSett.MinSlopeRates );
                             }
@@ -1451,7 +1448,7 @@ namespace CBApp1
                         {
                             // slope rate
                             if( sSett.SS2 != -1 &&
-                                ( result.SlopeRateAverage <= sSett.SS2 * newestEmaSlope ) &&
+                                ( result.SlopeRateAverage <= sSett.SS2 * newestEma) &&
                                 !sSett.OnlySS1 )
                             {
                                 // peak return
