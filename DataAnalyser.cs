@@ -1036,13 +1036,19 @@ namespace CBApp1
 
                                 if( hourSingleResult.BuyOk && hourLongAnalysisResult.BuyOk )
                                 {
-                                    args = new PreOrderReadyEventArgs();
-                                    args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
+                                    
 
                                     if( currentFiveMinCandles[product] != null )
                                     {
                                         double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
-                                        writer.Write( $"Pre order buy {product} at {price}" );
+
+                                        args = new PreOrderReadyEventArgs();
+                                        args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
+                                        args.PreliminaryOrder.Price = price;
+
+                                        OnPreOrderReady( args );
+
+                                        //writer.Write( $"Pre order buy {product} at {price}" );
                                     }
                                     
                                 }
@@ -1051,7 +1057,14 @@ namespace CBApp1
                                     if( currentFiveMinCandles[ product ] != null )
                                     {
                                         double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
-                                        writer.Write( $"Pre order sell {product} at {price}" );
+
+                                        args = new PreOrderReadyEventArgs();
+                                        args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
+                                        args.PreliminaryOrder.Price = price;
+
+                                        OnPreOrderReady( args );
+
+                                        //writer.Write( $"Pre order sell {product} at {price}" );
                                     }
                                 }
                                 else if( hourLongAnalysisResult.SellOff )
@@ -1059,7 +1072,15 @@ namespace CBApp1
                                     if( currentFiveMinCandles[ product ] != null )
                                     {
                                         double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
-                                        writer.Write( $"Pre order sell off {product} at {price}" );
+
+                                        args = new PreOrderReadyEventArgs();
+                                        args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
+                                        args.PreliminaryOrder.Price = price;
+                                        args.PreliminaryOrder.SellOff = true;
+
+                                        OnPreOrderReady( args );
+
+                                        //writer.Write( $"Pre order sell off {product} at {price}" );
                                     }
                                 }
                             }
@@ -1524,9 +1545,10 @@ namespace CBApp1
                     if( sSett.BTrigger )
                     {
                         // simple slope or override
-                        if( (sSett.BS1 != -1 && 
-                            (newestEmaSlope >= 0 ||
-                            newestEmaSlope >= sSett.BS1 * newestEma) ) ||
+                        if( (sSett.BS1 != -1) && 
+                            ((newestEmaSlope >= 0 ||
+                            newestEmaSlope >= sSett.BS1 * newestEma) &&
+                            (newestEmaSlope < (sSett.BS1 * (-4) * newestEma))) ||
                             sSett.OnlyBs2 )
                         {
                             // slope rate 
@@ -1544,26 +1566,26 @@ namespace CBApp1
                                     {
                                         result.BuyOk = true;
                                     }
-                                    else
-                                    {
-                                        result.BuyOk = true;
-                                    }
                                 }
-                                else
+                                else if( sSett.BPeakWindow == -1 )
                                 {
                                     result.BuyOk = true;
                                 }
                             }
                             // simple slope
-                            else if( !sSett.OnlyBS1 && !sSett.OnlyBs2 )
+                            else if( sSett.OnlyBS1 && !sSett.OnlyBs2 )
                             {
-                                // simple slope and peak return
-                                if( sSett.BPeakWindow != -1 && ( newestEma.Price < ( result.StartPrice * ( sSett.BPeakRP + sSett.BPeakWindow) ) ) )
+                                // slope rate and peak return
+                                if( sSett.BPeakRP != -1 &&
+                                        (newestEma.Price > result.StartPrice * sSett.BPeakRP) )
                                 {
-                                    result.BuyOk = true;
+                                    // peak return window
+                                    if( sSett.BPeakWindow != -1 && (newestEma.Price < (result.StartPrice * (sSett.BPeakRP + sSett.BPeakWindow))) )
+                                    {
+                                        result.BuyOk = true;
+                                    }
                                 }
-                                // only simple slope
-                                else
+                                else if( sSett.BPeakWindow == -1 )
                                 {
                                     result.BuyOk = true;
                                 }
@@ -1593,12 +1615,8 @@ namespace CBApp1
                                     {
                                         result.SellOk = true;
                                     }
-                                    else
-                                    {
-                                        result.SellOk = true;
-                                    }
                                 }
-                                else
+                                else if( sSett.SPeakWindow == -1 )
                                 {
                                     result.SellOk = true;
                                 }
@@ -1616,12 +1634,8 @@ namespace CBApp1
                                     {
                                         result.SellOk = true;
                                     }
-                                    else
-                                    {
-                                        result.SellOk = true;
-                                    }
                                 }
-                                else
+                                else if( sSett.SPeakWindow == -1 )
                                 {
                                     result.SellOk = true;
                                 }

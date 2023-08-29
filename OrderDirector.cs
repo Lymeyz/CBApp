@@ -37,7 +37,7 @@ namespace CBApp1
                 this.writer = writer;
 
                 // UNSUBSCRIBED
-                //analyser.PreOrderReady += this.PreOrderReadyEvent;
+                analyser.PreOrderReady += this.PreOrderReadyEvent;
 
                 this.reqMaker = reqMaker;
 
