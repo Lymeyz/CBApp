@@ -162,7 +162,8 @@ namespace CBApp1
                                           bool sOffTrigger,
                                           double slopeRateAvgLength,
                                           int emaLength,
-                                          int minSlopeRates,
+                                          int minSlopeRateCount,
+                                          int setSlopeRateCount,
                                           ref ConcurrentDictionary<string, Candle> currentCandles,
                                           ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emas,
                                           ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes
@@ -178,7 +179,7 @@ namespace CBApp1
             BS1 = bS1;
             BS2 = bS2;
             OnlyBS1 = onlyBS1;
-            BS2Override = onlyBS2;
+            OnlyBs2 = onlyBS2;
             BPeakRP = bPeakRP;
             BPeakWindow = bPeakWindow;
             SS1 = sS1;
@@ -192,7 +193,8 @@ namespace CBApp1
             SOffTrigger = sOffTrigger;
             SlopeRateAvgP = slopeRateAvgLength;
             EmaLength = emaLength;
-            MinSlopeRates = minSlopeRates;
+            MinSlopeRates = minSlopeRateCount;
+            SetSlopeRateCount = setSlopeRateCount;
             CurrentCandles = currentCandles;
             Emas = emas;
             EmaSlopes = emaSlopes;
@@ -210,7 +212,7 @@ namespace CBApp1
         public double BS1 { get; }
         public double BS2 { get; }
         public bool OnlyBS1 { get; }
-        public bool BS2Override { get; }
+        public bool OnlyBs2 { get; }
         public double BPeakRP { get; }
         public double BPeakWindow { get; }
         public double SS1 { get; }
@@ -225,6 +227,7 @@ namespace CBApp1
         public double SlopeRateAvgP { get; }
         public int EmaLength { get; }
         public int MinSlopeRates { get; }
+        public int SetSlopeRateCount { get; }
         public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
         public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> Emas { get; }
         public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> EmaSlopes { get; }

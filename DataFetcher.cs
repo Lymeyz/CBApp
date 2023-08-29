@@ -446,8 +446,15 @@ namespace CBApp1
                 // compare current short candle to new match, change current if needed
                 currentCandle = currentShortCandles[ match.Product_Id ];
                 CompareCandles( match, ref currentShortCandles, currentCandle, ref newCandle );
-                args.NewShortCandle = new Candle( newCandle );
-
+                if( newCandle!= null )
+                {
+                    args.NewShortCandle = new Candle( newCandle );
+                }
+                else
+                {
+                    throw new Exception( "Null candle" );
+                }
+                
                 //// compare current long candle to new match, change current if needed
                 //if( constructedLongCandle[match.Product_Id] )
                 //{
