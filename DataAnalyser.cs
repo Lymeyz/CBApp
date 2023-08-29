@@ -949,9 +949,9 @@ namespace CBApp1
                                                                                   0.004,
                                                                                   0.004,
                                                                                   true,
-                                                                                  true,
-                                                                                  true,
-                                                                                  0.4,
+                                                                                  false,
+                                                                                  false,
+                                                                                  0.16,
                                                                                   hourEmaRange[ hourEmaRange.Length - 1 ],
                                                                                   20,
                                                                                   ref currentHourCandles,
@@ -987,10 +987,7 @@ namespace CBApp1
 
                     SingleEmaAnalysisSettings hourSingleSettings;
                     SingleEmaAnalysisResult hourSingleResult = null;
-                    if( hourLongAnalysisResult.BuyOk || hourLongAnalysisResult.SellOk )
-                    {
 
-                    }
                     if( currentHourCandles.ContainsKey( product ) && sortedHourResults != null )
                     {
                         int bestEma = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ].EmaLength;
@@ -1527,6 +1524,10 @@ namespace CBApp1
                             }
                         }
                     }
+                    else
+                    {
+                        result.SellOff = true;
+                    }
 
                     if( sSett.STrigger )
                     {
@@ -1586,6 +1587,10 @@ namespace CBApp1
                             }
                         }
                     }
+                    else
+                    {
+                        result.SellOk = true;
+                    }
 
                     if( sSett.SOffTrigger )
                     {
@@ -1630,20 +1635,23 @@ namespace CBApp1
                                     if( sSett.SOffPeakWindow != -1 &&
                                         (newestEma.Price > (result.StartPrice * (sSett.SOffPeakRP + sSett.SOffPeakWindow))) )
                                     {
-                                        result.SellOk = true;
+                                        result.SellOff = true;
                                     }
                                     else
                                     {
-                                        result.SellOk = true;
+                                        result.SellOff = true;
                                     }
                                 }
                                 else
                                 {
-                                    result.SellOk = true;
+                                    result.SellOff = true;
                                 }
                             }
                         }
-
+                    }
+                    else
+                    {
+                        result.SellOff = true;
                     }
                 }
                 if( result != null )
