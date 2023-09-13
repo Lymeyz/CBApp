@@ -166,7 +166,8 @@ namespace CBApp1
                                           int setSlopeRateCount,
                                           ref ConcurrentDictionary<string, Candle> currentCandles,
                                           ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emas,
-                                          ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes
+                                          ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes,
+                                          ref Dictionary<string, Queue<Candle>> candles
                                           )
         {
             Product = product;
@@ -200,6 +201,7 @@ namespace CBApp1
             EmaSlopes = emaSlopes;
             PrevEmas = new LimitedDateTimeList<Ema>( emas[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
             PrevEmaSlopes = new LimitedDateTimeList<Ema>( emaSlopes[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
+            Candles = new LimitedDateTimeList<Candle>( candles[ product ], candles[ product ].Count );
         }
 
         public string Product { get; }
@@ -233,6 +235,7 @@ namespace CBApp1
         public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> EmaSlopes { get; }
         public LimitedDateTimeList<Ema> PrevEmas { get; set; }
         public LimitedDateTimeList<Ema> PrevEmaSlopes { get; set; }
+        public LimitedDateTimeList<Candle> Candles { get; set; }
     }
 
     public class SBuyingBehaviour

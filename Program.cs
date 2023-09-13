@@ -51,7 +51,7 @@ namespace CBApp1
                                                                                   200,
                                                                                   72,
                                                                                   new int[] { 8, 76 },
-                                                                                  new int[] { 8, 52 },
+                                                                                  new int[] { 8, 24 },
                                                                                   4,
                                                                                   4
                                                                                   );
