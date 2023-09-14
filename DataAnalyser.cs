@@ -913,7 +913,124 @@ namespace CBApp1
                 //    }
                 //}
 
-                
+
+
+
+                VolatilityAnalysisSettings fiveVolSettings;
+                VolatilityAnalysisResult fiveVolResult;
+                SortedList<double, VolatilityAnalysisResult> sortedFiveResults;
+
+                foreach( var pair in fiveMinEmas.Where( p => p.Value != null ) )
+                {
+                    string product = pair.Key;
+
+                    sortedFiveResults = new SortedList<double, VolatilityAnalysisResult>( new DComp() );
+
+                    foreach( var length in fiveMinEmaRange )
+                    {
+                        if( fiveMinEmas[ product ][ length ] != null )
+                        {
+                            Ema latestEma;
+                            fiveMinEmas[ product ][ length ].TryPeek( out latestEma );
+                            fiveVolSettings = new VolatilityAnalysisSettings( product,
+                                                                              true,
+                                                                              length,
+                                                                              0.13,
+                                                                              currentFiveMinCandles,
+                                                                              ref fiveMinCandles,
+                                                                              null,
+                                                                              fiveMinEmaSlopes,
+                                                                              latestEma
+                                                                              );
+                            fiveVolResult = VolatilityAnalysis( fiveVolSettings );
+
+                            if( fiveVolResult != null )
+                            {
+                                if( !sortedFiveResults.ContainsKey( fiveVolResult.CurrentEmaVolatility ) )
+                                {
+                                    sortedFiveResults.Add( fiveVolResult.CurrentEmaVolatility, fiveVolResult );
+                                }
+                            }
+                        }
+                    }
+
+                    if( sortedFiveResults.Count > 0 )
+                    {
+                        VolatilityAnalysisResult bestFiveVolatility = sortedFiveResults.Values[ sortedFiveResults.Count - 1 ];
+                        SingleEmaAnalysisSettings fiveAnalysisSettings;
+                        SingleEmaAnalysisResult fiveAnalysisResult = null;
+                        int bestEma = -1;
+
+                        if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.0011 )
+                        {
+                            if( fiveMinCandles.ContainsKey( product )
+                                && currentFiveMinCandles.ContainsKey( product )
+                                && currentFiveMinCandles[ product ] != null )
+                            {
+                                bestEma = bestFiveVolatility.EmaLength;
+                                fiveAnalysisSettings = new SingleEmaAnalysisSettings( product,
+                                                                                      false,
+                                                                                      false,
+                                                                                      -0.00044,
+                                                                                      0.0014,
+                                                                                      -1,
+                                                                                      -1,
+                                                                                      -0.00044, // -0.000031 //bs1
+                                                                                      0.0000182, // bs2
+                                                                                      false,
+                                                                                      true,
+                                                                                      -1, //bpeakrp
+                                                                                      -1, //bpeakwindow
+                                                                                      0.00200, //SS1
+                                                                                      -0.0001, //SS2 000039 --> 001
+                                                                                      false,
+                                                                                      false,
+                                                                                      -1,
+                                                                                      -1,
+                                                                                      true,
+                                                                                      true,
+                                                                                      false,
+                                                                                      0.4,
+                                                                                      bestEma,
+                                                                                      3,
+                                                                                      5,
+                                                                                      ref currentFiveMinCandles,
+                                                                                      ref fiveMinEmas,
+                                                                                      ref fiveMinEmaSlopes,
+                                                                                      ref fiveMinCandles );
+
+                                if( fiveAnalysisResult != null )
+                                {
+                                    if( fiveAnalysisResult.BuyOk )
+                                    {
+                                        writer.Write( $"Buy {product} at {currentFiveMinCandles[ product ].Avg}" );
+                                    }
+
+                                    if( fiveAnalysisResult.SellOk )
+                                    {
+                                        writer.Write( $"Sell {product} at {currentFiveMinCandles[ product ].Avg}" );
+
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+
+
+
+
+
+
+                //
+
+
+
+
+
+
+
 
 
                 VolatilityAnalysisSettings hourVolSettings;
