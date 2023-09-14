@@ -1180,13 +1180,16 @@ namespace CBApp1
                                         {
                                             double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
 
-                                            args = new PreOrderReadyEventArgs();
-                                            args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
-                                            args.PreliminaryOrder.Price = price;
+                                            if( price < 1.02 * bestVolatility.Peaks.First.Next.Value )
+                                            {
+                                                args = new PreOrderReadyEventArgs();
+                                                args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
+                                                args.PreliminaryOrder.Price = price;
 
-                                            OnPreOrderReady( args );
+                                                OnPreOrderReady( args );
 
-                                            //writer.Write( $"Pre order buy {product} at {price}" );
+                                                //writer.Write( $"Pre order buy {product} at {price}" );
+                                            }
                                         }
 
                                     }

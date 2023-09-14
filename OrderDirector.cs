@@ -32,6 +32,7 @@ namespace CBApp1
                 this.orderSpreadPercent = orderSpreadPercent;
                 this.requiredSellPercent = requiredSellPercent;
 
+                productAliases = new Dictionary<string, string>();
                 lastTries = new Dictionary<string, DateTime>();
 
                 this.writer = writer;
@@ -772,12 +773,26 @@ namespace CBApp1
                     {
                         priceString = prel.Price.ToString( $"F{productInfos[ prel.ProductId ].QuotePrecision}", new CultureInfo( "En-Us" ) );
                         guidString = Guid.NewGuid().ToString();
-                        order = new LimitOrder( guidString,
+
+                        if( prel.ProductId.Split('-')[1] == "USD")
+                        {
+                            order = new LimitOrder( guidString,
+                                               $"{prel.ProductId.Split( '-' )[ 0 ]}-USDC",
+                                               "BUY",
+                                               new OrderConfiguration( new LimitGtc( sizeString,
+                                                                                    priceString,
+                                                                                    true ) ) );
+                        }
+                        else
+                        {
+                            order = new LimitOrder( guidString,
                                                prel.ProductId,
                                                "BUY",
                                                new OrderConfiguration( new LimitGtc( sizeString,
                                                                                     priceString,
                                                                                     true ) ) );
+                        }
+                        
 
                         orderString = JsonConvert.SerializeObject( order );
                         orderResp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders", Method.Post, orderString );
@@ -818,12 +833,25 @@ namespace CBApp1
                     do
                     {
                         priceString = prel.Price.ToString( $"F{productInfos[ prel.ProductId ].QuotePrecision}", new CultureInfo( "En-Us" ) );
-                        order = new LimitOrder( guidString,
+                        if( prel.ProductId.Split( '-' )[ 1 ] == "USD" )
+                        {
+                            order = new LimitOrder( guidString,
+                                               $"{prel.ProductId.Split( '-' )[ 0 ]}-USDC",
+                                               "SELL",
+                                               new OrderConfiguration( new LimitGtc( sizeString,
+                                                                                    priceString,
+                                                                                    true ) ) );
+                        }
+                        else
+                        {
+                            order = new LimitOrder( guidString,
                                                prel.ProductId,
                                                "SELL",
                                                new OrderConfiguration( new LimitGtc( sizeString,
                                                                                     priceString,
                                                                                     true ) ) );
+                        }
+
 
                         orderString = JsonConvert.SerializeObject( order );
                         orderResp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders", Method.Post, orderString );
@@ -998,6 +1026,7 @@ namespace CBApp1
         private ConcurrentDictionary<string, ProductInfo> productInfos;
         //private Dictionary<string, int> buyCount;
         private Dictionary<string, DateTime> lastTries;
+        private Dictionary<string, string> productAliases;
 
         private SynchronizedConsoleWriter writer;
         private AsyncOrderTracker wsTracker;

@@ -58,6 +58,16 @@ namespace CBApp1
 
                 DataAnalyser analyser = new DataAnalyser( ref dataHandler, ref aTimer, ref writer, analyserConfig);
 
+                Dictionary<string, string> aliases = new Dictionary<string, string>() 
+                {
+                    { "ETH-USD", "ETH-USDC" },
+                    { "ADA-USD", "ADA-USDC" },
+                    { "BTC-USD", "BTC-USDC" },
+                    { "SOL-USD", "SOL-USDC" },
+                    { "XLM-USD", "XLM-USDC" },
+                    { "LTC-USD", "LTC-USDC" }
+                };
+
                 OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 30, 3 , ref aTimer, 0.015, 1.01010);
 
                 //string input = "";
