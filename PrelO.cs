@@ -36,7 +36,7 @@ namespace CBApp1
             this.SellOff = prelO.SellOff;
         }
 
-        public string ProductId { get; }
+        public string ProductId { get; set; }
         // Start of current trend window
         public bool B { get; }
         public bool Complete { get; set; }

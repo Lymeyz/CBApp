@@ -45,7 +45,7 @@ namespace CBApp1
                 recentCancels = new ConcurrentQueue<string>();
                 recentFills = new ConcurrentQueue<WsOrder>();
 
-                foreach( string product in productIds )
+                foreach( string product in productInfos.Keys )
                 {
                     // initalize collections.......
                     activeOrders[ product ] = new ConcurrentDictionary<string, OrderInfo>();

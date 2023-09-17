@@ -28,12 +28,12 @@ namespace CBApp1
                 //string[] products = { "ETH-EUR" };
                 string[] products =
                 {
-                    "ETH-EUR",
-                    "ADA-EUR",
-                    "LTC-EUR",
-                    "BTC-EUR",
-                    "SOL-EUR",
-                    "XLM-EUR"
+                    "ETH-USD",
+                    "ADA-USD",
+                    "LTC-USD",
+                    "BTC-USD",
+                    "SOL-USD",
+                    "XLM-USD"
                 };
 
                 Authenticator auth = new Authenticator( "UskLbUTH3fKU6lKl",
@@ -68,7 +68,7 @@ namespace CBApp1
                     { "LTC-USD", "LTC-USDC" }
                 };
 
-                OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 30, 3 , ref aTimer, 0.015, 1.01010);
+                OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 30, 3 , ref aTimer, 0.015, 1.01010, products, aliases);
 
                 //string input = "";
               

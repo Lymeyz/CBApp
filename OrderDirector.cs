@@ -23,7 +23,9 @@ namespace CBApp1
                              int maxBuys,
                              ref System.Timers.Timer timer,
                              double orderSpreadPercent,
-                             double requiredSellPercent )
+                             double requiredSellPercent,
+                             string[] products,
+                             Dictionary<string, string> productAliases )
         {
             try
             {
@@ -32,7 +34,7 @@ namespace CBApp1
                 this.orderSpreadPercent = orderSpreadPercent;
                 this.requiredSellPercent = requiredSellPercent;
 
-                productAliases = new Dictionary<string, string>();
+                this.productAliases = new Dictionary<string, string>( productAliases );
                 lastTries = new Dictionary<string, DateTime>();
 
                 this.writer = writer;
@@ -44,11 +46,6 @@ namespace CBApp1
 
                 this.analyser = analyser;
 
-                // get profile id
-                //profileId = GetProfileId(profile);
-
-                productInfos = analyser.DataHandler.Fetcher.ProductInfos;
-
                 // get accounts
                 accounts = new AccountManager(ref reqMaker);
 
@@ -56,16 +53,31 @@ namespace CBApp1
                 aLogger = new AsyncOrderLogger();
 
                 // NEW TRACKER
-                wsTracker = new AsyncOrderTracker( productInfos.Keys.ToArray(),
+                List<string> productsList = new List<string>();
+                InfoFetcher dirInfoFetcher = new InfoFetcher( ref reqMaker );
+                productInfos = new ConcurrentDictionary<string, ProductInfo>();
+                foreach( var product in products )
+                {
+                    if( productAliases.ContainsKey(product) )
+                    {
+                        productsList.Add( productAliases[ product ] );
+                        productInfos[ productAliases[ product ] ] = dirInfoFetcher.GetProductInfo( productAliases[ product ] );
+                    }
+                    else
+                    {
+                        productsList.Add( product );
+                        productInfos[ product ] = dirInfoFetcher.GetProductInfo( product );
+                    }
+                }
+
+                wsTracker = new AsyncOrderTracker( productsList.ToArray(),
                                                    ref analyser,
                                                    ref aLogger,
                                                    ref writer,
                                                    ref reqMaker,
                                                    ref productInfos,
                                                    ref timer,
-                                                   orderSpreadPercent);
-
-
+                                                   orderSpreadPercent );
 
 
                 //while( true )
@@ -306,14 +318,16 @@ namespace CBApp1
             }
         }
 
-        private async Task TryPlaceOrder(PreOrder prel)
+        private async Task TryPlaceOrder(PreOrder prelOrder)
         {
             try
             {
-                accounts.FetchAccounts( ref reqMaker );
+                if( productAliases.ContainsKey( prelOrder.ProductId ) )
+                {
+                    prelOrder.ProductId = productAliases[ prelOrder.ProductId ];
+                }
 
-                //// Tracker updates
-                //tracker.UpdateTrackedProduct( ref reqMaker, prel.ProductId );
+                accounts.FetchAccounts( ref reqMaker );
 
                 bool activeOrder = false;
                 bool tooManyLogged = false;
@@ -325,12 +339,12 @@ namespace CBApp1
                 OrderInfo activeBuyOrder = null;
                 List<FillInfo> fillsOnCanceled = new List<FillInfo>();
 
-                if( prel.B )
+                if( prelOrder.B )
                 {
                     // check active orders
-                    if( wsTracker.ActiveOrders[ prel.ProductId ].Count > 0 )
+                    if( wsTracker.ActiveOrders[ prelOrder.ProductId ].Count > 0 )
                     {
-                        foreach( var pair in wsTracker.ActiveOrders[ prel.ProductId ] )
+                        foreach( var pair in wsTracker.ActiveOrders[ prelOrder.ProductId ] )
                         {
                             if( pair.Value.Side == "BUY" )
                             {
@@ -345,18 +359,18 @@ namespace CBApp1
                     }
 
                     // check logged orders
-                    if( wsTracker.UnMatched[ prel.ProductId].Count > maxBuys )
+                    if( wsTracker.UnMatched[ prelOrder.ProductId].Count > maxBuys )
                     {
                         tooManyLogged = true;
                     }
                     
                     // check if there was a recent buy or a previous buy price is too close
                     OrderInfo trackedUnMatched = null;
-                    prel.Price = Math.Round( prel.Price, productInfos[ prel.ProductId ].QuotePrecision );
-                    count = wsTracker.UnMatched[ prel.ProductId ].Count;
+                    prelOrder.Price = Math.Round( prelOrder.Price, productInfos[ prelOrder.ProductId ].QuotePrecision );
+                    count = wsTracker.UnMatched[ prelOrder.ProductId ].Count;
 
                     // for every unmatched order in tracker
-                    foreach( var pair in wsTracker.UnMatched[prel.ProductId] )
+                    foreach( var pair in wsTracker.UnMatched[prelOrder.ProductId] )
                     {
                         trackedUnMatched = pair.Value;
 
@@ -366,30 +380,30 @@ namespace CBApp1
                             tooClose = true;
                         }
 
-                        if( Math.Abs( trackedUnMatched.Price - prel.Price ) < orderSpreadPercent * prel.Price )
+                        if( Math.Abs( trackedUnMatched.Price - prelOrder.Price ) < orderSpreadPercent * prelOrder.Price )
                         {
                             tooClose = true;
 
                             //check if close order is incomplete
                             if( Math.Round( trackedUnMatched.Price * trackedUnMatched.FilledSize,
-                                    productInfos[ prel.ProductId ].QuotePrecision ) < eurAm )
+                                    productInfos[ prelOrder.ProductId ].QuotePrecision ) < eurAm )
                             {
                                 // close order is not complete
                                 tooClose = false;
                                 recentBuy = false;
-                                prel.Complementary = true;
+                                prelOrder.Complementary = true;
                                 
                                 // calculate remaining size etc
                                 double trackedUnMatchedQuoteSize = trackedUnMatched.FilledSize * trackedUnMatched.Price;
                                 double remainingQuoteSize = eurAm - trackedUnMatchedQuoteSize;
-                                double complementaryBaseSize = Math.Round(remainingQuoteSize / prel.Price,
-                                                            productInfos[ prel.ProductId].BasePrecision );
-                                double complementaryQuoteSize = Math.Round( complementaryBaseSize * prel.Price,
-                                                                        productInfos[ prel.ProductId ].QuotePrecision );
+                                double complementaryBaseSize = Math.Round(remainingQuoteSize / prelOrder.Price,
+                                                            productInfos[ prelOrder.ProductId].BasePrecision );
+                                double complementaryQuoteSize = Math.Round( complementaryBaseSize * prelOrder.Price,
+                                                                        productInfos[ prelOrder.ProductId ].QuotePrecision );
 
-                                if( complementaryQuoteSize < productInfos[ prel.ProductId].QuoteMinSize )
+                                if( complementaryQuoteSize < productInfos[ prelOrder.ProductId].QuoteMinSize )
                                 {
-                                    prel.Complementary = false;
+                                    prelOrder.Complementary = false;
                                     tooClose = true;
                                 }
                                 else if( complementaryQuoteSize < 0 )
@@ -398,7 +412,7 @@ namespace CBApp1
                                 }
                                 else
                                 {
-                                    prel.Size = complementaryBaseSize;
+                                    prelOrder.Size = complementaryBaseSize;
                                 }
 
                                 // bold break statement
@@ -409,20 +423,20 @@ namespace CBApp1
 
                     if( (!(recentBuy || tooManyLogged || tooClose)) && activeOrder )
                     {
-                        if( activeBuyOrder.Price != Math.Round( prel.Price, productInfos[ prel.ProductId ].QuotePrecision ) )
+                        if( activeBuyOrder.Price != Math.Round( prelOrder.Price, productInfos[ prelOrder.ProductId ].QuotePrecision ) )
                         {
                             if( trackedUnMatched != null )
                             {
                                 if( await wsTracker.CancelOrder( activeBuyOrder.ProductId, activeBuyOrder.ClientOrderId, activeBuyOrder.Order_Id ) )
                                 {
-                                    if( wsTracker.UnMatched[ prel.ProductId ][ trackedUnMatched.ClientOrderId ].FilledSize
+                                    if( wsTracker.UnMatched[ prelOrder.ProductId ][ trackedUnMatched.ClientOrderId ].FilledSize
                                         == trackedUnMatched.FilledSize )
                                     {
-                                        if( accounts.Accounts[ prel.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
+                                        if( accounts.Accounts[ prelOrder.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
                                         {
                                             if( analyser.DataHandler.Fetcher.CheckUserSocket() )
                                             {
-                                                await SendOrder( prel, null );
+                                                await SendOrder( prelOrder, null );
                                             }
                                             else
                                             {
@@ -433,18 +447,18 @@ namespace CBApp1
                                     else
                                     {
                                         double[] complementarySizes =
-                                            CalculateRemainingOrder( wsTracker.UnMatched[ prel.ProductId ][ trackedUnMatched.ClientOrderId ], prel );
+                                            CalculateRemainingOrder( wsTracker.UnMatched[ prelOrder.ProductId ][ trackedUnMatched.ClientOrderId ], prelOrder );
 
-                                        if( complementarySizes[ 1 ] >= productInfos[ prel.ProductId ].QuoteMinSize &&
-                                            complementarySizes[ 0 ] >= productInfos[ prel.ProductId ].BaseMinSize )
+                                        if( complementarySizes[ 1 ] >= productInfos[ prelOrder.ProductId ].QuoteMinSize &&
+                                            complementarySizes[ 0 ] >= productInfos[ prelOrder.ProductId ].BaseMinSize )
                                         {
-                                            prel.Size = complementarySizes[ 0 ];
+                                            prelOrder.Size = complementarySizes[ 0 ];
 
-                                            if( accounts.Accounts[ prel.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
+                                            if( accounts.Accounts[ prelOrder.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
                                             {
                                                 if( analyser.DataHandler.Fetcher.CheckUserSocket() )
                                                 {
-                                                    await SendOrder( prel, null );
+                                                    await SendOrder( prelOrder, null );
                                                 }
                                                 else
                                                 {
@@ -464,17 +478,17 @@ namespace CBApp1
                                 {
                                     if( ( cancelledOrder.FilledSize * cancelledOrder.Price ) < eurAm )
                                     {
-                                        double[] remaining = CalculateRemainingOrder( cancelledOrder, prel );
+                                        double[] remaining = CalculateRemainingOrder( cancelledOrder, prelOrder );
 
-                                        if( remaining[0] >= productInfos[prel.ProductId].BaseMinSize )
+                                        if( remaining[0] >= productInfos[prelOrder.ProductId].BaseMinSize )
                                         {
-                                            prel.Size = remaining[ 0 ];
+                                            prelOrder.Size = remaining[ 0 ];
 
-                                            if( accounts.Accounts[ prel.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
+                                            if( accounts.Accounts[ prelOrder.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
                                             {
                                                 if( analyser.DataHandler.Fetcher.CheckUserSocket() )
                                                 {
-                                                    await SendOrder( prel, null );
+                                                    await SendOrder( prelOrder, null );
                                                 }
                                                 else
                                                 {
@@ -493,11 +507,11 @@ namespace CBApp1
                     }
                     else if( !(recentBuy || tooManyLogged || tooClose) )
                     {
-                        if( accounts.Accounts[ prel.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
+                        if( accounts.Accounts[ prelOrder.ProductId.Split( '-' )[ 1 ] ].BalanceDouble >= eurAm )
                         {
                             if( analyser.DataHandler.Fetcher.CheckUserSocket() )
                             {
-                                await SendOrder( prel, null );
+                                await SendOrder( prelOrder, null );
                             }
                             else
                             {
@@ -509,10 +523,10 @@ namespace CBApp1
                 else
                 {
                     List<OrderInfo> matchingBuyOrders;
-                    double roundedPrelPrice = Math.Round( prel.Price, productInfos[ prel.ProductId ].QuotePrecision );
-                    prel.Size = 0;
+                    double roundedPrelPrice = Math.Round( prelOrder.Price, productInfos[ prelOrder.ProductId ].QuotePrecision );
+                    prelOrder.Size = 0;
 
-                    matchingBuyOrders = FindCancelAssociatedOrders( prel.ProductId, roundedPrelPrice, false ).Result;
+                    matchingBuyOrders = FindCancelAssociatedOrders( prelOrder.ProductId, roundedPrelPrice, false ).Result;
 
 
                     if( matchingBuyOrders != null )
@@ -522,20 +536,20 @@ namespace CBApp1
                             
                             foreach( var order in matchingBuyOrders )
                             {
-                                prel.Size += order.FilledSize;
+                                prelOrder.Size += order.FilledSize;
                             }
 
-                            prel.Size = Math.Round( prel.Size, productInfos[ prel.ProductId ].BasePrecision );
+                            prelOrder.Size = Math.Round( prelOrder.Size, productInfos[ prelOrder.ProductId ].BasePrecision );
 
-                            double accountSize = accounts.Accounts[ prel.ProductId.Split( '-' )[ 0 ] ].BalanceDouble;
-                            writer.Write( $"AccountSize = {accountSize}, preliminary order size = {prel.Size}" );
+                            double accountSize = accounts.Accounts[ prelOrder.ProductId.Split( '-' )[ 0 ] ].BalanceDouble;
+                            writer.Write( $"AccountSize = {accountSize}, preliminary order size = {prelOrder.Size}" );
 
-                            if( accounts.Accounts[ prel.ProductId.Split( '-' )[ 0 ] ].BalanceDouble >= prel.Size
-                                    && (prel.Size >= productInfos[ prel.ProductId ].BaseMinSize) )
+                            if( accounts.Accounts[ prelOrder.ProductId.Split( '-' )[ 0 ] ].BalanceDouble >= prelOrder.Size
+                                    && (prelOrder.Size >= productInfos[ prelOrder.ProductId ].BaseMinSize) )
                             {
                                 if( analyser.DataHandler.Fetcher.CheckUserSocket() )
                                 {
-                                    await SendOrder( prel, matchingBuyOrders.ToArray() );
+                                    await SendOrder( prelOrder, matchingBuyOrders.ToArray() );
                                 }
                                 else
                                 {
@@ -699,6 +713,10 @@ namespace CBApp1
         {
             try
             {
+                if( productAliases.ContainsKey( prelOrder.ProductId ) )
+                {
+                    prelOrder.ProductId = productAliases[ prelOrder.ProductId ];
+                }
 
                 List<OrderInfo> unMatched = await FindCancelAssociatedOrders( prelOrder.ProductId, prelOrder.Price, true );
 
@@ -768,31 +786,18 @@ namespace CBApp1
                     }
 
                     sizeString = size.ToString( $"F{productInfos[ prel.ProductId ].BasePrecision}", new CultureInfo( "En-Us" ) );
+                    guidString = Guid.NewGuid().ToString();
 
                     do
                     {
                         priceString = prel.Price.ToString( $"F{productInfos[ prel.ProductId ].QuotePrecision}", new CultureInfo( "En-Us" ) );
-                        guidString = Guid.NewGuid().ToString();
-
-                        if( prel.ProductId.Split('-')[1] == "USD")
-                        {
-                            order = new LimitOrder( guidString,
-                                               $"{prel.ProductId.Split( '-' )[ 0 ]}-USDC",
-                                               "BUY",
-                                               new OrderConfiguration( new LimitGtc( sizeString,
-                                                                                    priceString,
-                                                                                    true ) ) );
-                        }
-                        else
-                        {
-                            order = new LimitOrder( guidString,
+                        
+                        order = new LimitOrder( guidString,
                                                prel.ProductId,
                                                "BUY",
                                                new OrderConfiguration( new LimitGtc( sizeString,
                                                                                     priceString,
                                                                                     true ) ) );
-                        }
-                        
 
                         orderString = JsonConvert.SerializeObject( order );
                         orderResp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders", Method.Post, orderString );
@@ -833,24 +838,14 @@ namespace CBApp1
                     do
                     {
                         priceString = prel.Price.ToString( $"F{productInfos[ prel.ProductId ].QuotePrecision}", new CultureInfo( "En-Us" ) );
-                        if( prel.ProductId.Split( '-' )[ 1 ] == "USD" )
-                        {
-                            order = new LimitOrder( guidString,
-                                               $"{prel.ProductId.Split( '-' )[ 0 ]}-USDC",
-                                               "SELL",
-                                               new OrderConfiguration( new LimitGtc( sizeString,
-                                                                                    priceString,
-                                                                                    true ) ) );
-                        }
-                        else
-                        {
-                            order = new LimitOrder( guidString,
+
+                        order = new LimitOrder( guidString,
                                                prel.ProductId,
                                                "SELL",
                                                new OrderConfiguration( new LimitGtc( sizeString,
                                                                                     priceString,
                                                                                     true ) ) );
-                        }
+
 
 
                         orderString = JsonConvert.SerializeObject( order );
