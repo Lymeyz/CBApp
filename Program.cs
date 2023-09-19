@@ -33,7 +33,11 @@ namespace CBApp1
                     "LTC-USD",
                     "BTC-USD",
                     "SOL-USD",
-                    "XLM-USD"
+                    "XLM-USD",
+                    "XRP-USD",
+                    "BCH-USD",
+                    "TRB-USD",
+                    "STORJ-USD"
                 };
 
                 Authenticator auth = new Authenticator( "UskLbUTH3fKU6lKl",
@@ -65,7 +69,11 @@ namespace CBApp1
                     { "BTC-USD", "BTC-USDC" },
                     { "SOL-USD", "SOL-USDC" },
                     { "XLM-USD", "XLM-USDC" },
-                    { "LTC-USD", "LTC-USDC" }
+                    { "LTC-USD", "LTC-USDC" },
+                    { "XRP-USD", "XRP-USDC" },
+                    { "BCH-USD", "BCH-USDC" },
+                    { "TRB-USD", "TRB-USDC" },
+                    { "STORJ-USD", "STORJ-USDC" }
                 };
 
                 OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 30, 3 , ref aTimer, 0.015, 1.01010, products, aliases);
