@@ -386,7 +386,8 @@ namespace CBApp1
 
                             //check if close order is incomplete
                             if( Math.Round( trackedUnMatched.Price * trackedUnMatched.FilledSize,
-                                    productInfos[ prelOrder.ProductId ].QuotePrecision ) < eurAm )
+                                    productInfos[ prelOrder.ProductId ].QuotePrecision ) 
+                                < eurAm )
                             {
                                 // close order is not complete
                                 tooClose = false;
@@ -613,7 +614,7 @@ namespace CBApp1
                 {
                     foreach( var pair in wsTracker.UnMatched[ productId ] )
                     {
-                        if( (prelPrice < 0.98 * pair.Value.Price) &&
+                        if( (prelPrice < 0.96 * pair.Value.Price) &&
                             matchingBuyOrders.Where(o => o.ClientOrderId == pair.Value.ClientOrderId).ToList().Count == 0)
                         {
                             matchingBuyOrders.Add( pair.Value );
@@ -971,7 +972,7 @@ namespace CBApp1
                             }
 
                             lastTries[ e.PreliminaryOrder.ProductId ] = DateTime.UtcNow;
-                            writer.Write( $"Preliminary order {e.PreliminaryOrder.ProductId} {type} at {e.PreliminaryOrder.Price} - {DateTime.UtcNow}" );
+                            //writer.Write( $"Preliminary order {e.PreliminaryOrder.ProductId} {type} at {e.PreliminaryOrder.Price} - {DateTime.UtcNow}" );
                         }
                     }
                     else
@@ -1003,7 +1004,7 @@ namespace CBApp1
                         }
 
                         lastTries[ e.PreliminaryOrder.ProductId ] = DateTime.UtcNow;
-                        writer.Write( $"Preliminary order {e.PreliminaryOrder.ProductId} {type} at {e.PreliminaryOrder.Price} - {DateTime.UtcNow}" );
+                        //writer.Write( $"Preliminary order {e.PreliminaryOrder.ProductId} {type} at {e.PreliminaryOrder.Price} - {DateTime.UtcNow}" );
                     }
                 }
             }

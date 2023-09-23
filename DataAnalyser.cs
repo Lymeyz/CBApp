@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Collections.Concurrent;
 using System.Timers;
 using System.Threading;
+using System.Diagnostics;
 
 namespace CBApp1
 {
@@ -961,7 +962,7 @@ namespace CBApp1
                         SingleEmaAnalysisResult fiveAnalysisResult = null;
                         int bestEma = -1;
 
-                        if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.0011 )
+                        if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.015 )
                         {
                             if( fiveMinCandles.ContainsKey( product )
                                 && currentFiveMinCandles.ContainsKey( product )
@@ -982,7 +983,7 @@ namespace CBApp1
                                                                                       -1, //bpeakrp
                                                                                       -1, //bpeakwindow
                                                                                       0.00200, //SS1
-                                                                                      -0.0001, //SS2 000039 --> 001
+                                                                                      -0.00011, //SS2 000039 --> 001
                                                                                       false,
                                                                                       false,
                                                                                       -1,
@@ -993,22 +994,47 @@ namespace CBApp1
                                                                                       0.4,
                                                                                       bestEma,
                                                                                       3,
-                                                                                      5,
+                                                                                      7,
                                                                                       ref currentFiveMinCandles,
                                                                                       ref fiveMinEmas,
                                                                                       ref fiveMinEmaSlopes,
                                                                                       ref fiveMinCandles );
 
+                                fiveAnalysisResult = SingleEmaAnalyseProduct( fiveAnalysisSettings, null );
+
                                 if( fiveAnalysisResult != null )
                                 {
+
+                                    double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
+                                    PreOrderReadyEventArgs args;
+
                                     if( fiveAnalysisResult.BuyOk )
                                     {
                                         writer.Write( $"Buy {product} at {currentFiveMinCandles[ product ].Avg}" );
+
+
+
+                                        if( price < 1.02 * bestFiveVolatility.Peaks.First.Next.Value )
+                                        {
+                                            args = new PreOrderReadyEventArgs();
+                                            args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
+                                            args.PreliminaryOrder.Price = price;
+
+                                            OnPreOrderReady( args );
+
+                                            //writer.Write( $"Pre order buy {product} at {price}" );
+                                        }
                                     }
 
                                     if( fiveAnalysisResult.SellOk )
                                     {
                                         writer.Write( $"Sell {product} at {currentFiveMinCandles[ product ].Avg}" );
+
+                                        args = new PreOrderReadyEventArgs();
+                                        args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
+                                        args.PreliminaryOrder.Price = price;
+
+                                        OnPreOrderReady( args );
 
                                     }
                                 }

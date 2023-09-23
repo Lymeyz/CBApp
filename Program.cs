@@ -76,7 +76,7 @@ namespace CBApp1
                     { "STORJ-USD", "STORJ-USDC" }
                 };
 
-                OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 30, 3 , ref aTimer, 0.015, 1.01010, products, aliases);
+                OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 10, 3 , ref aTimer, 0.015, 1.01010, products, aliases);
 
                 //string input = "";
               
