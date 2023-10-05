@@ -671,7 +671,7 @@ namespace CBApp1
                         SingleEmaAnalysisResult fiveAnalysisResult = null;
                         int bestEma = -1;
 
-                        if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.018 )
+                        if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.0142 )
                         {
                             if( fiveMinCandles.ContainsKey( product )
                                 && currentFiveMinCandles.ContainsKey( product )
@@ -862,7 +862,7 @@ namespace CBApp1
                                                                                         false,
                                                                                         false,
                                                                                         -0.00030,
-                                                                                        -0.000032,
+                                                                                        -0.000035,
                                                                                         -1,
                                                                                         -1,
                                                                                         -0.00044, // -0.000031 //bs1
@@ -966,7 +966,7 @@ namespace CBApp1
                                                                                         false,
                                                                                         false,
                                                                                         -0.00030,
-                                                                                        -0.000032,
+                                                                                        -0.000035,
                                                                                         -1,
                                                                                         -1,
                                                                                         -0.00044, // -0.000031 //bs1

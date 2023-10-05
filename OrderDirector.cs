@@ -329,6 +329,11 @@ namespace CBApp1
 
                 accounts.FetchAccounts( ref reqMaker );
 
+                //if( prelOrder.ProductId == "SOL-USDC" )
+                //{
+                //    wsTracker.UnMatched[ "SOL-USDC" ][ "858b3fac-4133-4c46-89c7-2e87c68cc657" ].FilledSize = 0.520;
+                //}
+
                 bool activeOrder = false;
                 bool tooManyLogged = false;
                 bool tooClose = false;
@@ -614,7 +619,7 @@ namespace CBApp1
                 {
                     foreach( var pair in wsTracker.UnMatched[ productId ] )
                     {
-                        if( (prelPrice < 0.97 * pair.Value.Price) &&
+                        if( (prelPrice < 0.965 * pair.Value.Price) &&
                             matchingBuyOrders.Where(o => o.ClientOrderId == pair.Value.ClientOrderId).ToList().Count == 0)
                         {
                             matchingBuyOrders.Add( pair.Value );
