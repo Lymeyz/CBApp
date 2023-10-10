@@ -726,7 +726,7 @@ namespace CBApp1
                                             args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
                                             args.PreliminaryOrder.Price = price;
 
-                                            writer.Write( $"Buy {product} at {price}, five minute ema length: {bestFiveVolatility.EmaLength}" );
+                                            //writer.Write( $"Buy {product} at {price}, five minute ema length: {bestFiveVolatility.EmaLength} {DateTime.Now}" );
                                                           //$"Last peaks:\n{bestFiveVolatility.Peaks.First.Value} - {bestFiveVolatility.PeakTimes.First.Value}" +
                                                           //$"\n{bestFiveVolatility.Peaks.First.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Value}" +
                                                           //$"\n{bestFiveVolatility.Peaks.First.Next.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Next.Value}" );
@@ -743,7 +743,7 @@ namespace CBApp1
                                         args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
                                         args.PreliminaryOrder.Price = price;
 
-                                        writer.Write( $"Sell {product} at {price}, five minute ema length: {bestFiveVolatility.EmaLength}" );
+                                        //writer.Write( $"Sell {product} at {price}, five minute ema length: {bestFiveVolatility.EmaLength} {DateTime.Now}" );
 
                                         OnPreOrderReady( args );
 
@@ -907,7 +907,7 @@ namespace CBApp1
                                                     args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
                                                     args.PreliminaryOrder.Price = price;
 
-                                                    writer.Write( $"Buy {product} at {price}, hour ema length: {bestVolatility.EmaLength}\n" );
+                                                    //writer.Write( $"Buy {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now}" );
                                                         //+
                                                         //      $"Last peaks:\n{bestVolatility.Peaks.First.Value} - {bestVolatility.PeakTimes.First.Value}" +
                                                         //      $"\n{bestVolatility.Peaks.First.Next.Value} - {bestVolatility.PeakTimes.First.Next.Value}" +
@@ -930,7 +930,7 @@ namespace CBApp1
                                                 args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
                                                 args.PreliminaryOrder.Price = price;
 
-                                                writer.Write( $"Sell {product} at {price}, hour ema length: {bestVolatility.EmaLength}" );
+                                                //writer.Write( $"Sell {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now} {DateTime.Now}" );
 
                                                 OnPreOrderReady( args );
 
@@ -948,7 +948,7 @@ namespace CBApp1
                                                 args.PreliminaryOrder.Price = price;
                                                 args.PreliminaryOrder.SellOff = true;
 
-                                                writer.Write( $"Sell off {product} at {price}, hour ema length: {bestVolatility.EmaLength}" );
+                                                //writer.Write( $"Sell off {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now} {DateTime.Now}" );
 
                                                 OnPreOrderReady( args );
                                             }
@@ -1010,7 +1010,7 @@ namespace CBApp1
                                                 args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
                                                 args.PreliminaryOrder.Price = price;
 
-                                                writer.Write( $"Sell {product} at {price}, hour ema length: {bestVolatility.EmaLength}" );
+                                                //writer.Write( $"Sell {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now}" );
 
                                                 OnPreOrderReady( args );
                                             }
@@ -1027,7 +1027,7 @@ namespace CBApp1
                                                 args.PreliminaryOrder.Price = price;
                                                 args.PreliminaryOrder.SellOff = true;
 
-                                                writer.Write( $"Sell off {product} at {price}, hour ema length: {bestVolatility.EmaLength}" );
+                                                //writer.Write( $"Sell off {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now}" );
 
                                                 OnPreOrderReady( args );
                                             }
@@ -1361,6 +1361,7 @@ namespace CBApp1
                         // go backwards, add rates of change, increase count, find zero, calculate average
                         if( result == null )
                         {
+                            int autoRateCount = Convert.ToInt32( Math.Round( sSett.EmaLength * sSett.SlopeRateAvgP, 0 ) );
                             if( sSett.SetSlopeRateCount != -1 )
                             {
                                 result = new SingleEmaAnalysisResult( sSett.SetSlopeRateCount );
