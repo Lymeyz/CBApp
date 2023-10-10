@@ -668,8 +668,9 @@ namespace CBApp1
                     {
                         foreach( var order in messageEvent.Orders )
                         {
-                            logger.LogTrackerOutput( $"{order.Status} - {order.Order_Id}" );
-                            writer.Write( $"{order.Status} - {order.Order_Id}" );
+                            string eventSummary = $"{order.Status} - {order.Order_Id} -{order.Order_Side} {order.Product_Id}";
+                            logger.LogTrackerOutput( eventSummary );
+                            writer.Write( eventSummary );
 
                             //OPEN orders:
                             //  Not filled: Add to activeOrders, associatedOrders, remove from pendingOrders
