@@ -607,8 +607,7 @@ namespace CBApp1
                 // find matching orders
                 foreach( var pair in wsTracker.UnMatched[ productId ] )
                 {
-                    //if( prelPrice > requiredSellPercent * pair.Value.Price )
-                    if ( (prelPrice - ( requiredSellPercent * pair.Value.Price )) >= ( 0.005 * requiredSellPercent * pair.Value.Price ) ||
+                    if ( (Math.Abs(prelPrice - ( requiredSellPercent * pair.Value.Price ))) <= ( 0.005 * requiredSellPercent * pair.Value.Price ) ||
                         ( prelPrice > requiredSellPercent * pair.Value.Price ))
                     {
                         matchingBuyOrders.Add( pair.Value );
@@ -619,7 +618,7 @@ namespace CBApp1
                 {
                     foreach( var pair in wsTracker.UnMatched[ productId ] )
                     {
-                        if( (prelPrice < 0.965 * pair.Value.Price) &&
+                        if( (prelPrice < 0.97 * pair.Value.Price) &&
                             matchingBuyOrders.Where(o => o.ClientOrderId == pair.Value.ClientOrderId).ToList().Count == 0)
                         {
                             matchingBuyOrders.Add( pair.Value );

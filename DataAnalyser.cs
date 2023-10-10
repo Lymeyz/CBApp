@@ -726,10 +726,10 @@ namespace CBApp1
                                             args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
                                             args.PreliminaryOrder.Price = price;
 
-                                            writer.Write( $"Buy {product} at {price}, five minute ema length: {bestFiveVolatility.EmaLength}\n" +
-                                                          $"Last peaks:\n{bestFiveVolatility.Peaks.First.Value} - {bestFiveVolatility.PeakTimes.First.Value}" +
-                                                          $"\n{bestFiveVolatility.Peaks.First.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Value}" +
-                                                          $"\n{bestFiveVolatility.Peaks.First.Next.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Next.Value}" );
+                                            writer.Write( $"Buy {product} at {price}, five minute ema length: {bestFiveVolatility.EmaLength}" );
+                                                          //$"Last peaks:\n{bestFiveVolatility.Peaks.First.Value} - {bestFiveVolatility.PeakTimes.First.Value}" +
+                                                          //$"\n{bestFiveVolatility.Peaks.First.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Value}" +
+                                                          //$"\n{bestFiveVolatility.Peaks.First.Next.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Next.Value}" );
 
                                             OnPreOrderReady( args );
 
@@ -861,8 +861,8 @@ namespace CBApp1
                                     hourSingleSettings = new SingleEmaAnalysisSettings( product,
                                                                                         false,
                                                                                         false,
-                                                                                        -0.00030,
-                                                                                        -0.000035,
+                                                                                        -0.00034, // sOffS1
+                                                                                        -0.000049, // sOffS2
                                                                                         -1,
                                                                                         -1,
                                                                                         -0.00044, // -0.000031 //bs1
@@ -901,16 +901,17 @@ namespace CBApp1
                                             {
                                                 double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
 
-                                                if( price < 1.02 * bestVolatility.Peaks.First.Next.Value )
+                                                if( price < 1.017 * bestVolatility.Peaks.First.Next.Value )
                                                 {
                                                     args = new PreOrderReadyEventArgs();
                                                     args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
                                                     args.PreliminaryOrder.Price = price;
 
-                                                    writer.Write( $"Buy {product} at {price}, hour ema length: {bestVolatility.EmaLength}\n" +
-                                                              $"Last peaks:\n{bestVolatility.Peaks.First.Value} - {bestVolatility.PeakTimes.First.Value}" +
-                                                              $"\n{bestVolatility.Peaks.First.Next.Value} - {bestVolatility.PeakTimes.First.Next.Value}" +
-                                                              $"\n{bestVolatility.Peaks.First.Next.Next.Value} - {bestVolatility.PeakTimes.First.Next.Next.Value}" );
+                                                    writer.Write( $"Buy {product} at {price}, hour ema length: {bestVolatility.EmaLength}\n" );
+                                                        //+
+                                                        //      $"Last peaks:\n{bestVolatility.Peaks.First.Value} - {bestVolatility.PeakTimes.First.Value}" +
+                                                        //      $"\n{bestVolatility.Peaks.First.Next.Value} - {bestVolatility.PeakTimes.First.Next.Value}" +
+                                                        //      $"\n{bestVolatility.Peaks.First.Next.Next.Value} - {bestVolatility.PeakTimes.First.Next.Next.Value}" );
 
                                                     OnPreOrderReady( args );
 
@@ -965,8 +966,8 @@ namespace CBApp1
                                     hourSingleSettings = new SingleEmaAnalysisSettings( product,
                                                                                         false,
                                                                                         false,
-                                                                                        -0.00030,
-                                                                                        -0.000035,
+                                                                                        -0.00034, // sOffS1
+                                                                                        -0.000049, // sOffS2
                                                                                         -1,
                                                                                         -1,
                                                                                         -0.00044, // -0.000031 //bs1
