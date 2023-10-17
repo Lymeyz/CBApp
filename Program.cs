@@ -36,8 +36,7 @@ namespace CBApp1
                     "XLM-USD",
                     "XRP-USD",
                     "BCH-USD",
-                    "TRB-USD",
-                    "STORJ-USD"
+                    "TRB-USD"
                 };
 
                 Authenticator auth = new Authenticator( "UskLbUTH3fKU6lKl",
@@ -51,7 +50,7 @@ namespace CBApp1
                 AnalyserConfiguration analyserConfig = new AnalyserConfiguration( new int[] { 6, 26 },
                                                                                   new int[] { 6, 12 },
                                                                                   46,
-                                                                                  52,
+                                                                                  60,
                                                                                   200,
                                                                                   72,
                                                                                   new int[] { 8, 20 },
@@ -72,8 +71,7 @@ namespace CBApp1
                     { "LTC-USD", "LTC-USDC" },
                     { "XRP-USD", "XRP-USDC" },
                     { "BCH-USD", "BCH-USDC" },
-                    { "TRB-USD", "TRB-USDC" },
-                    { "STORJ-USD", "STORJ-USDC" }
+                    { "TRB-USD", "TRB-USDC" }
                 };
 
                 OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 10, 3 , ref aTimer, 0.015, 1.01010, products, aliases);

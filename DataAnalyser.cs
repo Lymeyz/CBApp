@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Timers;
 using System.Threading;
 using System.Diagnostics;
+using Newtonsoft.Json;
 
 namespace CBApp1
 {
@@ -589,7 +590,8 @@ namespace CBApp1
         {
             try
             {
-                if (fiveMinCandles.Values.Count != 0)
+                if ( fiveMinCandles.Values.Count != 0 && hourCandles.Values.Count != 0
+                    && currentFiveMinCandles.Values.Count != 0 && currentHourCandles.Values.Count != 0 )
                 {
                     if (!((e.SignalTime.Minute % 5 == 0) && (e.SignalTime.Second > 49 || e.SignalTime.Second < 10)))
                     {
@@ -630,123 +632,175 @@ namespace CBApp1
                 VolatilityAnalysisResult fiveVolResult;
                 SortedList<double, VolatilityAnalysisResult> sortedFiveResults;
 
+                VolatilityAnalysisSettings hourVolSettings;
+                VolatilityAnalysisResult hourVolResult;
+                SortedList<double, VolatilityAnalysisResult> sortedHourResults;
+                SingleEmaAnalysisResult hourLongAnalysisResult = null;
+                SingleEmaAnalysisSettings hourLongAnalysisSettings;
+
                 foreach( var pair in fiveMinEmas.Where( p => p.Value != null ) )
                 {
                     string product = pair.Key;
 
                     sortedFiveResults = new SortedList<double, VolatilityAnalysisResult>( new DComp() );
 
-                    foreach( var length in fiveMinEmaRange )
+                    if( fiveMinCandles.ContainsKey( product ) && currentFiveMinCandles.ContainsKey( product) )
                     {
-                        if( fiveMinEmas[ product ][ length ] != null )
+                        if( fiveMinCandles[product] != null && currentFiveMinCandles[product] != null )
                         {
-                            Ema latestEma;
-                            fiveMinEmas[ product ][ length ].TryPeek( out latestEma );
-                            fiveVolSettings = new VolatilityAnalysisSettings( product,
-                                                                              true,
-                                                                              length,
-                                                                              0.13,
-                                                                              currentFiveMinCandles,
-                                                                              ref fiveMinCandles,
-                                                                              null,
-                                                                              fiveMinEmaSlopes,
-                                                                              latestEma
-                                                                              );
-                            fiveVolResult = VolatilityAnalysis( fiveVolSettings );
 
-                            if( fiveVolResult != null )
+                            foreach( var length in fiveMinEmaRange )
                             {
-                                if( !sortedFiveResults.ContainsKey( fiveVolResult.CurrentEmaVolatility ) )
+                                if( fiveMinEmas[ product ][ length ] != null )
                                 {
-                                    sortedFiveResults.Add( fiveVolResult.CurrentEmaVolatility, fiveVolResult );
-                                }
-                            }
-                        }
-                    }
-
-                    if( sortedFiveResults.Count > 0 )
-                    {
-                        VolatilityAnalysisResult bestFiveVolatility = sortedFiveResults.Values[ sortedFiveResults.Count - 1 ];
-                        SingleEmaAnalysisSettings fiveAnalysisSettings;
-                        SingleEmaAnalysisResult fiveAnalysisResult = null;
-                        int bestEma = -1;
-
-                        if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.0142 )
-                        {
-                            if( fiveMinCandles.ContainsKey( product )
-                                && currentFiveMinCandles.ContainsKey( product )
-                                && currentFiveMinCandles[ product ] != null )
-                            {
-                                bestEma = bestFiveVolatility.EmaLength;
-                                fiveAnalysisSettings = new SingleEmaAnalysisSettings( product,
-                                                                                      false,
-                                                                                      false,
-                                                                                      -0.00044,
-                                                                                      0.0014,
-                                                                                      -1,
-                                                                                      -1,
-                                                                                      -0.00044, // -0.000031 //bs1
-                                                                                      0.0000182, // bs2
-                                                                                      false,
+                                    Ema latestEma;
+                                    fiveMinEmas[ product ][ length ].TryPeek( out latestEma );
+                                    fiveVolSettings = new VolatilityAnalysisSettings( product,
                                                                                       true,
-                                                                                      -1, //bpeakrp
-                                                                                      -1, //bpeakwindow
-                                                                                      0.00200, //SS1
-                                                                                      -0.00011, //SS2 000039 --> 001
-                                                                                      false,
-                                                                                      false,
-                                                                                      -1,
-                                                                                      -1,
-                                                                                      true,
-                                                                                      true,
-                                                                                      false,
-                                                                                      0.4,
-                                                                                      bestEma,
-                                                                                      3,
-                                                                                      7,
-                                                                                      ref currentFiveMinCandles,
-                                                                                      ref fiveMinEmas,
-                                                                                      ref fiveMinEmaSlopes,
-                                                                                      ref fiveMinCandles );
+                                                                                      length,
+                                                                                      0.13,
+                                                                                      currentFiveMinCandles,
+                                                                                      ref fiveMinCandles,
+                                                                                      null,
+                                                                                      fiveMinEmaSlopes,
+                                                                                      latestEma
+                                                                                      );
+                                    fiveVolResult = VolatilityAnalysis( fiveVolSettings );
 
-                                fiveAnalysisResult = SingleEmaAnalyseProduct( fiveAnalysisSettings, null );
-
-                                if( fiveAnalysisResult != null )
-                                {
-
-                                    double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
-                                    PreOrderReadyEventArgs args;
-
-                                    if( fiveAnalysisResult.BuyOk )
+                                    if( fiveVolResult != null )
                                     {
-
-                                        if( price < 1.015 * bestFiveVolatility.Peaks.First.Next.Value )
+                                        if( !sortedFiveResults.ContainsKey( fiveVolResult.CurrentEmaVolatility ) )
                                         {
-                                            args = new PreOrderReadyEventArgs();
-                                            args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
-                                            args.PreliminaryOrder.Price = price;
-
-                                            //writer.Write( $"Buy {product} at {price}, five minute ema length: {bestFiveVolatility.EmaLength} {DateTime.Now}" );
-                                                          //$"Last peaks:\n{bestFiveVolatility.Peaks.First.Value} - {bestFiveVolatility.PeakTimes.First.Value}" +
-                                                          //$"\n{bestFiveVolatility.Peaks.First.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Value}" +
-                                                          //$"\n{bestFiveVolatility.Peaks.First.Next.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Next.Value}" );
-
-                                            OnPreOrderReady( args );
-
+                                            sortedFiveResults.Add( fiveVolResult.CurrentEmaVolatility, fiveVolResult );
                                         }
                                     }
+                                }
+                            }
 
-                                    if( fiveAnalysisResult.SellOk )
+                            if( sortedFiveResults.Count > 0 )
+                            {
+                                VolatilityAnalysisResult bestFiveVolatility = sortedFiveResults.Values[ sortedFiveResults.Count - 1 ];
+                                SingleEmaAnalysisSettings fiveAnalysisSettings;
+                                SingleEmaAnalysisResult fiveAnalysisResult = null;
+
+                                int bestEma = -1;
+
+                                if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.0142 )
+                                {
+                                    if( fiveMinCandles.ContainsKey( product )
+                                        && currentFiveMinCandles.ContainsKey( product )
+                                        && currentFiveMinCandles[ product ] != null )
                                     {
+                                        bestEma = bestFiveVolatility.EmaLength;
+                                        fiveAnalysisSettings = new SingleEmaAnalysisSettings( product,
+                                                                                              false,
+                                                                                              false,
+                                                                                              -0.00044,
+                                                                                              0.0014,
+                                                                                              -1,
+                                                                                              -1,
+                                                                                              -0.00044, // -0.000031 //bs1
+                                                                                              0.0000182, // bs2
+                                                                                              false,
+                                                                                              true,
+                                                                                              -1, //bpeakrp
+                                                                                              -1, //bpeakwindow
+                                                                                              0.00200, //SS1
+                                                                                              -0.00011, //SS2 000039 --> 001
+                                                                                              false,
+                                                                                              false,
+                                                                                              -1,
+                                                                                              -1,
+                                                                                              true,
+                                                                                              true,
+                                                                                              false,
+                                                                                              0.4,
+                                                                                              bestEma,
+                                                                                              3,
+                                                                                              7,
+                                                                                              ref currentFiveMinCandles,
+                                                                                              ref fiveMinEmas,
+                                                                                              ref fiveMinEmaSlopes,
+                                                                                              ref fiveMinCandles );
 
-                                        args = new PreOrderReadyEventArgs();
-                                        args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
-                                        args.PreliminaryOrder.Price = price;
+                                        fiveAnalysisResult = SingleEmaAnalyseProduct( fiveAnalysisSettings, null );
 
-                                        //writer.Write( $"Sell {product} at {price}, five minute ema length: {bestFiveVolatility.EmaLength} {DateTime.Now}" );
+                                        if( fiveAnalysisResult != null )
+                                        {
 
-                                        OnPreOrderReady( args );
+                                            double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
+                                            PreOrderReadyEventArgs args;
 
+                                            if( fiveAnalysisResult.BuyOk )
+                                            {
+                                                hourLongAnalysisSettings = new SingleEmaAnalysisSettings( product,
+                                                                                                              false,
+                                                                                                              false,
+                                                                                                              -0.00026,
+                                                                                                              -0.000032,
+                                                                                                              -1,
+                                                                                                              -1,
+                                                                                                              -0.00017,
+                                                                                                              -1,
+                                                                                                              true,
+                                                                                                              false,
+                                                                                                              -1,
+                                                                                                              -1,
+                                                                                                              0.00013,
+                                                                                                              -0.000021,
+                                                                                                              false,
+                                                                                                              false,
+                                                                                                              -1,
+                                                                                                              -1,
+                                                                                                              true,
+                                                                                                              false,
+                                                                                                              false,
+                                                                                                              0.11,
+                                                                                                              config.HourSingleEmaLength,
+                                                                                                              3,
+                                                                                                              14,
+                                                                                                              ref currentHourCandles,
+                                                                                                              ref hourEmas,
+                                                                                                              ref hourEmaSlopes,
+                                                                                                              ref hourCandles );
+
+                                                hourLongAnalysisResult = SingleEmaAnalyseProduct( hourLongAnalysisSettings, null );
+
+                                                if( hourLongAnalysisResult.BuyOk )
+                                                {
+                                                    if( price < 1.015 * bestFiveVolatility.Peaks.First.Next.Value )
+                                                    {
+                                                        args = new PreOrderReadyEventArgs();
+                                                        args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
+                                                        args.PreliminaryOrder.Price = price;
+
+                                                        //writer.Write( $"Buy {product} at {price}, five minute ema length: {bestFiveVolatility.EmaLength} {DateTime.Now}" );
+                                                        //$"Last peaks:\n{bestFiveVolatility.Peaks.First.Value} - {bestFiveVolatility.PeakTimes.First.Value}" +
+                                                        //$"\n{bestFiveVolatility.Peaks.First.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Value}" +
+                                                        //$"\n{bestFiveVolatility.Peaks.First.Next.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Next.Value}" );
+
+                                                        if( product != "STORJ-USD" )
+                                                        {
+                                                            OnPreOrderReady( args );
+                                                        }
+
+                                                    }
+                                                }
+                                            }
+
+                                            if( fiveAnalysisResult.SellOk )
+                                            {
+
+                                                args = new PreOrderReadyEventArgs();
+                                                args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
+                                                args.PreliminaryOrder.Price = price;
+
+                                                //writer.Write( $"Sell {product} at {price}, five minute ema length: {bestFiveVolatility.EmaLength} {DateTime.Now}" );
+
+                                                OnPreOrderReady( args );
+
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -755,67 +809,14 @@ namespace CBApp1
                 }
 
 
-
-
-
-
-
-                //
-
-
-
-
-
-
-
-
-
-                VolatilityAnalysisSettings hourVolSettings;
-                VolatilityAnalysisResult hourVolResult;
-                SortedList<double, VolatilityAnalysisResult> sortedHourResults;
-                SingleEmaAnalysisResult hourLongAnalysisResult = null;
-                SingleEmaAnalysisSettings hourLongAnalysisSettings;
-
                 foreach( var pair in hourEmas.Where(p => p.Value != null) )
                 {
                     string product = pair.Key;
-                    
+                    hourLongAnalysisResult = null;
+
                     if( hourCandles.ContainsKey( product ) && currentHourCandles.ContainsKey( product ) && currentHourCandles[ product ] != null
                         && hourEmas[ product ].ContainsKey( hourEmaRange[ hourEmaRange.Length - 1 ] ) )
                     {
-                        //hourLongAnalysisSettings = new SingleEmaAnalysisSettings( product,
-                        //                                                          false,
-                        //                                                          false,
-                        //                                                          -0.00025,
-                        //                                                          -0.000032,
-                        //                                                          -1,
-                        //                                                          -1,
-                        //                                                          -0.00047,
-                        //                                                          0.0000021,
-                        //                                                          false,
-                        //                                                          false,
-                        //                                                          -1,
-                        //                                                          -1,
-                        //                                                          0.00013,
-                        //                                                          -0.000021,
-                        //                                                          false,
-                        //                                                          false,
-                        //                                                          -1,
-                        //                                                          -1,
-                        //                                                          true,
-                        //                                                          false,
-                        //                                                          true,
-                        //                                                          0.11,
-                        //                                                          config.HourSingleEmaLength,
-                        //                                                          config.HourSingleEmaLength,
-                        //                                                          3,
-                        //                                                          ref currentHourCandles,
-                        //                                                          ref hourEmas,
-                        //                                                          ref hourEmaSlopes,
-                        //                                                          ref hourCandles );
-
-                        //hourLongAnalysisResult = SingleEmaAnalyseProduct( hourLongAnalysisSettings, null );
-
                         sortedHourResults = new SortedList<double, VolatilityAnalysisResult>( new DComp() );
 
                         foreach( var length in hourEmaRange )
@@ -872,14 +873,14 @@ namespace CBApp1
                                                                                         -1, //bpeakrp
                                                                                         -1, //bpeakwindow
                                                                                         0.00200, //SS1
-                                                                                        -0.0001, //SS2 000039 --> 001
+                                                                                        -0.00011, //SS2 000039 --> 001
                                                                                         false,
                                                                                         false,
                                                                                         -1,
                                                                                         -1,
                                                                                         true,
                                                                                         true,
-                                                                                        true,
+                                                                                        false,
                                                                                         0.4,
                                                                                         bestEma,
                                                                                         3,
@@ -891,36 +892,76 @@ namespace CBApp1
 
                                     hourSingleResult = SingleEmaAnalyseProduct( hourSingleSettings, null );
 
-                                    if( hourSingleResult != null )
+                                    hourLongAnalysisSettings = new SingleEmaAnalysisSettings( product,
+                                                                                                      false,
+                                                                                                      false,
+                                                                                                      -0.00028,
+                                                                                                      -0.000032,
+                                                                                                      -1,
+                                                                                                      -1,
+                                                                                                      -0.00016,
+                                                                                                      -1,
+                                                                                                      true,
+                                                                                                      false,
+                                                                                                      -1,
+                                                                                                      -1,
+                                                                                                      0.00013,
+                                                                                                      -0.000021,
+                                                                                                      false,
+                                                                                                      false,
+                                                                                                      -1,
+                                                                                                      -1,
+                                                                                                      true,
+                                                                                                      false,
+                                                                                                      true,
+                                                                                                      0.11,
+                                                                                                      config.HourSingleEmaLength,
+                                                                                                      3,
+                                                                                                      14,
+                                                                                                      ref currentHourCandles,
+                                                                                                      ref hourEmas,
+                                                                                                      ref hourEmaSlopes,
+                                                                                                      ref hourCandles );
+
+                                    hourLongAnalysisResult = SingleEmaAnalyseProduct( hourLongAnalysisSettings, null );
+
+                                    //if( hourLongAnalysisResult.BuyOk )
+                                    //{
+                                    //    writer.Write( $"{product} buy long ok" );
+                                    //}
+
+                                    if( hourSingleResult != null && hourLongAnalysisResult != null )
                                     {
                                         PreOrderReadyEventArgs args;
 
-                                        if( hourSingleResult.BuyOk )
+                                        if( hourSingleResult.BuyOk && hourLongAnalysisResult.BuyOk )
                                         {
                                             if( currentFiveMinCandles[ product ] != null )
                                             {
                                                 double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
 
-                                                if( price < 1.017 * bestVolatility.Peaks.First.Next.Value )
+                                                if( price < 1.018 * bestVolatility.Peaks.First.Next.Value )
                                                 {
                                                     args = new PreOrderReadyEventArgs();
                                                     args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
                                                     args.PreliminaryOrder.Price = price;
 
                                                     //writer.Write( $"Buy {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now}" );
-                                                        //+
-                                                        //      $"Last peaks:\n{bestVolatility.Peaks.First.Value} - {bestVolatility.PeakTimes.First.Value}" +
-                                                        //      $"\n{bestVolatility.Peaks.First.Next.Value} - {bestVolatility.PeakTimes.First.Next.Value}" +
-                                                        //      $"\n{bestVolatility.Peaks.First.Next.Next.Value} - {bestVolatility.PeakTimes.First.Next.Next.Value}" );
-
-                                                    OnPreOrderReady( args );
-
+                                                    //+
+                                                    //      $"Last peaks:\n{bestVolatility.Peaks.First.Value} - {bestVolatility.PeakTimes.First.Value}" +
+                                                    //      $"\n{bestVolatility.Peaks.First.Next.Value} - {bestVolatility.PeakTimes.First.Next.Value}" +
+                                                    //      $"\n{bestVolatility.Peaks.First.Next.Next.Value} - {bestVolatility.PeakTimes.First.Next.Next.Value}" );
+                                                    if( product != "STORJ-USD" )
+                                                    {
+                                                        OnPreOrderReady( args );
+                                                    }
+                                                    
                                                     //writer.Write( $"Pre order buy {product} at {price}" );
                                                 }
                                             }
-
                                         }
-                                        else if( hourSingleResult.SellOk )
+
+                                        if( hourSingleResult.SellOk )
                                         {
                                             if( currentFiveMinCandles[ product ] != null )
                                             {
@@ -937,7 +978,7 @@ namespace CBApp1
                                                 //writer.Write( $"Pre order sell {product} at {price}" );
                                             }
                                         }
-                                        else if( hourSingleResult.SellOff && bestVolatility.EmaLength > 50 )
+                                        else if ( hourLongAnalysisResult.SellOff )
                                         {
                                             if( currentFiveMinCandles[ product ] != null )
                                             {
@@ -1611,8 +1652,8 @@ namespace CBApp1
                     if( sSett.SOffTrigger )
                     {
                         // simple slope and slope rate or override
-                        if( ( sSett.SOffSP != -1 && (newestEmaSlope < 0 ||
-                            newestEmaSlope <= sSett.SOffSP * newestEma ) ) ||
+                        if( ( sSett.SOffSP != -1 && 
+                            ( newestEmaSlope <= sSett.SOffSP * newestEma ) ) ||
                             sSett.OnlySOffSPP )
                         {
                             // slope rate

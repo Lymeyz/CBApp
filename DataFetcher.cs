@@ -240,17 +240,33 @@ namespace CBApp1
                         {
                             lock( matchesRoot )
                             {
-                                foreach( var trade in msg.Events[ 0 ].Trades )
+                                if( msg.Events[0].Type != "snapshot" )
                                 {
-                                    matchQueue.Enqueue( trade );
-                                    //writer.Write( $"{trade.Time}: {trade.Product_Id} at {trade.Price}, size: {trade.Size}" );
+                                    foreach( var trade in msg.Events[ 0 ].Trades )
+                                    {
+                                        if( DateTime.UtcNow.Minute - trade.Time.Minute < DateTime.UtcNow.Minute % 5 &&
+                                        ( ! ( trade.Time < DateTime.UtcNow.AddMinutes( -5 ) ) ) )
+                                        {
+                                            matchQueue.Enqueue( trade );
+                                        }
+                                        else
+                                        {
+                                            //writer.Write( "OLD MATCH " + data );
+                                        }
+                                        //writer.Write( $"{trade.Time}: {trade.Product_Id} at {trade.Price}, size: {trade.Size}" );
+                                    }
                                 }
+                                else
+                                {
+                                    //writer.Write( $"Snapshot message: { data }");
+                                }
+                                
                             }
                         }
                     }
                     else if( msg.Channel == "subscriptions" )
                     {
-                        writer.Write( $"SUBSCRIPTION: {data}");
+                        //writer.Write( $"SUBSCRIPTION: {data}");
                     }
                     //else if( typeObject.Type == "heartbeat" )
                     //{
@@ -989,15 +1005,6 @@ namespace CBApp1
             }
         }
 
-        private bool MatchComplete(Match data)
-        {
-            if (data.Product_Id!=null && data.Price!=null && data.Time!=null)
-            {
-                return true;
-            }
-            return false;
-        }
-
         //async
         public void MarketSocket_OnMessage(object sender, MessageEventArgs e)
         {
@@ -1114,49 +1121,51 @@ namespace CBApp1
                 if ((DateTime.UtcNow - candleStart).Minutes >= 5)
                 {
                     candleStart = DateTime.UtcNow;
-                    int seconds = candleStart.Second;
-                    DateTime synchronized = candleStart.AddSeconds(-seconds);
-
-                    candleStart = synchronized;
-
-                    if (candleStart.Minute % 5 != 0 ||
-                    (candleStart.Minute == 0 &&
-                    !(candleStart.Second < 3)))
+                    lock( dequeueRoot )
                     {
-                        throw new Exception("candleStart unsynchronized!");
+                        int seconds = candleStart.Second;
+                        DateTime synchronized = candleStart.AddSeconds( -seconds );
+
+                        candleStart = synchronized;
+
+                        if( candleStart.Minute % 5 != 0 ||
+                        (candleStart.Minute == 0 &&
+                        !(candleStart.Second < 3)) )
+                        {
+                            throw new Exception( "candleStart unsynchronized!" );
+                        }
+
+
+                        CandlesCompleteEventArgs args = new CandlesCompleteEventArgs();
+                        Caid candlesAndIds = null;
+
+                        if( DateTime.UtcNow.Minute != 0 )
+                        {
+                            // only update fiveMinCandles
+                            CopyCandlesAndIds( ref candlesAndIds );
+                            //FindAddMissingTrades( ref candlesAndIds );
+                            args.ShortCandles = new Dictionary<string, Candle>( candlesAndIds.ShortCandles );
+
+                            // raise event to update current long candles in analyser
+
+                            UpdateLongCandles( ref candlesAndIds, false );
+                            args.LongCandles = null;
+
+                            OnCandlesComplete( args );
+                        }
+                        else
+                        {
+                            // hour passed, update hourCandles
+                            CopyCandlesAndIds( ref candlesAndIds );
+                            //FindAddMissingTrades( ref candlesAndIds );
+                            args.ShortCandles = new Dictionary<string, Candle>( candlesAndIds.ShortCandles );
+
+                            UpdateLongCandles( ref candlesAndIds, true );
+                            args.LongCandles = candlesAndIds.LongCandles;
+
+                            OnCandlesComplete( args );
+                        }
                     }
-
-
-                    CandlesCompleteEventArgs args = new CandlesCompleteEventArgs();
-                    Caid candlesAndIds = null;
-
-                    if( DateTime.UtcNow.Minute != 0 )
-                    {
-                        // only update fiveMinCandles
-                        CopyCandlesAndIds( ref candlesAndIds);
-                        //FindAddMissingTrades( ref candlesAndIds );
-                        args.ShortCandles = new Dictionary<string, Candle>( candlesAndIds.ShortCandles );
-
-                        // raise event to update current long candles in analyser
-
-                        UpdateLongCandles( ref candlesAndIds, false );
-                        args.LongCandles = null;
-
-                        OnCandlesComplete( args );
-                    }
-                    else
-                    {
-                        // hour passed, update hourCandles
-                        CopyCandlesAndIds( ref candlesAndIds);
-                        //FindAddMissingTrades( ref candlesAndIds );
-                        args.ShortCandles = new Dictionary<string, Candle>( candlesAndIds.ShortCandles );
-
-                        UpdateLongCandles( ref candlesAndIds, true );
-                        args.LongCandles = candlesAndIds.LongCandles;
-
-                        OnCandlesComplete( args );
-                    }
-                    
                 }
                 else
                 {
