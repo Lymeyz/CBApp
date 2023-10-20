@@ -49,6 +49,8 @@ namespace CBApp1
             infoFetcher = new InfoFetcher(ref reqMaker);
 
             this.timer = aTimer;
+
+            ProductInfo productInfo = null;
             
             foreach (string product in products)
             {
@@ -56,7 +58,17 @@ namespace CBApp1
                 longCandles[ product ] = null;
                 constructedLongCandle[ product ] = false;
                 tradeIds[ product ] = new ConcurrentStack<int>();
-                productInfos[ product ] = infoFetcher.GetProductInfo( product );
+                while( productInfo == null )
+                {
+                    productInfo = infoFetcher.GetProductInfo( product );
+                    if( productInfo != null )
+                    {
+                        productInfos[ product ] = productInfo;
+                        productInfo = null;
+                        break;
+                    }
+                }
+                
                 firstTradeIds[ product ] = -1;
                 lastTradeIds[ product ] = -1;
             }
@@ -131,15 +143,19 @@ namespace CBApp1
                 // start and end switched
                 int startUnix = GetUnixTime( startTime );
                 int endUnix = GetUnixTime( endTime );
+                string reqPath;
+                RestResponse resp;
+                string contentString = null;
 
-                string reqPath = 
+                reqPath =
                     $@"api/v3/brokerage/products/{productId}/candles" +
-                    $"?start={ startUnix }&" +
-                    $"end={ endUnix }&" +
+                    $"?start={startUnix}&" +
+                    $"end={endUnix}&" +
                     $"granularity={granularity}";
 
-                RestResponse resp = reqMaker.SendAuthRequest( reqPath, Method.Get, "" );
-                string contentString = resp.Content;
+                resp = reqMaker.SendAuthRequest( reqPath, Method.Get, "" );
+
+                contentString = resp.Content;
 
                 CandleHolder<Candle> holder2 = JsonConvert.DeserializeObject<CandleHolder<Candle>>( contentString );
 

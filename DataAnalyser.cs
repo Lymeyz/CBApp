@@ -899,7 +899,7 @@ namespace CBApp1
                                                                                                       -0.000032,
                                                                                                       -1,
                                                                                                       -1,
-                                                                                                      -0.00016,
+                                                                                                      -0.00018,
                                                                                                       -1,
                                                                                                       true,
                                                                                                       false,
@@ -951,11 +951,10 @@ namespace CBApp1
                                                     //      $"Last peaks:\n{bestVolatility.Peaks.First.Value} - {bestVolatility.PeakTimes.First.Value}" +
                                                     //      $"\n{bestVolatility.Peaks.First.Next.Value} - {bestVolatility.PeakTimes.First.Next.Value}" +
                                                     //      $"\n{bestVolatility.Peaks.First.Next.Next.Value} - {bestVolatility.PeakTimes.First.Next.Next.Value}" );
-                                                    if( product != "STORJ-USD" )
-                                                    {
-                                                        OnPreOrderReady( args );
-                                                    }
-                                                    
+
+
+                                                    OnPreOrderReady( args );
+
                                                     //writer.Write( $"Pre order buy {product} at {price}" );
                                                 }
                                             }

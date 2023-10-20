@@ -56,12 +56,23 @@ namespace CBApp1
                 List<string> productsList = new List<string>();
                 InfoFetcher dirInfoFetcher = new InfoFetcher( ref reqMaker );
                 productInfos = new ConcurrentDictionary<string, ProductInfo>();
+                ProductInfo productInfo = null;
                 foreach( var product in products )
                 {
                     if( productAliases.ContainsKey(product) )
                     {
                         productsList.Add( productAliases[ product ] );
-                        productInfos[ productAliases[ product ] ] = dirInfoFetcher.GetProductInfo( productAliases[ product ] );
+                        while( productInfo == null )
+                        {
+                            productInfo = dirInfoFetcher.GetProductInfo( productAliases[ product ] );
+                            
+                            if( productInfo != null )
+                            {
+                                productInfos[ productAliases[ product ] ] = productInfo;
+                                productInfo = null;
+                                break;
+                            }
+                        }
                     }
                     else
                     {
@@ -922,7 +933,8 @@ namespace CBApp1
                         {
                             if( lastTries[ e.PreliminaryOrder.ProductId ] < DateTime.UtcNow.AddSeconds( -30 ) )
                             {
-                                if( analyser.DataHandler.Fetcher.CheckUserSocket() )
+                                if( analyser.DataHandler.Fetcher.CheckUserSocket() &&
+                                    accounts.FetchAccounts( ref reqMaker ) )
                                 {
                                     //writer.Write( $"Selloff {e.PreliminaryOrder.ProductId} at {e.PreliminaryOrder.Price}" );
                                     TryPlaceSellOff( e.PreliminaryOrder );
@@ -936,7 +948,8 @@ namespace CBApp1
                         }
                         else
                         {
-                            if( analyser.DataHandler.Fetcher.CheckUserSocket() )
+                            if( analyser.DataHandler.Fetcher.CheckUserSocket() &&
+                                accounts.FetchAccounts( ref reqMaker ) )
                             {
                                 //writer.Write( $"Selloff {e.PreliminaryOrder.ProductId} at {e.PreliminaryOrder.Price}" );
                                 TryPlaceSellOff( e.PreliminaryOrder );
@@ -949,7 +962,8 @@ namespace CBApp1
                         }
                         
                     }
-                    else if( lastTries.ContainsKey( e.PreliminaryOrder.ProductId ) )
+                    else if( lastTries.ContainsKey( e.PreliminaryOrder.ProductId ) &&
+                             accounts.FetchAccounts( ref reqMaker ) )
                     {
                         if( lastTries[ e.PreliminaryOrder.ProductId ] < DateTime.UtcNow.AddSeconds( -30 ) )
                         {
@@ -989,7 +1003,8 @@ namespace CBApp1
                         {
                             type = "buy";
 
-                            if( analyser.DataHandler.Fetcher.CheckUserSocket() )
+                            if( analyser.DataHandler.Fetcher.CheckUserSocket() &&
+                                accounts.FetchAccounts( ref reqMaker ) )
                             {
                                 TryPlaceOrder( e.PreliminaryOrder );
                             }
@@ -1001,7 +1016,8 @@ namespace CBApp1
                         else
                         {
                             type = "sell";
-                            if( analyser.DataHandler.Fetcher.CheckUserSocket() )
+                            if( analyser.DataHandler.Fetcher.CheckUserSocket() &&
+                                accounts.FetchAccounts( ref reqMaker ) )
                             {
                                 TryPlaceOrder( e.PreliminaryOrder );
                             }

@@ -14,7 +14,7 @@ namespace CBApp1
             FetchAccounts(ref authReqMaker);
         }
 
-        public void FetchAccounts(ref RequestMaker authReqMaker)
+        public bool FetchAccounts(ref RequestMaker authReqMaker)
         {
             try
             {
@@ -28,12 +28,18 @@ namespace CBApp1
                     {
                         Accounts[ account.Currency ] = account;
                     }
+                    return true;
+                }
+                else
+                {
+                    return false;
                 }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.StackTrace);
                 Console.WriteLine(e.Message);
+                return false;
             }
         }
 

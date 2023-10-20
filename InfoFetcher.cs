@@ -7,6 +7,7 @@ using RestSharp;
 using System.IO;
 using Newtonsoft.Json;
 using System.Globalization;
+using System.Threading;
 
 namespace CBApp1
 {
@@ -45,8 +46,16 @@ namespace CBApp1
                 //minHolder = JsonConvert.DeserializeObject<MinSizeHolder>(infoString);
                 //productInfo.BaseMinSize = double.Parse(minHolder.Min_Size, new CultureInfo("En-Us"));
 
-
-                return productInfo;
+                if( productInfo != null )
+                {
+                    return productInfo;
+                }
+                else
+                {
+                    Console.WriteLine( $"{productId} productInfo null" );
+                    return null;
+                }
+               
             }
             catch (Exception e)
             {
@@ -58,7 +67,9 @@ namespace CBApp1
 
         private string FetchProductInfo(string productId)
         {
-            RestResponse resp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/products/{productId}",
+            RestResponse resp = null;
+
+            resp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/products/{productId}",
                                                          Method.Get,
                                                          "" );
 
