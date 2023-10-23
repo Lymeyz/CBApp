@@ -593,7 +593,9 @@ namespace CBApp1
                 if ( fiveMinCandles.Values.Count != 0 && hourCandles.Values.Count != 0
                     && currentFiveMinCandles.Values.Count != 0 && currentHourCandles.Values.Count != 0 )
                 {
-                    if (!((e.SignalTime.Minute % 5 == 0) && (e.SignalTime.Second > 49 || e.SignalTime.Second < 10)))
+                    if (!((((e.SignalTime.Minute % 5 == 0) && ( e.SignalTime.Second < 15 ))) ||
+                            ((e.SignalTime.Minute + 1) % 5 == 0) && (e.SignalTime.Second > 42) )
+                        )
                     {
                         if (!analysisRunning)
                         {
@@ -602,6 +604,7 @@ namespace CBApp1
                             {
                                 //AnalyseData();
                                 AnalysisFunctionsTests();
+                                //writer.Write( $"analysis running {DateTime.UtcNow}" );
                             });
                             analysisRunning = false;
                         }
@@ -779,10 +782,7 @@ namespace CBApp1
                                                         //$"\n{bestFiveVolatility.Peaks.First.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Value}" +
                                                         //$"\n{bestFiveVolatility.Peaks.First.Next.Next.Value} - {bestFiveVolatility.PeakTimes.First.Next.Next.Value}" );
 
-                                                        if( product != "STORJ-USD" )
-                                                        {
-                                                            OnPreOrderReady( args );
-                                                        }
+                                                        OnPreOrderReady( args );
 
                                                     }
                                                 }
@@ -1549,7 +1549,7 @@ namespace CBApp1
                         if( (sSett.BS1 != -1) && 
                             ((newestEmaSlope >= 0 ||
                             newestEmaSlope >= sSett.BS1 * newestEma) &&
-                            (newestEmaSlope < (sSett.BS1 * (-4) * newestEma))) ||
+                            (newestEmaSlope < (sSett.BS1 * (-6) * newestEma))) ||
                             sSett.OnlyBs2 )
                         {
                             // slope rate 
@@ -1898,6 +1898,11 @@ namespace CBApp1
 
                     for( int i = 0; i < count; i++ )
                     {
+                        if( volSett.Product == "ETH-USD" && volSett.Length == 56 &&
+                            currentCandle.Time.Day == 19 && currentCandle.Time.Hour == 18)
+                        {
+
+                        }
                         if( peaks == null )
                         {
                             peaks = new LinkedList<double>();
@@ -1931,7 +1936,7 @@ namespace CBApp1
 
                                     peakDiff = Math.Abs( prevCandle.Avg - peaks.Last.Value );
 
-                                    if( peakDiff > 0.0018 * prevCandle.Avg )
+                                    if( peakDiff > 0.0035 * prevCandle.Avg )
                                     {
                                         sinceSwitch = 0;
 
@@ -1944,6 +1949,7 @@ namespace CBApp1
                                         {
                                             peakTimes.AddLast( peakTime );
                                             peaks.AddLast( peak );
+                                            peak = -1;
                                         }
                                         else
                                         {
@@ -1952,6 +1958,7 @@ namespace CBApp1
 
                                             peaks.AddFirst( peak );
                                             peakTimes.AddFirst( peakTime );
+                                            peak = -1;
                                         }
                                         
                                         switchTimes.AddLast( currentCandle.Time );
@@ -1967,7 +1974,7 @@ namespace CBApp1
                                 else
                                 {
                                     // if candle is lower than current peak, set current peak
-                                    if( currentCandle.Avg < peak )
+                                    if( currentCandle.Avg < peak || peak == -1 )
                                     {
                                         peak = currentCandle.Avg;
                                         peakTime = currentCandle.Time;
@@ -1983,7 +1990,7 @@ namespace CBApp1
 
                                     peakDiff = Math.Abs( prevCandle.Avg - peaks.Last.Value );
 
-                                    if( peakDiff > 0.0018 * prevCandle.Avg )
+                                    if( peakDiff > 0.0035 * prevCandle.Avg )
                                     {
                                         sinceSwitch = 0;
 
@@ -1996,6 +2003,7 @@ namespace CBApp1
                                         {
                                             peakTimes.AddLast( peakTime );
                                             peaks.AddLast( peak );
+                                            peak = -1;
                                         }
                                         else
                                         {
@@ -2004,6 +2012,7 @@ namespace CBApp1
 
                                             peaks.AddFirst( peak );
                                             peakTimes.AddFirst( peakTime );
+                                            peak = -1;
                                         }
 
                                         switchTimes.AddLast( currentCandle.Time );
@@ -2018,7 +2027,7 @@ namespace CBApp1
                                 else
                                 {
                                     // if candle is higher than current peak, set current peak
-                                    if( currentCandle.Avg > peak )
+                                    if( currentCandle.Avg > peak || peak == -1)
                                     {
                                         peak = currentCandle.Avg;
                                         peakTime = currentCandle.Time;

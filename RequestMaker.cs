@@ -78,13 +78,13 @@ namespace CBApp1
 
                     if( i == 24 )
                     {
-                        Console.WriteLine( "OVER 24 FAILS" );
+                        //Console.WriteLine( "OVER 24 FAILS" );
                         Thread.Sleep( 1000 );
                         i = 0;
                         counter++;
                     }
 
-                    if( counter > 4 )
+                    if( counter > 10 )
                     {
                         throw new Exception( "Request failed, 100 failed requests" );
                     }
