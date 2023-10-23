@@ -940,7 +940,7 @@ namespace CBApp1
                                             {
                                                 double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
 
-                                                if( price < 1.018 * bestVolatility.Peaks.First.Next.Value )
+                                                if( price < 1.02 * bestVolatility.Peaks.First.Next.Value )
                                                 {
                                                     args = new PreOrderReadyEventArgs();
                                                     args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
@@ -1549,7 +1549,7 @@ namespace CBApp1
                         if( (sSett.BS1 != -1) && 
                             ((newestEmaSlope >= 0 ||
                             newestEmaSlope >= sSett.BS1 * newestEma) &&
-                            (newestEmaSlope < (sSett.BS1 * (-6) * newestEma))) ||
+                            (newestEmaSlope < (sSett.BS1 * (-11) * newestEma))) ||
                             sSett.OnlyBs2 )
                         {
                             // slope rate 
