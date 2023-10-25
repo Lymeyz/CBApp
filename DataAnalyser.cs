@@ -704,12 +704,13 @@ namespace CBApp1
                                                                                               -1,
                                                                                               -0.00044, // -0.000031 //bs1
                                                                                               0.0000182, // bs2
+                                                                                              -1,
                                                                                               false,
                                                                                               true,
                                                                                               -1, //bpeakrp
                                                                                               -1, //bpeakwindow
                                                                                               0.00200, //SS1
-                                                                                              -0.00011, //SS2 000039 --> 001
+                                                                                              -0.00012, //SS2 00011-->0.00012
                                                                                               false,
                                                                                               false,
                                                                                               -1,
@@ -743,7 +744,8 @@ namespace CBApp1
                                                                                                               -0.000032,
                                                                                                               -1,
                                                                                                               -1,
-                                                                                                              -0.00017,
+                                                                                                              -0.00018,
+                                                                                                              -1,
                                                                                                               -1,
                                                                                                               true,
                                                                                                               false,
@@ -771,7 +773,11 @@ namespace CBApp1
 
                                                 if( hourLongAnalysisResult.BuyOk )
                                                 {
-                                                    if( price < 1.015 * bestFiveVolatility.Peaks.First.Next.Value )
+
+                                                    double latestLow = Math.Min( bestFiveVolatility.Peaks.First.Next.Value, bestFiveVolatility.Peaks.First.Value );
+                                                    double latestHigh = Math.Max( bestFiveVolatility.Peaks.First.Next.Value, bestFiveVolatility.Peaks.First.Value );
+
+                                                    if( price < 1.016 * latestLow )
                                                     {
                                                         args = new PreOrderReadyEventArgs();
                                                         args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
@@ -868,6 +874,7 @@ namespace CBApp1
                                                                                         -1,
                                                                                         -0.00044, // -0.000031 //bs1
                                                                                         0.0000182, // bs2
+                                                                                        -1,
                                                                                         false,
                                                                                         true,
                                                                                         -1, //bpeakrp
@@ -900,6 +907,7 @@ namespace CBApp1
                                                                                                       -1,
                                                                                                       -1,
                                                                                                       -0.00018,
+                                                                                                      -1,
                                                                                                       -1,
                                                                                                       true,
                                                                                                       false,
@@ -940,7 +948,9 @@ namespace CBApp1
                                             {
                                                 double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
 
-                                                if( price < 1.02 * bestVolatility.Peaks.First.Next.Value )
+                                                double latestLow = Math.Min( bestVolatility.Peaks.First.Next.Value, bestVolatility.Peaks.First.Value );
+
+                                                if( price < 1.02 * latestLow )
                                                 {
                                                     args = new PreOrderReadyEventArgs();
                                                     args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
@@ -1012,6 +1022,7 @@ namespace CBApp1
                                                                                         -1,
                                                                                         -0.00044, // -0.000031 //bs1
                                                                                         0.0000182, // bs2
+                                                                                        -1,
                                                                                         false,
                                                                                         true,
                                                                                         -1, //bpeakrp
@@ -1549,7 +1560,7 @@ namespace CBApp1
                         if( (sSett.BS1 != -1) && 
                             ((newestEmaSlope >= 0 ||
                             newestEmaSlope >= sSett.BS1 * newestEma) &&
-                            (newestEmaSlope < (sSett.BS1 * (-11) * newestEma))) ||
+                            ((newestEmaSlope < (sSett.BS1 * (-11) * newestEma))|| (sSett.BS1S == -1) )) ||
                             sSett.OnlyBs2 )
                         {
                             // slope rate 

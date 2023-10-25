@@ -559,8 +559,12 @@ namespace CBApp1
                             prelOrder.Size = Math.Round( prelOrder.Size, productInfos[ prelOrder.ProductId ].BasePrecision );
 
                             double accountSize = accounts.Accounts[ prelOrder.ProductId.Split( '-' )[ 0 ] ].BalanceDouble;
-                            writer.Write( $"AccountSize = {accountSize}, preliminary order size = {prelOrder.Size}" );
 
+                            if( prelOrder.Size >= productInfos[ prelOrder.ProductId ].BaseMinSize )
+                            {
+                                writer.Write( $"AccountSize = {accountSize}, preliminary order size = {prelOrder.Size}" );
+                            }
+                            
                             if( accounts.Accounts[ prelOrder.ProductId.Split( '-' )[ 0 ] ].BalanceDouble >= prelOrder.Size
                                     && (prelOrder.Size >= productInfos[ prelOrder.ProductId ].BaseMinSize) )
                             {

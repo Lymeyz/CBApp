@@ -147,6 +147,7 @@ namespace CBApp1
                                           double sOffPeakWindow,
                                           double bS1,
                                           double bS2,
+                                          double bS1S,
                                           bool onlyBS1,
                                           bool onlyBS2,
                                           double bPeakRP,
@@ -179,6 +180,7 @@ namespace CBApp1
             SOffPeakWindow = sOffPeakWindow;
             BS1 = bS1;
             BS2 = bS2;
+            BS1S = bS1S;
             OnlyBS1 = onlyBS1;
             OnlyBs2 = onlyBS2;
             BPeakRP = bPeakRP;
@@ -213,6 +215,7 @@ namespace CBApp1
         public double SOffPeakWindow { get; }
         public double BS1 { get; }
         public double BS2 { get; }
+        public double BS1S { get; }
         public bool OnlyBS1 { get; }
         public bool OnlyBs2 { get; }
         public double BPeakRP { get; }
