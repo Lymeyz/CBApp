@@ -82,7 +82,7 @@ namespace CBApp1
         public DataFetcher Fetcher { get; }
         //after 7 minutes, combine historic data and new data
 
-        private bool UpdateProductCandles(Dictionary<string, Candle> shortCandles, Dictionary<string, Candle> longCandles)
+        private async Task<bool> UpdateProductCandles(Dictionary<string, Candle> shortCandles, Dictionary<string, Candle> longCandles)
         {
             try
             {
@@ -119,7 +119,8 @@ namespace CBApp1
                         DateTime shortEndTime = DateTime.UtcNow.AddMinutes( -(DateTime.UtcNow.Minute % 5) )
                                                                .AddSeconds( -DateTime.UtcNow.Second );
 
-                        AddHistoricCandles( product, ref shortProductCandles, 300, "FIVE_MINUTE", DateTime.UtcNow.AddDays( -1 ), shortEndTime);
+                        //AddHistoricCandles( product, ref shortProductCandles, 300, "FIVE_MINUTE", DateTime.UtcNow.AddDays( -1 ), shortEndTime);
+                        shortProductCandles = await AddHistoricCandles( product, shortProductCandles, 300, "FIVE_MINUTE", DateTime.UtcNow.AddDays( -1 ), shortEndTime);
 
                         // fetch hourly historic candles
                         // older than last time when minute == 0 && second == 0
@@ -128,7 +129,8 @@ namespace CBApp1
                                                               .AddMinutes( -DateTime.UtcNow.Minute )
                                                               .AddSeconds(-DateTime.UtcNow.Second);
 
-                        AddHistoricCandles( product, ref longProductCandles, 300, "ONE_HOUR", DateTime.UtcNow.AddDays( -12 ), longEndTime );
+                        //AddHistoricCandles( product, ref longProductCandles, 300, "ONE_HOUR", DateTime.UtcNow.AddDays( -12 ), longEndTime );
+                        longProductCandles = await AddHistoricCandles( product, longProductCandles, 300, "ONE_HOUR", DateTime.UtcNow.AddDays( -12 ), longEndTime );
 
                         // construct partial candle for last hour
                         Candle longCandle = ConstructLongCandle( product, ref shortProductCandles );
@@ -221,8 +223,8 @@ namespace CBApp1
             }
         }
 
-        private void AddHistoricCandles( string product,
-                                        ref ConcurrentDictionary<string, ConcurrentQueue<Candle>> candleCollection,
+        private async Task<ConcurrentDictionary<string, ConcurrentQueue<Candle>>> AddHistoricCandles( string product,
+                                        ConcurrentDictionary<string, ConcurrentQueue<Candle>> candleCollection,
                                         int candleCount,
                                         string granularity,
                                         DateTime startTime,
@@ -232,24 +234,29 @@ namespace CBApp1
             {
                 LimitedDateTimeList<Candle> newCandles = new LimitedDateTimeList<Candle>(candleCount);
                 LimitedDateTimeList<Candle> historicCandles = 
-                    fetcher.GetProductHistoricCandles( product, granularity, startTime, endTime, candleCount);
+                    await fetcher.GetProductHistoricCandles( product,
+                                                             granularity,
+                                                             startTime,
+                                                             endTime,
+                                                             candleCount  );
 
-                CompileCandles(product, ref candleCollection, ref historicCandles, ref newCandles, candleCount, granularity);
+                CompileCandles( product, ref candleCollection, ref historicCandles, ref newCandles, candleCount, granularity );
 
                 candleCollection[product] = new ConcurrentQueue<Candle>();
 
                 int count = newCandles.Count;
                 for (int i = 0; i < count; i++)
                 {
-                    candleCollection[product].Enqueue(newCandles.GetRemoveOldest());
-
-                    // dont 
+                    candleCollection[product].Enqueue( newCandles.GetRemoveOldest() );
                 }
+
+                return candleCollection;
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
                 Console.WriteLine(e.StackTrace);
+                return null;
             }
         }
         private void CompileCandles(string product, ref ConcurrentDictionary<string, ConcurrentQueue<Candle>> candleCollection,
@@ -343,7 +350,7 @@ namespace CBApp1
         }
 
         //Async hantering av ws-data
-        private void CandlesCompleteEvent(object source, CandlesCompleteEventArgs e)
+        private async void CandlesCompleteEvent(object source, CandlesCompleteEventArgs e)
         {
             try
             {
@@ -372,7 +379,7 @@ namespace CBApp1
 
 
                 // Update _productCandles collection, OBS! Only products in e.Candles
-                bool constructedCandleCollections = UpdateProductCandles(e.ShortCandles, e.LongCandles);
+                bool constructedCandleCollections = await UpdateProductCandles(e.ShortCandles, e.LongCandles);
 
                 // If sufficient activity in product, add historic candles
                 UpdatedProductCandlesEventArgs args = new UpdatedProductCandlesEventArgs();

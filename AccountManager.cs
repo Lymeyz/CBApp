@@ -3,6 +3,8 @@ using RestSharp;
 using System.Collections.Generic;
 using System;
 using System.Linq;
+using System.Threading.Tasks;
+using System.Net.Http;
 
 namespace CBApp1
 {
@@ -11,18 +13,18 @@ namespace CBApp1
         public AccountManager(ref RequestMaker authReqMaker)
         {
             accounts = new Dictionary<string, Account>();
-            FetchAccounts(ref authReqMaker);
+            FetchAccounts( authReqMaker );
         }
 
-        public bool FetchAccounts(ref RequestMaker authReqMaker)
+        public async Task<bool> FetchAccounts( RequestMaker authReqMaker)
         {
             try
             {
-                RestResponse resp = authReqMaker.SendAuthRequest( $@"api/v3/brokerage/accounts/", Method.Get, "" );
+                string resp = await authReqMaker.SendAuthRequest( $@"api/v3/brokerage/accounts/", "", HttpMethod.Get, "" );
 
-                if (resp.IsSuccessful)
+                if ( resp != null )
                 {
-                    AccountsHolder accounts = JsonConvert.DeserializeObject<AccountsHolder>( resp.Content );
+                    AccountsHolder accounts = JsonConvert.DeserializeObject<AccountsHolder>( resp );
 
                     foreach( Account account in accounts.Accounts )
                     {

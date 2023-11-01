@@ -9,6 +9,7 @@ using RestSharp;
 using Newtonsoft.Json;
 using System.Timers;
 using System.Globalization;
+using System.Net.Http;
 
 namespace CBApp1
 {
@@ -159,8 +160,8 @@ namespace CBApp1
                 var orderIds = new { order_ids = new string[] { OrderId } };
                 string jsonString = JsonConvert.SerializeObject( orderIds );
 
-                RestResponse resp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/batch_cancel", Method.Post, jsonString );
-                CancelResponse cancelResp = JsonConvert.DeserializeObject<CancelResponse>( resp.Content );
+                string resp = await reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/batch_cancel", "", HttpMethod.Post, jsonString );
+                CancelResponse cancelResp = JsonConvert.DeserializeObject<CancelResponse>( resp );
 
                 OrderInfo removedPending;
                 bool cancelled = false;
@@ -225,8 +226,8 @@ namespace CBApp1
                 var orderIds = new { order_ids = new string[] { OrderId } };
                 string jsonString = JsonConvert.SerializeObject( orderIds );
 
-                RestResponse resp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/batch_cancel", Method.Post, jsonString );
-                CancelResponse cancelResp = JsonConvert.DeserializeObject<CancelResponse>( resp.Content );
+                string resp = await reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/batch_cancel", "", HttpMethod.Post, jsonString );
+                CancelResponse cancelResp = JsonConvert.DeserializeObject<CancelResponse>( resp );
 
                 OrderInfo removedPending;
                 OrderInfo returnOrderInfo = null;
@@ -299,24 +300,38 @@ namespace CBApp1
                         {
                             if( associatedOrders.TryGetValue( unMatchedClientOrderId, out associatedClientId ) )
                             {
-                                foreach( var pair in activeOrders[ productId ] )
+                                if( activeOrders.ContainsKey( associatedClientId ) )
                                 {
-                                    if( pair.Key == associatedClientId )
+                                    foreach( var pair in activeOrders[ productId ] )
                                     {
-                                        isActive = true;
-                                        if( activeOrders[ productId ].TryGetValue( associatedClientId, out associatedOrder ) )
+                                        if( pair.Key == associatedClientId )
                                         {
-                                            if( await CancelOrder( productId, associatedClientId, associatedOrder.Order_Id ) )
+                                            isActive = true;
+                                            if( activeOrders[ productId ].TryGetValue( associatedClientId, out associatedOrder ) )
                                             {
-                                                if( associatedOrders.ContainsKey( unMatchedClientOrderId ) )
+                                                if( await CancelOrder( productId, associatedClientId, associatedOrder.Order_Id ) )
                                                 {
-                                                    associatedOrders.TryRemove( unMatchedClientOrderId, out throwawayAssociated );
+                                                    if( associatedOrders.ContainsKey( unMatchedClientOrderId ) )
+                                                    {
+                                                        associatedOrders.TryRemove( unMatchedClientOrderId, out throwawayAssociated );
+                                                    }
+
+                                                    cancelled = true;
+
                                                 }
-                                                cancelled = true;
                                             }
                                         }
                                     }
                                 }
+                                else
+                                {
+                                    if( unMatchedOrders[productId].ContainsKey ( unMatchedClientOrderId ) )
+                                    {
+                                        cancelled = true;
+                                        isActive = false;
+                                    }
+                                }
+                                
                                 if( cancelled == false && isActive == false )
                                 {
                                     if( associatedOrders.ContainsKey( unMatchedClientOrderId ) )
@@ -568,16 +583,17 @@ namespace CBApp1
             }
         }
 
-        private void FetchOrderToPending( string order_Id )
+        private async Task FetchOrderToPending( string order_Id )
         {
             try
             {
-                RestResponse resp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/historical/{order_Id}",
-                                                              Method.Get,
+                string resp = await reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/historical/{order_Id}",
+                                                              "",
+                                                              HttpMethod.Post,
                                                               "" );
-                if( resp.IsSuccessful )
+                if( resp != null )
                 {
-                    OrderHolder orderHolder = JsonConvert.DeserializeObject<OrderHolder>( resp.Content );
+                    OrderHolder orderHolder = JsonConvert.DeserializeObject<OrderHolder>( resp );
                     OrderInfo order = orderHolder.Order;
                     if( order.Status == "OPEN")
                     {
@@ -661,7 +677,7 @@ namespace CBApp1
                             }
                         }
 
-                        ProcessPreviouslyActiveOrders( ref previousActive );
+                        ProcessPreviouslyActiveOrders( previousActive );
 
                     }
                     if( messageEvent.Type == "update" )
@@ -713,7 +729,7 @@ namespace CBApp1
             }
         }
 
-        private void ProcessPreviouslyActiveOrders( ref ConcurrentDictionary<string, ConcurrentDictionary<string, OrderInfo>> previousActive )
+        private async Task ProcessPreviouslyActiveOrders(  ConcurrentDictionary<string, ConcurrentDictionary<string, OrderInfo>> previousActive )
         {
             try
             {
@@ -745,7 +761,7 @@ namespace CBApp1
                 {
                     order = inactiveOrders[ i ];
 
-                    FillsHolder fills = FetchOrderFills( order.Order_Id );
+                    FillsHolder fills = await FetchOrderFills( order.Order_Id );
 
                     if( fills != null )
                     {
@@ -790,16 +806,17 @@ namespace CBApp1
             }
         }
 
-        private FillsHolder FetchOrderFills( string orderId )
+        private async Task<FillsHolder> FetchOrderFills( string orderId )
         {
             try
             {
-                RestResponse resp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/historical/fills?order_id={orderId}",
-                                                                Method.Get,
+                string resp = await reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/historical/fills?order_id={orderId}",
+                                                                "",
+                                                                HttpMethod.Get,
                                                                 "" );
-                if( resp.IsSuccessful )
+                if( resp != null )
                 {
-                    return JsonConvert.DeserializeObject<FillsHolder>( resp.Content );
+                    return JsonConvert.DeserializeObject<FillsHolder>( resp );
                 }
                 else
                 {
@@ -932,11 +949,11 @@ namespace CBApp1
                 int basePrecision = productInfo.BasePrecision;
                 Math.Round( order.FilledSize, basePrecision );
 
-                FillsHolder fillsHolder = FetchOrderFills( order.Order_Id );
-                List<Fill> fills = new List<Fill>( fillsHolder.Fills );
-
+                FillsHolder fillsHolder = await FetchOrderFills( order.Order_Id );
+                
                 if( fillsHolder != null )
                 {
+                    List<Fill> fills = new List<Fill>( fillsHolder.Fills );
                     if( fillsHolder.Fills.Length > 0 )
                     {
                         foreach( var fill in fillsHolder.Fills )
@@ -1157,12 +1174,13 @@ namespace CBApp1
                         pendingOrders.TryRemove( order.Client_Order_Id, out throwAway );
                     }
 
-                    RestResponse resp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/historical/{order.Order_Id}",
-                                                              Method.Get,
+                    string resp = await reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/historical/{order.Order_Id}",
+                                                                    "",
+                                                              HttpMethod.Get,
                                                               "" );
-                    if( resp.IsSuccessful )
+                    if( resp != null )
                     {
-                        OrderHolder holder = JsonConvert.DeserializeObject<OrderHolder>( resp.Content );
+                        OrderHolder holder = JsonConvert.DeserializeObject<OrderHolder>( resp );
                         filledOrder = holder.Order;
 
 

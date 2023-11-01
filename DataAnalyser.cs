@@ -20,6 +20,7 @@ namespace CBApp1
         private readonly object analyserLongCandlesRoot = new object();
         private readonly object analyserCurrentLongCandlesRoot = new object();
         private readonly object analyserCurrentShortCandlesRoot = new object();
+        private readonly object analysisRoot = new object();
         public DataAnalyser( ref DataHandler dataHandler,
                              ref System.Timers.Timer aTimer,
                              ref SynchronizedConsoleWriter writer,
@@ -72,6 +73,7 @@ namespace CBApp1
             hourEmaRange = GenerateRange( config.HourEmaRange[ 0 ], config.HourEmaRange[ 1 ], 4 );
 
             analysisRunning = false;
+            analysisEnd = DateTime.MinValue;
         }
 
         
@@ -597,26 +599,26 @@ namespace CBApp1
                             ((e.SignalTime.Minute + 1) % 5 == 0) && (e.SignalTime.Second > 42) )
                         )
                     {
-                        if (!analysisRunning)
+                        await Task.Run( () =>
                         {
-                            analysisRunning = true;
-                            await Task.Run(() =>
+                            if( !analysisRunning )
                             {
-                                //AnalyseData();
-                                AnalysisFunctionsTests();
-                                //writer.Write( $"analysis running {DateTime.UtcNow}" );
-                            });
-                            analysisRunning = false;
-                        }
-                        //else
-                        //{
+                                lock( analysisRoot )
+                                {
+                                    analysisRunning = true;
 
-                        //}
+                                    writer.Write( $"analysis running {DateTime.UtcNow}" );
+                                    AnalysisFunctionsTests();
+
+                                    analysisRunning = false;
+                                }
+                            }
+                        });
                     }
-                    //else
-                    //{
-                    //    Console.WriteLine("Close to new candle");
-                    //}
+                    else
+                    {
+                        analysisRunning = false;
+                    }
                 }
             }
             catch (Exception ex)
@@ -640,6 +642,11 @@ namespace CBApp1
                 SortedList<double, VolatilityAnalysisResult> sortedHourResults;
                 SingleEmaAnalysisResult hourLongAnalysisResult = null;
                 SingleEmaAnalysisSettings hourLongAnalysisSettings;
+
+                while ( analysisEnd > DateTime.UtcNow.AddSeconds( -3 ) )
+                {
+                    Thread.Sleep( 1000 );
+                }
 
                 foreach( var pair in fiveMinEmas.Where( p => p.Value != null ) )
                 {
@@ -686,6 +693,9 @@ namespace CBApp1
                                 SingleEmaAnalysisSettings fiveAnalysisSettings;
                                 SingleEmaAnalysisResult fiveAnalysisResult = null;
 
+                                double latestLow = Math.Min( bestFiveVolatility.Peaks.First.Next.Value, bestFiveVolatility.Peaks.First.Value );
+                                double latestHigh = Math.Max( bestFiveVolatility.Peaks.First.Next.Value, bestFiveVolatility.Peaks.First.Value );
+
                                 int bestEma = -1;
 
                                 if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.0142 )
@@ -721,7 +731,7 @@ namespace CBApp1
                                                                                               0.4,
                                                                                               bestEma,
                                                                                               3,
-                                                                                              7,
+                                                                                              6,
                                                                                               ref currentFiveMinCandles,
                                                                                               ref fiveMinEmas,
                                                                                               ref fiveMinEmaSlopes,
@@ -731,7 +741,6 @@ namespace CBApp1
 
                                         if( fiveAnalysisResult != null )
                                         {
-
                                             double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
                                             PreOrderReadyEventArgs args;
 
@@ -773,11 +782,7 @@ namespace CBApp1
 
                                                 if( hourLongAnalysisResult.BuyOk )
                                                 {
-
-                                                    double latestLow = Math.Min( bestFiveVolatility.Peaks.First.Next.Value, bestFiveVolatility.Peaks.First.Value );
-                                                    double latestHigh = Math.Max( bestFiveVolatility.Peaks.First.Next.Value, bestFiveVolatility.Peaks.First.Value );
-
-                                                    if( price < 1.016 * latestLow )
+                                                    if( price < 1.019 * latestLow )
                                                     {
                                                         args = new PreOrderReadyEventArgs();
                                                         args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
@@ -873,8 +878,8 @@ namespace CBApp1
                                                                                         -1,
                                                                                         -1,
                                                                                         -0.00044, // -0.000031 //bs1
-                                                                                        0.0000182, // bs2
-                                                                                        -1,
+                                                                                        0.0000164, // bs2 0,0000182 --> 0,0000164
+                                                                                        -1, //-11
                                                                                         false,
                                                                                         true,
                                                                                         -1, //bpeakrp
@@ -949,6 +954,7 @@ namespace CBApp1
                                                 double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
 
                                                 double latestLow = Math.Min( bestVolatility.Peaks.First.Next.Value, bestVolatility.Peaks.First.Value );
+                                                double latestHigh = Math.Max( bestVolatility.Peaks.First.Next.Value, bestVolatility.Peaks.First.Value );
 
                                                 if( price < 1.02 * latestLow )
                                                 {
@@ -962,10 +968,9 @@ namespace CBApp1
                                                     //      $"\n{bestVolatility.Peaks.First.Next.Value} - {bestVolatility.PeakTimes.First.Next.Value}" +
                                                     //      $"\n{bestVolatility.Peaks.First.Next.Next.Value} - {bestVolatility.PeakTimes.First.Next.Next.Value}" );
 
-
                                                     OnPreOrderReady( args );
 
-                                                    //writer.Write( $"Pre order buy {product} at {price}" );
+                                                    writer.Write( $"Pre order buy {product} at {price}" );
                                                 }
                                             }
                                         }
@@ -1094,6 +1099,7 @@ namespace CBApp1
                         }
                     }
                 }
+                analysisEnd = DateTime.UtcNow;
             }
             catch( Exception e )
             {
@@ -1500,10 +1506,7 @@ namespace CBApp1
                         result.StartPrice = peakEmaPrice;
                         result.Time = tStartTime;
                     }
-                    else
-                    {
-                        throw new Exception( "No find start of trend?" );
-                    }
+
                 }
                 else
                 {
@@ -1560,7 +1563,7 @@ namespace CBApp1
                         if( (sSett.BS1 != -1) && 
                             ((newestEmaSlope >= 0 ||
                             newestEmaSlope >= sSett.BS1 * newestEma) &&
-                            ((newestEmaSlope < (sSett.BS1 * (-11) * newestEma))|| (sSett.BS1S == -1) )) ||
+                            ((newestEmaSlope < (sSett.BS1 * ( sSett.BS1S ) * newestEma))|| (sSett.BS1S == -1) )) ||
                             sSett.OnlyBs2 )
                         {
                             // slope rate 
@@ -1909,8 +1912,8 @@ namespace CBApp1
 
                     for( int i = 0; i < count; i++ )
                     {
-                        if( volSett.Product == "ETH-USD" && volSett.Length == 56 &&
-                            currentCandle.Time.Day == 19 && currentCandle.Time.Hour == 18)
+                        if( volSett.Product == "TRB-USD" && volSett.Length == 18 &&
+                            currentCandle.Time.Day == 27 && currentCandle.Time.Hour == 12 )
                         {
 
                         }
@@ -3523,6 +3526,7 @@ namespace CBApp1
         private bool analysisRunning;
         private int[] fiveMinEmaRange;
         private int[] hourEmaRange;
+        private DateTime analysisEnd;
 
         private SynchronizedConsoleWriter writer;
         private readonly AnalyserConfiguration config;

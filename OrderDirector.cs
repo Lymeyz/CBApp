@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Net.Http;
 
 namespace CBApp1
 {
@@ -95,13 +96,14 @@ namespace CBApp1
                 //{
                 //    tracker.UpdateTracker( ref reqMaker );
                 //}
-                //while( true )
-                //{
-                //    PrelO prel1 = new PrelO( "ETH-EUR", DateTime.UtcNow, true );
-                //    writer.Write( "Write ETH buy order: " );
-                //    prel1.Price = double.Parse( Console.ReadLine(), new CultureInfo( "En-Us" ) );
-                //    TryPlaceOrder( prel1 );
-                //}
+
+                while( true )
+                {
+                    PreOrder prel1 = new PreOrder( "ETH-EUR", DateTime.UtcNow, true );
+                    writer.Write( "Write ETH buy order: " );
+                    prel1.Price = double.Parse( Console.ReadLine(), new CultureInfo( "En-Us" ) );
+                    TryPlaceOrder( prel1 );
+                }
 
 
                 //lastTry = DateTime.MinValue;
@@ -298,36 +300,6 @@ namespace CBApp1
             }
         }
 
-        private string GetProfileId(string profileName)
-        {
-            try
-            {
-                var resp = reqMaker.GetProfilesRequest();
-                List<Profile> profiles;
-                string id = "";
-
-                if (resp.Content.Length != 0)
-                {
-                    profiles = JsonConvert.DeserializeObject<List<Profile>>(resp.Content);
-
-                    foreach (Profile item in profiles)
-                    {
-                        if (item.Name == profileName)
-                        {
-                            id = item.Id;
-                        }
-                    }
-                }
-
-                return id;
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e.StackTrace);
-                Console.WriteLine(e.Message);
-                return "";
-            }
-        }
 
         private async Task TryPlaceOrder(PreOrder prelOrder)
         {
@@ -338,7 +310,7 @@ namespace CBApp1
                     prelOrder.ProductId = productAliases[ prelOrder.ProductId ];
                 }
 
-                accounts.FetchAccounts( ref reqMaker );
+                accounts.FetchAccounts( reqMaker );
 
                 //if( prelOrder.ProductId == "SOL-USDC" )
                 //{
@@ -400,15 +372,15 @@ namespace CBApp1
                         {
                             tooClose = true;
 
-                            //check if close order is incomplete
+                            // check if close order is incomplete
                             if( Math.Round( trackedUnMatched.Price * trackedUnMatched.FilledSize,
                                     productInfos[ prelOrder.ProductId ].QuotePrecision ) 
                                 < eurAm )
                             {
                                 // close order is not complete
-                                tooClose = false;
-                                recentBuy = false;
-                                prelOrder.Complementary = true;
+                                //tooClose = false;
+                                //recentBuy = false;
+                                //prelOrder.Complementary = true;
                                 
                                 // calculate remaining size etc
                                 double trackedUnMatchedQuoteSize = trackedUnMatched.FilledSize * trackedUnMatched.Price;
@@ -637,7 +609,7 @@ namespace CBApp1
                 {
                     foreach( var pair in wsTracker.UnMatched[ productId ] )
                     {
-                        if( (prelPrice < 0.97 * pair.Value.Price) &&
+                        if( (prelPrice < 0.96 * pair.Value.Price) &&
                             matchingBuyOrders.Where(o => o.ClientOrderId == pair.Value.ClientOrderId).ToList().Count == 0)
                         {
                             matchingBuyOrders.Add( pair.Value );
@@ -705,7 +677,9 @@ namespace CBApp1
                             else
                             {
                                 // remove associated
+                                string trash;
                                 hasActiveAssociated.Remove( matchingBuyOrders[ i ].ClientOrderId );
+                                wsTracker.Associated.TryRemove( matchingBuyOrders[ i ].ClientOrderId, out trash );
                                 matchingBuyOrders.RemoveAt( i );
                                 count--;
                             }
@@ -752,7 +726,7 @@ namespace CBApp1
                     {
                         writer.Write( $"{item.FilledSize} {prelOrder.ProductId.Split( '-' )[0]} at {item.Price}" );
                     }
-                    accounts.FetchAccounts( ref reqMaker );
+                    accounts.FetchAccounts( reqMaker );
                     double balance = Math.Round( accounts.Accounts[ prelOrder.ProductId.Split( '-' )[ 0 ] ].BalanceDouble,
                             productInfos[ prelOrder.ProductId ].BasePrecision );
 
@@ -790,7 +764,7 @@ namespace CBApp1
             {
                 LimitOrder order;
                 string orderString;
-                RestResponse orderResp = null;
+                string orderResp = null;
                 OrderInfoResponse respOrderInfo;
                 double size;
                 string sizeString;
@@ -824,13 +798,13 @@ namespace CBApp1
                                                                                     true ) ) );
 
                         orderString = JsonConvert.SerializeObject( order );
-                        orderResp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders", Method.Post, orderString );
+                        orderResp = await reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders", "", HttpMethod.Post, orderString );
 
                         sentCount++;
 
-                        if( orderResp.IsSuccessful )
+                        if( orderResp != null )
                         {
-                            respOrderInfo = JsonConvert.DeserializeObject<OrderInfoResponse>( orderResp.Content );
+                            respOrderInfo = JsonConvert.DeserializeObject<OrderInfoResponse>( orderResp );
 
                             if( respOrderInfo.Success )
                             {
@@ -864,21 +838,21 @@ namespace CBApp1
                         priceString = prel.Price.ToString( $"F{productInfos[ prel.ProductId ].QuotePrecision}", new CultureInfo( "En-Us" ) );
 
                         order = new LimitOrder( guidString,
-                                               prel.ProductId,
-                                               "SELL",
-                                               new OrderConfiguration( new LimitGtc( sizeString,
-                                                                                    priceString,
-                                                                                    true ) ) );
+                                                prel.ProductId,
+                                                "SELL",
+                                                new OrderConfiguration( new LimitGtc( sizeString,
+                                                                                       priceString,
+                                                                                       true            ) ) );
 
 
 
                         orderString = JsonConvert.SerializeObject( order );
-                        orderResp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders", Method.Post, orderString );
+                        orderResp = await reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders", "", HttpMethod.Post, orderString );
                         sentCount++;
 
-                        if( orderResp.IsSuccessful )
+                        if( orderResp != null )
                         {
-                            respOrderInfo = JsonConvert.DeserializeObject<OrderInfoResponse>( orderResp.Content );
+                            respOrderInfo = JsonConvert.DeserializeObject<OrderInfoResponse>( orderResp );
 
                             if( respOrderInfo.Success )
                             {
@@ -938,7 +912,7 @@ namespace CBApp1
                             if( lastTries[ e.PreliminaryOrder.ProductId ] < DateTime.UtcNow.AddSeconds( -30 ) )
                             {
                                 if( analyser.DataHandler.Fetcher.CheckUserSocket() &&
-                                    accounts.FetchAccounts( ref reqMaker ) )
+                                    accounts.FetchAccounts( reqMaker ).Result )
                                 {
                                     //writer.Write( $"Selloff {e.PreliminaryOrder.ProductId} at {e.PreliminaryOrder.Price}" );
                                     TryPlaceSellOff( e.PreliminaryOrder );
@@ -953,7 +927,7 @@ namespace CBApp1
                         else
                         {
                             if( analyser.DataHandler.Fetcher.CheckUserSocket() &&
-                                accounts.FetchAccounts( ref reqMaker ) )
+                                accounts.FetchAccounts( reqMaker ).Result )
                             {
                                 //writer.Write( $"Selloff {e.PreliminaryOrder.ProductId} at {e.PreliminaryOrder.Price}" );
                                 TryPlaceSellOff( e.PreliminaryOrder );
@@ -967,7 +941,7 @@ namespace CBApp1
                         
                     }
                     else if( lastTries.ContainsKey( e.PreliminaryOrder.ProductId ) &&
-                             accounts.FetchAccounts( ref reqMaker ) )
+                             accounts.FetchAccounts( reqMaker ).Result )
                     {
                         if( lastTries[ e.PreliminaryOrder.ProductId ] < DateTime.UtcNow.AddSeconds( -30 ) )
                         {
@@ -1008,7 +982,7 @@ namespace CBApp1
                             type = "buy";
 
                             if( analyser.DataHandler.Fetcher.CheckUserSocket() &&
-                                accounts.FetchAccounts( ref reqMaker ) )
+                                accounts.FetchAccounts( reqMaker ).Result )
                             {
                                 TryPlaceOrder( e.PreliminaryOrder );
                             }
@@ -1021,7 +995,7 @@ namespace CBApp1
                         {
                             type = "sell";
                             if( analyser.DataHandler.Fetcher.CheckUserSocket() &&
-                                accounts.FetchAccounts( ref reqMaker ) )
+                                accounts.FetchAccounts( reqMaker ).Result )
                             {
                                 TryPlaceOrder( e.PreliminaryOrder );
                             }

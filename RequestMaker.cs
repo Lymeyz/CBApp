@@ -10,87 +10,83 @@ using System.Runtime.Serialization;
 using System.Threading;
 using Newtonsoft.Json;
 using System.Runtime.CompilerServices;
+using System.Net.Http;
+using System.Web;
 
 namespace CBApp1
 {
     public class RequestMaker
     {
-        public RequestMaker(ref Authenticator authenticator, string apiEndpoint)
+        public RequestMaker(ref Authenticator authenticator, RequestLimiter limiter, string apiEndpoint)
         {
             auth = authenticator;
+            this.limiter = limiter;
             this.apiEndpoint = apiEndpoint;
         }
 
         private Authenticator auth;
+        private RequestLimiter limiter;
         string apiEndpoint;
-        public RestResponse SendAuthRequest(string reqPath, Method method, string body)
+        public async Task<string> SendAuthRequest(string reqPath, string queryParams, HttpMethod method, string body)
         {
 
             try
             {
-                RestClient client;
-                RestRequest request;
-                RestResponse resp = null;
+                HttpResponseMessage resp = null;
+                string returnString = null;
+
                 string[] headers;
+                //Console.WriteLine( "Sending request" );
 
-                client = new RestClient( apiEndpoint + reqPath );
-                request = new RestRequest( "", method );
-
-                int counter = 0;
-
-                for( int i = 0; i < 25; i++ )
+                for( int i = 0; i < 100; i++ )
                 {
                     headers = auth.GenerateHeaders( auth.GetUnixTime(),
-                                                        method.ToString(),
-                                                        client.Options.BaseUrl.AbsolutePath,
-                                                        body );
+                                                    method.ToString(),
+                                                    '/' + reqPath,
+                                                    body                );
 
-                    request.AddHeader( "accept", "application/json" );
-                    request.AddHeader( "CB-ACCESS-KEY", headers[ 0 ] );
-                    request.AddHeader( "CB-ACCESS-SIGN", headers[ 1 ] );
-                    request.AddHeader( "CB-ACCESS-TIMESTAMP", headers[ 2 ] );
+                    HttpRequestMessage reqMessage = new HttpRequestMessage( method, apiEndpoint + reqPath + queryParams );
+                    reqMessage.Headers.Add( "accept", "application/json"        );
+                    reqMessage.Headers.Add( "CB-ACCESS-KEY", headers[ 0 ]       );
+                    reqMessage.Headers.Add( "CB-ACCESS-SIGN", headers[ 1 ]      );
+                    reqMessage.Headers.Add( "CB-ACCESS-TIMESTAMP", headers[ 2 ] );
 
                     if( body != "" )
                     {
-                        request.AddParameter( "application/json", body, ParameterType.RequestBody );
+                        reqMessage.Content = new StringContent( body, Encoding.UTF8, "application/json" );
                     }
 
-                    resp = client.Execute( request );
+                    resp = await limiter.ExecuteRequest( reqMessage );
 
                     if( resp != null &&
-                        resp.IsSuccessful )
+                        resp.IsSuccessStatusCode )
                     {
-                        if( i > 0 )
-                        {
-                            //Console.WriteLine( $"success on {i+1}" );
-                        }
-                        else
-                        {
-                            //Console.WriteLine( $"success on {i + 1}" );
-                        }
+                        returnString = await resp.Content.ReadAsStringAsync();
+
                         break;
                     }
                     else
                     {
-                        //Console.WriteLine( "reqFail" );
-                        //Console.WriteLine( $"{resp.StatusDescription}" );
+                        if( resp != null )
+                        {
+                            string respContent = await resp.Content.ReadAsStringAsync();
+                            //Console.WriteLine( "reqFail" );
+                        }
+                        else
+                        {
+                            //Console.WriteLine( "reqFail" );
+                        }
+                        
+                        //Console.WriteLine( $"{resp.StatusCode}" );
                     }
 
-                    if( i == 24 )
-                    {
-                        //Console.WriteLine( "OVER 24 FAILS" );
-                        Thread.Sleep( 1000 );
-                        i = 0;
-                        counter++;
-                    }
-
-                    if( counter > 10 )
-                    {
-                        throw new Exception( "Request failed, 100 failed requests" );
-                    }
+                    //if( counter > 30 )
+                    //{
+                    //    throw new Exception( "Request failed, 100 failed requests" );
+                    //}
                 }
 
-                return resp;
+                return returnString;
             }
             catch( Exception e )
             {
@@ -98,145 +94,6 @@ namespace CBApp1
                 Console.WriteLine( e.StackTrace );
                 return null;
             }
-            
-        }
-
-        public RestResponse SendAuthQueryRequest(string reqPath, string query, Method method, string body)
-        {
-            try
-            {
-                RestClient client;
-                RestRequest request;
-                RestResponse resp = null;
-                string[] headers;
-
-
-                client = new RestClient( apiEndpoint + reqPath + query );
-                request = new RestRequest( "", method );
-
-                int counter = 0;
-
-                for( int i = 0; i < 25; i++ )
-                {
-                    headers = auth.GenerateHeaders( auth.GetUnixTime(),
-                                                        method.ToString(),
-                                                        reqPath,
-                                                        body );
-
-                    request.AddHeader( "accept", "application/json" );
-                    request.AddHeader( "CB-ACCESS-KEY", headers[ 0 ] );
-                    request.AddHeader( "CB-ACCESS-SIGN", headers[ 1 ] );
-                    request.AddHeader( "CB-ACCESS-TIMESTAMP", headers[ 2 ] );
-
-                    if( body != "" )
-                    {
-                        request.AddParameter( "application/json", body, ParameterType.RequestBody );
-                    }
-
-                    resp = client.Execute( request );
-
-                    if( resp != null && 
-                        resp.IsSuccessful &&
-                        resp.StatusCode != System.Net.HttpStatusCode.BadGateway )
-                    {
-                        break;
-                    }
-
-                    if( i == 24 )
-                    {
-                        Thread.Sleep( 500 );
-                        i = 0;
-                    }
-
-
-                    counter++;
-                    if( counter > 4 )
-                    {
-                        throw new Exception( "Request failed" );
-                    }
-                }
-
-                return resp;
-                
-            }
-            catch( Exception e )
-            {
-                Console.WriteLine( e.Message );
-                Console.WriteLine( e.StackTrace );
-                return null;
-            }
-        }
-
-        public RestResponse SendOrderRequest(string reqBody)
-        {
-            return SendAuthRequest("/orders", Method.Post, reqBody);
-        }
-
-        public RestResponse SendCancelRequest(string orderId, string profile_id)
-        {
-            int sentCount = 0;
-            bool canceled = false;
-            RestResponse cResp = null;
-
-            while (!canceled)
-            {
-                cResp = SendAuthRequest("/orders/" + orderId + $"?profile_id={profile_id}", Method.Delete, "");
-                sentCount++;
-
-                if (sentCount == 5)
-                {
-                    Thread.Sleep(1000);
-                    sentCount = 0;
-                }
-
-                if (cResp.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    canceled = true;
-                }
-                else if( cResp.StatusCode == System.Net.HttpStatusCode.NotFound )
-                {
-                    canceled = true;
-                }
-                else
-                {
-                    sentCount++;
-                }
-            }
-            return cResp;
-        }
-
-        public RestResponse GetOrdersRequest(string queryString)
-        {
-            return SendAuthRequest("/orders?" + queryString, Method.Get, "");
-        }
-
-        public RestResponse SendFillsRequest(string queryString)
-        {
-            return SendAuthRequest("/fills?" + queryString, Method.Get, "");
-        }
-
-        public RestResponse GetOrderRequest(string orderId)
-        {
-            return SendAuthRequest($"/orders/{orderId}", Method.Get, "");
-        }
-
-        public RestResponse GetProfilesRequest()
-        {
-            return SendAuthRequest($"/profiles?active=true", Method.Get, "");
-        }
-        public RestResponse GetAccountsRequest()
-        {
-            return SendAuthRequest("/accounts", Method.Get, "");
-        }
-
-        public RestResponse SendRequest(string reqPath, Method method)
-        {
-            var client = new RestClient(apiEndpoint + reqPath);
-            var request = new RestRequest( "", method );
-            
-            request.AddHeader("Accept", "application/json");
-
-            return client.Execute(request);
         }
 
         private int GetUnixTime()

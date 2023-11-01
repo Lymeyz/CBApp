@@ -36,14 +36,17 @@ namespace CBApp1
                     "XLM-USD",
                     "XRP-USD",
                     "BCH-USD",
-                    "TRB-USD"
+                    "TRB-USD",
+                    "LINK-USD",
+                    "AVAX-USD"
                 };
 
                 Authenticator auth = new Authenticator( "UskLbUTH3fKU6lKl",
                                                   "0faf3uv6rzi",
                                                   "6qzqQXei1fFZgE9w37tndH8Qi0MSwmTd" );
+                RequestLimiter limiter = new RequestLimiter();
 
-                RequestMaker reqMaker = new RequestMaker( ref auth, @"https://api.coinbase.com/" );
+                RequestMaker reqMaker = new RequestMaker( ref auth, limiter, @"https://api.coinbase.com/" );
 
                 DataHandler dataHandler = new DataHandler(ref aTimer, ref writer, ref auth, ref reqMaker, products);
 
@@ -71,7 +74,9 @@ namespace CBApp1
                     { "LTC-USD", "LTC-USDC" },
                     { "XRP-USD", "XRP-USDC" },
                     { "BCH-USD", "BCH-USDC" },
-                    { "TRB-USD", "TRB-USDC" }
+                    { "TRB-USD", "TRB-USDC" },
+                    { "LINK-USD", "LINK-USDC" },
+                    { "AVAX-USD", "AVAX-USDC" }
                 };
 
                 OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 10, 3 , ref aTimer, 0.015, 1.01010, products, aliases);

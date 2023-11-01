@@ -8,6 +8,7 @@ using System.IO;
 using Newtonsoft.Json;
 using System.Globalization;
 using System.Threading;
+using System.Net.Http;
 
 namespace CBApp1
 {
@@ -67,18 +68,14 @@ namespace CBApp1
 
         private string FetchProductInfo(string productId)
         {
-            RestResponse resp = null;
+            string resp = null;
 
             resp = reqMaker.SendAuthRequest( $@"api/v3/brokerage/products/{productId}",
-                                                         Method.Get,
-                                                         "" );
+                                                    "",
+                                                         HttpMethod.Get,
+                                                         "" ).Result;
 
-            return resp.Content;
-        }
-
-        private string FetchCurrencyMinSize(string currencyId)
-        {
-            return reqMaker.SendRequest($"currencies/{currencyId}", Method.Get).Content;
+            return resp;
         }
 
         private void WriteToFile()

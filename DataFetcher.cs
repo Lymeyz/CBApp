@@ -10,6 +10,7 @@ using Newtonsoft.Json;
 using System.Timers;
 using System.Globalization;
 using RestSharp;
+using System.Net.Http;
 
 namespace CBApp1
 {
@@ -82,13 +83,13 @@ namespace CBApp1
             //Create websocket, 
             marketSocketHandler = new WebSocketHandler( @"wss://advanced-trade-ws.coinbase.com",
                                                  auth,
-                                                 new string[] { "market_trades" },
+                                                 new string[] { "market_trades", "heartbeats" },
                                                  products );
             marketSocket = marketSocketHandler.Ws;
 
             userSocketHandler = new WebSocketHandler( @"wss://advanced-trade-ws.coinbase.com",
                                                  auth,
-                                                 new string[] { "user" },
+                                                 new string[] { "user", "heartbeats" },
                                                  new string[] { } );
             userSocket = userSocketHandler.Ws;
 
@@ -120,7 +121,6 @@ namespace CBApp1
                 while (count != 0)
                 {
 
-                    //Console.Write($"{count}    ");
                     Thread.Sleep(1000);
                     count--;
                 }
@@ -135,7 +135,7 @@ namespace CBApp1
         {
             GetProductHistoricCandles( "ETH-EUR", "FIVE_MINUTE", DateTime.UtcNow, DateTime.UtcNow.AddHours( -1 ), 200 );
         }
-        public LimitedDateTimeList<Candle> GetProductHistoricCandles(string productId, string granularity, DateTime startTime, 
+        public async Task<LimitedDateTimeList<Candle>> GetProductHistoricCandles(string productId, string granularity, DateTime startTime, 
             DateTime endTime, int candleCount)
         {
             try
@@ -144,20 +144,19 @@ namespace CBApp1
                 int startUnix = GetUnixTime( startTime );
                 int endUnix = GetUnixTime( endTime );
                 string reqPath;
-                RestResponse resp;
-                string contentString = null;
+                string queryParams;
+                string resp;
 
                 reqPath =
-                    $@"api/v3/brokerage/products/{productId}/candles" +
+                    $@"api/v3/brokerage/products/{productId}/candles";
+                queryParams = 
                     $"?start={startUnix}&" +
                     $"end={endUnix}&" +
                     $"granularity={granularity}";
 
-                resp = reqMaker.SendAuthRequest( reqPath, Method.Get, "" );
+                resp = await reqMaker.SendAuthRequest( reqPath, queryParams, HttpMethod.Get, "" );
 
-                contentString = resp.Content;
-
-                CandleHolder<Candle> holder2 = JsonConvert.DeserializeObject<CandleHolder<Candle>>( contentString );
+                CandleHolder<Candle> holder2 = JsonConvert.DeserializeObject<CandleHolder<Candle>>( resp );
 
                 return new LimitedDateTimeList<Candle>( holder2.Candles, candleCount, true );
             }
@@ -295,7 +294,10 @@ namespace CBApp1
                     //}
                     else
                     {
-                        writer.Write( data );
+                        if( msg.Channel != "heartbeats" )
+                        {
+                            writer.Write( data );
+                        }
                     }
                 });
             }

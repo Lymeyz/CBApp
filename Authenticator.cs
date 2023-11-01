@@ -15,6 +15,7 @@ namespace CBApp1
 
     public class Authenticator
     {
+        private readonly object authRoot = new object();
         public Authenticator(string accessKey, string passPhrase, string secretKey)
         {
             this.accessKey = accessKey;
@@ -41,7 +42,10 @@ namespace CBApp1
             // CB-ACCESS-KEY
             headers[0] = accessKey;
             // CB-ACCESS-SIGN
-            headers[1] = GenerateSign(MakePreHash(time, method.ToString().ToUpper(), requestPath, body));
+            lock( authRoot )
+            {
+                headers[ 1 ] = GenerateSign( MakePreHash( time, method.ToString().ToUpper(), requestPath, body ) );
+            }
             // CB-ACCESS-TIMESTAMP
             headers[2] = time.ToString();
 
