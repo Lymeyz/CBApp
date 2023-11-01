@@ -38,7 +38,7 @@ namespace CBApp1
                 string[] headers;
                 //Console.WriteLine( "Sending request" );
 
-                for( int i = 0; i < 100; i++ )
+                for( int i = 0; i < 30; i++ )
                 {
                     headers = auth.GenerateHeaders( auth.GetUnixTime(),
                                                     method.ToString(),

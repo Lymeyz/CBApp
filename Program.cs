@@ -81,15 +81,6 @@ namespace CBApp1
 
                 OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 10, 3 , ref aTimer, 0.015, 1.01010, products, aliases);
 
-                //string input = "";
-              
-                //while( input != "z" )
-                //{
-                //    Console.Write( "Type order: " );
-                //    input = Console.ReadLine();
-                //    director.TestSendOrder2( input );
-                //}
-
                 Console.ReadKey();
             }
             catch (Exception e)

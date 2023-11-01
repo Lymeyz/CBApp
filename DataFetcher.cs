@@ -156,9 +156,16 @@ namespace CBApp1
 
                 resp = await reqMaker.SendAuthRequest( reqPath, queryParams, HttpMethod.Get, "" );
 
-                CandleHolder<Candle> holder2 = JsonConvert.DeserializeObject<CandleHolder<Candle>>( resp );
+                if( resp != null )
+                {
+                    CandleHolder<Candle> holder2 = JsonConvert.DeserializeObject<CandleHolder<Candle>>( resp );
 
-                return new LimitedDateTimeList<Candle>( holder2.Candles, candleCount, true );
+                    return new LimitedDateTimeList<Candle>( holder2.Candles, candleCount, true );
+                }
+                else
+                {
+                    return null;
+                }
             }
             catch (Exception e)
             {
@@ -236,70 +243,67 @@ namespace CBApp1
             {
                 //Create new candle(s) if required, update existing candles if needed, pass along 
                 //candle(s) to DataHandler when minute is up
-                await Task.Run(() =>
+                WsMessage msg = JsonConvert.DeserializeObject<WsMessage>( data );
+
+                if( msg.Channel == "user" )
                 {
-                    WsMessage msg = JsonConvert.DeserializeObject<WsMessage>( data );
-
-                    if( msg.Channel == "user" )
+                    if( msg.Events.Length > 0 )
                     {
-                        if( msg.Events.Length > 0 )
-                        {
-                            UserChannelUpdateEventArgs args = new UserChannelUpdateEventArgs();
-                            args.messageEvent = msg.Events;
-                            OnUserChannelUpdate( args );
-                        }
+                        UserChannelUpdateEventArgs args = new UserChannelUpdateEventArgs();
+                        args.messageEvent = msg.Events;
+                        OnUserChannelUpdate( args );
                     }
-                    else if( msg.Channel == "market_trades" )
+                }
+                else if( msg.Channel == "market_trades" )
+                {
+                    if( msg.Events.Length != 0 )
                     {
-                        if( msg.Events.Length != 0 )
+                        lock( matchesRoot )
                         {
-                            lock( matchesRoot )
+                            if( msg.Events[ 0 ].Type != "snapshot" )
                             {
-                                if( msg.Events[0].Type != "snapshot" )
+                                foreach( var trade in msg.Events[ 0 ].Trades )
                                 {
-                                    foreach( var trade in msg.Events[ 0 ].Trades )
+                                    if( DateTime.UtcNow.Minute - trade.Time.Minute < DateTime.UtcNow.Minute % 5 &&
+                                    (!(trade.Time < DateTime.UtcNow.AddMinutes( -5 ))) )
                                     {
-                                        if( DateTime.UtcNow.Minute - trade.Time.Minute < DateTime.UtcNow.Minute % 5 &&
-                                        ( ! ( trade.Time < DateTime.UtcNow.AddMinutes( -5 ) ) ) )
-                                        {
-                                            matchQueue.Enqueue( trade );
-                                        }
-                                        else
-                                        {
-                                            //writer.Write( "OLD MATCH " + data );
-                                        }
-                                        //writer.Write( $"{trade.Time}: {trade.Product_Id} at {trade.Price}, size: {trade.Size}" );
+                                        matchQueue.Enqueue( trade );
                                     }
+                                    else
+                                    {
+                                        //writer.Write( "OLD MATCH " + data );
+                                    }
+                                    //writer.Write( $"{trade.Time}: {trade.Product_Id} at {trade.Price}, size: {trade.Size}" );
                                 }
-                                else
-                                {
-                                    //writer.Write( $"Snapshot message: { data }");
-                                }
-                                
                             }
-                        }
-                    }
-                    else if( msg.Channel == "subscriptions" )
-                    {
-                        //writer.Write( $"SUBSCRIPTION: {data}");
-                    }
-                    //else if( typeObject.Type == "heartbeat" )
-                    //{
-                    //    Heartbeat heartbeatMsg = JsonConvert.DeserializeObject<Heartbeat>( data );
+                            else
+                            {
+                                //writer.Write( $"Snapshot message: { data }");
+                            }
 
-                    //    lock( beatsRoot )
-                    //    {
-                    //        beatQueue.Enqueue( heartbeatMsg );
-                    //    }
-                    //}
-                    else
-                    {
-                        if( msg.Channel != "heartbeats" )
-                        {
-                            writer.Write( data );
                         }
                     }
-                });
+                }
+                else if( msg.Channel == "subscriptions" )
+                {
+                    //writer.Write( $"SUBSCRIPTION: {data}");
+                }
+                //else if( typeObject.Type == "heartbeat" )
+                //{
+                //    Heartbeat heartbeatMsg = JsonConvert.DeserializeObject<Heartbeat>( data );
+
+                //    lock( beatsRoot )
+                //    {
+                //        beatQueue.Enqueue( heartbeatMsg );
+                //    }
+                //}
+                else
+                {
+                    if( msg.Channel != "heartbeats" )
+                    {
+                        writer.Write( data );
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -1024,12 +1028,12 @@ namespace CBApp1
         }
 
         //async
-        public void MarketSocket_OnMessage(object sender, MessageEventArgs e)
+        public async void MarketSocket_OnMessage(object sender, MessageEventArgs e)
         {
-            ProcessMessage(e.Data);
+            await ProcessMessage(e.Data);
         }
 
-        public void UserSocket_OnMessage(object sender, MessageEventArgs e)
+        public async void UserSocket_OnMessage(object sender, MessageEventArgs e)
         {
             WsMessage message = JsonConvert.DeserializeObject<WsMessage>( e.Data );
             MessageType typeObject = JsonConvert.DeserializeObject<MessageType>( e.Data );
@@ -1062,7 +1066,7 @@ namespace CBApp1
                 {
                     if( message.Events != null )
                     {
-                        ProcessMessage( e.Data );
+                        await ProcessMessage( e.Data );
                     }
                 }
             }   
@@ -1136,7 +1140,7 @@ namespace CBApp1
             {
                 // if time since start >=5 min, copy candles and raise CandlesComplete-event...
                 // reset candleStart
-                if ((DateTime.UtcNow - candleStart).Minutes >= 5)
+                if( (DateTime.UtcNow - candleStart).Minutes >= 5 )
                 {
                     candleStart = DateTime.UtcNow;
                     lock( dequeueRoot )
@@ -1187,11 +1191,10 @@ namespace CBApp1
                 }
                 else
                 {
-                    await Task.Run(() =>
+                    await Task.Run( () =>
                     {
                         TryDequeue();
-
-                    });
+                    } );
                 }
 
                 if( e.SignalTime.Second % 2 == 0 )
@@ -1205,14 +1208,14 @@ namespace CBApp1
                         throw new Exception( "UserSocket down" );
                     }
 
-                    if( CheckMarketSocket() )
-                    {
+                    //if( CheckMarketSocket() )
+                    //{
 
-                    }
-                    else
-                    {
-                        throw new Exception( "MarketSocket down" );
-                    }
+                    //}
+                    //else
+                    //{
+                        //throw new Exception( "MarketSocket down" );
+                    //}
                 }
             }
             catch (Exception ex)

@@ -810,10 +810,13 @@ namespace CBApp1
         {
             try
             {
-                string resp = await reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/historical/fills?order_id={orderId}",
-                                                                "",
+                string reqPath = $@"api/v3/brokerage/orders/historical/fills";
+                string queryParams = $@"?order_id={orderId}";
+                string resp = await reqMaker.SendAuthRequest( reqPath,
+                                                                queryParams,
                                                                 HttpMethod.Get,
                                                                 "" );
+
                 if( resp != null )
                 {
                     return JsonConvert.DeserializeObject<FillsHolder>( resp );
@@ -1176,8 +1179,8 @@ namespace CBApp1
 
                     string resp = await reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders/historical/{order.Order_Id}",
                                                                     "",
-                                                              HttpMethod.Get,
-                                                              "" );
+                                                                    HttpMethod.Get,
+                                                                    "" );
                     if( resp != null )
                     {
                         OrderHolder holder = JsonConvert.DeserializeObject<OrderHolder>( resp );

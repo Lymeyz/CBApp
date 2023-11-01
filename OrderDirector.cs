@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 using System.Net.Http;
+using System.Timers;
 
 namespace CBApp1
 {
@@ -90,20 +91,12 @@ namespace CBApp1
                                                    ref productInfos,
                                                    ref timer,
                                                    orderSpreadPercent );
-
-
+                //started = false;
+                //timer.Elapsed += this.OnTimedEvent;
                 //while( true )
                 //{
                 //    tracker.UpdateTracker( ref reqMaker );
                 //}
-
-                while( true )
-                {
-                    PreOrder prel1 = new PreOrder( "ETH-EUR", DateTime.UtcNow, true );
-                    writer.Write( "Write ETH buy order: " );
-                    prel1.Price = double.Parse( Console.ReadLine(), new CultureInfo( "En-Us" ) );
-                    TryPlaceOrder( prel1 );
-                }
 
 
                 //lastTry = DateTime.MinValue;
@@ -129,13 +122,66 @@ namespace CBApp1
                 //prel4.Price = 1341.44;
                 //TryPlaceOrder( prel4 );
 
-                //tracker.UpdateTrackedProduct( ref reqMaker, "ETH-EUR" );
+
+                //string input = Console.ReadLine();
+                //while( input != "C" )
+                //{
+                //    input = Console.ReadLine();
+                //    TestSendOrder( input );
+                //}
 
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.StackTrace);
                 Console.WriteLine(e.Message);
+            }
+        }
+        private bool started;
+
+        private async void OnTimedEvent( Object source, ElapsedEventArgs e )
+        {
+            try
+            {
+                if( started == false )
+                {
+                    started = true;
+                    await TestSendOrders3();
+                }
+                
+            }
+            catch( Exception ex )
+            {
+                Console.WriteLine( ex.StackTrace );
+                Console.WriteLine( ex.Message );
+            }
+        }
+
+        public async Task TestSendOrders3()
+        {
+            if( DateTime.UtcNow.Second % 3 == 0 )
+            {
+                while( true )
+                {
+                    for( int i = 0; i <= 0; i++ )
+                    {
+                        PreOrder prel1 = new PreOrder( "ETH-USD", DateTime.UtcNow, true );
+                        //writer.Write( "Write ETH buy order: " );
+                        //prel1.Price = double.Parse( Console.ReadLine(), new CultureInfo( "En-Us" ) );
+                        prel1.Price = 1850;
+                        Console.WriteLine( "Sending" );
+                        TryPlaceOrder( prel1 );
+                        Thread.Sleep( 2000 );
+                        Console.WriteLine( $"Active orders: {wsTracker.ActiveOrders[ "ETH-USDC" ].Count}" );
+
+
+                        if( i == 10 )
+                        {
+                            //i = 0;
+                        }
+                    }
+
+                }
             }
         }
         public async Task TestSendOrder( string input )
@@ -146,11 +192,11 @@ namespace CBApp1
                 OrderInfo toCancel = null;
                 if( input.Split( '-' )[0] == "B" )
                 {
-                    if( double.Parse( input.Split( '-' )[ 1 ], new CultureInfo("En-Us") ) < 1560 )
+                    if( double.Parse( input.Split( '-' )[ 1 ], new CultureInfo("En-Us") ) < 1850 )
                     {
-                        if( wsTracker.ActiveOrders.ContainsKey( "ETH-EUR" ) )
+                        if( wsTracker.ActiveOrders.ContainsKey( "ETH-USDC" ) )
                         {
-                            foreach( var item in wsTracker.ActiveOrders[ "ETH-EUR" ].Where( i => i.Value.Side == "BUY" ) )
+                            foreach( var item in wsTracker.ActiveOrders[ "ETH-USDC" ].Where( i => i.Value.Side == "BUY" ) )
                             {
                                 toCancel = item.Value;
                             }
@@ -160,7 +206,7 @@ namespace CBApp1
                         {
                             if( await wsTracker.CancelOrder( toCancel.ProductId, toCancel.ClientOrderId, toCancel.Order_Id ))
                             {
-                                PreOrder pre1 = new PreOrder( "ETH-EUR", DateTime.UtcNow, true );
+                                PreOrder pre1 = new PreOrder( "ETH-USDC", DateTime.UtcNow, true );
                                 pre1.Price = double.Parse( input.Split( '-' )[ 1 ], new CultureInfo( "En-Us" ) );
 
                                 SendOrder( pre1, null );
@@ -168,29 +214,27 @@ namespace CBApp1
                         }
                         else
                         {
-                            PreOrder pre1 = new PreOrder( "ETH-EUR", DateTime.UtcNow, true );
+                            PreOrder pre1 = new PreOrder( "ETH-USDC", DateTime.UtcNow, true );
                             pre1.Price = double.Parse( input.Split( '-' )[ 1 ], new CultureInfo( "En-Us" ) );
 
                             SendOrder( pre1, null );
                         }
-
-                        
                     }
                     
                 }
                 else if( input.Split( '-' )[ 0 ] == "S" )
                 {
-                    if( double.Parse( input.Split( '-' )[ 1 ], new CultureInfo( "En-Us" ) ) > 1530 )
+                    if( double.Parse( input.Split( '-' )[ 1 ], new CultureInfo( "En-Us" ) ) > 1800 )
                     {
-                        PreOrder pre1 = new PreOrder( "ETH-EUR", DateTime.UtcNow, false );
+                        PreOrder pre1 = new PreOrder( "ETH-USDC", DateTime.UtcNow, false );
                         pre1.Price = double.Parse( input.Split( '-' )[ 1 ], new CultureInfo( "En-Us" ) );
 
                         List<OrderInfo> unMatchedOrders = new List<OrderInfo>();
                         List<OrderInfo> matchingOrders = new List<OrderInfo>();
 
-                        if( wsTracker.UnMatched.ContainsKey( "ETH-EUR" ) )
+                        if( wsTracker.UnMatched.ContainsKey( "ETH-USDC" ) )
                         {
-                            foreach( var pair in wsTracker.UnMatched[ "ETH-EUR" ] )
+                            foreach( var pair in wsTracker.UnMatched[ "ETH-USDC" ] )
                             {
                                 unMatchedOrders.Add( pair.Value );
                             }
@@ -202,15 +246,17 @@ namespace CBApp1
                             {
                                 if( wsTracker.Associated.ContainsKey( info.ClientOrderId  ) )
                                 {
-                                    if( await wsTracker.CancelAssociatedOrders( "ETH-EUR", info.ClientOrderId ) )
+                                    if( await wsTracker.CancelAssociatedOrders( "ETH-USDC", info.ClientOrderId ) )
                                     {
                                         matchingOrders.Add( info );
+                                        pre1.ProductId = "ETH-USDC";
                                         pre1.Size += info.FilledSize;
                                     }
                                 }
                                 else
                                 {
                                     matchingOrders.Add( info );
+                                    pre1.ProductId = "ETH-USDC";
                                     pre1.Size += info.FilledSize;
                                 }
                             }
@@ -378,10 +424,10 @@ namespace CBApp1
                                 < eurAm )
                             {
                                 // close order is not complete
-                                //tooClose = false;
-                                //recentBuy = false;
-                                //prelOrder.Complementary = true;
-                                
+                                tooClose = false;
+                                recentBuy = false;
+                                prelOrder.Complementary = true;
+
                                 // calculate remaining size etc
                                 double trackedUnMatchedQuoteSize = trackedUnMatched.FilledSize * trackedUnMatched.Price;
                                 double remainingQuoteSize = eurAm - trackedUnMatchedQuoteSize;
@@ -798,6 +844,7 @@ namespace CBApp1
                                                                                     true ) ) );
 
                         orderString = JsonConvert.SerializeObject( order );
+
                         orderResp = await reqMaker.SendAuthRequest( $@"api/v3/brokerage/orders", "", HttpMethod.Post, orderString );
 
                         sentCount++;
@@ -811,10 +858,6 @@ namespace CBApp1
                                 await wsTracker.AddOrder( respOrderInfo, null );
 
                                 break;
-                            }
-                            else if( sentCount % 10 == 0 )
-                            {
-                                Thread.Sleep( 500 );
                             }
                             else
                             {

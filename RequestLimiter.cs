@@ -25,6 +25,7 @@ namespace CBApp1
         {
             requestCount = 0;
             SetTimer( 1000 );
+            hClient.Timeout = TimeSpan.FromSeconds(5);
             requestTimer.Elapsed += this.OnTimedEvent;
         }
 
@@ -32,104 +33,33 @@ namespace CBApp1
         {
             try
             {
-                CancellationTokenSource cancelSource = new CancellationTokenSource( 3000 );
-                CancellationToken cToken;
                 HttpResponseMessage resp = null;
-                int statusCheckCount = 0;
-                if( requestCount < 29 )
+                if( requestCount < 30 )
                 {
-                    requestCount++;
-                    //Console.WriteLine( $"Executing request {requestCount}" );
-
-                    lock( requestRoot )
+                    resp = hClient.SendAsync( hReq ).GetAwaiter().GetResult();
+                    if( resp != null )
                     {
-                        cToken = cancelSource.Token;
-
-                        Task<HttpResponseMessage> task = hClient.SendAsync( hReq, cToken );
-
-                        //HttpContent content = hTask.Content;
-                        //var readAsString = content.ReadAsStringAsync();
-
-                        //Task<RestResponse> task = client.ExecuteAsync( request, cToken );
-
-
-                        while( task.Status == TaskStatus.Running ||
-                               task.Status == TaskStatus.WaitingToRun ||
-                               task.Status == TaskStatus.WaitingForActivation )
-                        {
-                            Thread.Sleep( 25 );
-                            statusCheckCount++;
-
-                            if( statusCheckCount > 80 )
-                            {
-                                //Console.WriteLine( "Request stuck" );
-                                break;
-                            }
-                        }
-
-                        if( task.IsCompleted && !task.IsFaulted )
-                        {
-                            resp = task.Result;
-                        }
-                        else
-                        {
-                            resp = null;
-                        }
+                        string respString = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
                     }
                 }
                 else
                 {
                     Thread.Sleep( 1000 );
-                    requestCount++;
-                    //Console.WriteLine( $"Sending request {requestCount}" );
-                    lock( requestRoot )
+                    resp = hClient.SendAsync( hReq ).GetAwaiter().GetResult();
+
+                    if( resp != null )
                     {
-                        cToken = cancelSource.Token;
-                        Task<HttpResponseMessage> task = hClient.SendAsync( hReq, cToken );
-
-                        while( task.Status == TaskStatus.Running ||
-                               task.Status == TaskStatus.WaitingToRun ||
-                               task.Status == TaskStatus.WaitingForActivation )
-                        {
-                            Thread.Sleep( 25 );
-                            statusCheckCount++;
-
-                            if( statusCheckCount > 80 )
-                            {
-                                //Console.WriteLine( "Request stuck" );
-                                break;
-                            }
-                        }
-
-                        if( task.IsCompleted && !task.IsFaulted )
-                        {
-                            resp = task.Result;
-                        }
-                        else
-                        {
-                            resp = null;
-                        }
+                        string respString = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
                     }
+                    
                 }
 
-
-                if( cToken.IsCancellationRequested )
-                {
-                    Console.WriteLine( $"Request was cancelled" );
-                }
-                else
-                {
-                    //Console.WriteLine( $"Recieved response" );
-                }
-
-                requesting = false;
                 return resp;
             }
             catch( Exception e )
             {
                 Console.WriteLine( e.Message );
                 Console.WriteLine( e.StackTrace );
-                requesting = false;
                 return null;
             }
         }
@@ -137,6 +67,7 @@ namespace CBApp1
         private void OnTimedEvent( Object source, ElapsedEventArgs e )
         {
             requestCount = 0;
+            //Console.WriteLine( "reset req count" );
         }
 
         private static void SetTimer( int ms )

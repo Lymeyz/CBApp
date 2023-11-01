@@ -233,24 +233,39 @@ namespace CBApp1
             try
             {
                 LimitedDateTimeList<Candle> newCandles = new LimitedDateTimeList<Candle>(candleCount);
-                LimitedDateTimeList<Candle> historicCandles = 
+                LimitedDateTimeList<Candle> historicCandles = null;
+                for( int i = 0; i < 10; i++ )
+                {
+                    historicCandles =
                     await fetcher.GetProductHistoricCandles( product,
                                                              granularity,
                                                              startTime,
                                                              endTime,
-                                                             candleCount  );
+                                                             candleCount );
+                    if( historicCandles != null )
+                    {
+                        CompileCandles( product, ref candleCollection, ref historicCandles, ref newCandles, candleCount, granularity );
 
-                CompileCandles( product, ref candleCollection, ref historicCandles, ref newCandles, candleCount, granularity );
+                        candleCollection[ product ] = new ConcurrentQueue<Candle>();
 
-                candleCollection[product] = new ConcurrentQueue<Candle>();
+                        int count = newCandles.Count;
+                        for( int ii = 0; ii < count; ii++ )
+                        {
+                            candleCollection[ product ].Enqueue( newCandles.GetRemoveOldest() );
+                        }
 
-                int count = newCandles.Count;
-                for (int i = 0; i < count; i++)
-                {
-                    candleCollection[product].Enqueue( newCandles.GetRemoveOldest() );
+                        break;
+                    }
                 }
 
-                return candleCollection;
+                if( historicCandles == null )
+                {
+                    throw new Exception( "Failed to fetch candles" );
+                }
+                else
+                {
+                    return candleCollection;
+                }
             }
             catch (Exception e)
             {
