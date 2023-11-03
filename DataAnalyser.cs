@@ -595,8 +595,8 @@ namespace CBApp1
                 if ( fiveMinCandles.Values.Count != 0 && hourCandles.Values.Count != 0
                     && currentFiveMinCandles.Values.Count != 0 && currentHourCandles.Values.Count != 0 )
                 {
-                    if (!((((e.SignalTime.Minute % 5 == 0) && ( e.SignalTime.Second < 15 ))) ||
-                            ((e.SignalTime.Minute + 1) % 5 == 0) && (e.SignalTime.Second > 42) )
+                    if (!((((e.SignalTime.Minute % 5 == 0) && ( e.SignalTime.Second < 25 ))) ||
+                            ((e.SignalTime.Minute + 1) % 5 == 0) && (e.SignalTime.Second > 35) )
                         )
                     {
                         await Task.Run( () =>

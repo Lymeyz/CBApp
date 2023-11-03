@@ -25,7 +25,7 @@ namespace CBApp1
         {
             requestCount = 0;
             SetTimer( 1000 );
-            hClient.Timeout = TimeSpan.FromSeconds(5);
+            hClient.Timeout = TimeSpan.FromSeconds(3);
             requestTimer.Elapsed += this.OnTimedEvent;
         }
 
