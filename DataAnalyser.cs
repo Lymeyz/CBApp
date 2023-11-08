@@ -400,6 +400,7 @@ namespace CBApp1
                         foreach( var product in dataHandler.ShortProductCandles.Keys )
                         {
                             currentQueue = dataHandler.ShortProductCandles[ product ];
+
                             if( currentQueue.Count > config.FiveMinCandleLowerLimit )
                             {
                                 fiveMinCandles[ product ] = new Queue<Candle>( currentQueue );

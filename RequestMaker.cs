@@ -17,16 +17,19 @@ namespace CBApp1
 {
     public class RequestMaker
     {
+        private static SemaphoreSlim semaphore;
+        private Authenticator auth;
+        private RequestLimiter limiter;
+        string apiEndpoint;
+
         public RequestMaker(ref Authenticator authenticator, RequestLimiter limiter, string apiEndpoint)
         {
             auth = authenticator;
             this.limiter = limiter;
             this.apiEndpoint = apiEndpoint;
+            semaphore = new SemaphoreSlim( 0, 1 );
+            semaphore.Release( 1 );
         }
-
-        private Authenticator auth;
-        private RequestLimiter limiter;
-        string apiEndpoint;
         public async Task<string> SendAuthRequest(string reqPath, string queryParams, HttpMethod method, string body)
         {
 
@@ -38,52 +41,61 @@ namespace CBApp1
                 string[] headers;
                 //Console.WriteLine( "Sending request" );
 
-                for( int i = 0; i < 30; i++ )
+                try
                 {
-                    headers = auth.GenerateHeaders( auth.GetUnixTime(),
-                                                    method.ToString(),
-                                                    '/' + reqPath,
-                                                    body                );
-
-                    HttpRequestMessage reqMessage = new HttpRequestMessage( method, apiEndpoint + reqPath + queryParams );
-                    reqMessage.Headers.Add( "accept", "application/json"        );
-                    reqMessage.Headers.Add( "CB-ACCESS-KEY", headers[ 0 ]       );
-                    reqMessage.Headers.Add( "CB-ACCESS-SIGN", headers[ 1 ]      );
-                    reqMessage.Headers.Add( "CB-ACCESS-TIMESTAMP", headers[ 2 ] );
-
-                    if( body != "" )
+                    semaphore.Wait();
+                    for( int i = 0; i < 30; i++ )
                     {
-                        reqMessage.Content = new StringContent( body, Encoding.UTF8, "application/json" );
-                    }
 
-                    resp = await limiter.ExecuteRequest( reqMessage );
+                        headers = auth.GenerateHeaders( auth.GetUnixTime(),
+                                                        method.ToString(),
+                                                        '/' + reqPath,
+                                                        body );
 
-                    if( resp != null &&
-                        resp.IsSuccessStatusCode )
-                    {
-                        returnString = await resp.Content.ReadAsStringAsync();
+                        HttpRequestMessage reqMessage = new HttpRequestMessage( method, apiEndpoint + reqPath + queryParams );
+                        reqMessage.Headers.Add( "accept", "application/json" );
+                        reqMessage.Headers.Add( "CB-ACCESS-KEY", headers[ 0 ] );
+                        reqMessage.Headers.Add( "CB-ACCESS-SIGN", headers[ 1 ] );
+                        reqMessage.Headers.Add( "CB-ACCESS-TIMESTAMP", headers[ 2 ] );
 
-                        break;
-                    }
-                    else
-                    {
-                        if( resp != null )
+                        if( body != "" )
                         {
-                            string respContent = await resp.Content.ReadAsStringAsync();
-                            //Console.WriteLine( "reqFail" );
+                            reqMessage.Content = new StringContent( body, Encoding.UTF8, "application/json" );
+                        }
+
+                        resp = await limiter.ExecuteRequest( reqMessage );
+
+                        if( resp != null &&
+                            resp.IsSuccessStatusCode )
+                        {
+                            returnString = await resp.Content.ReadAsStringAsync();
+
+                            break;
                         }
                         else
                         {
-                            //Console.WriteLine( "reqFail" );
-                        }
-                        
-                        //Console.WriteLine( $"{resp.StatusCode}" );
-                    }
+                            if( resp != null )
+                            {
+                                string respContent = await resp.Content.ReadAsStringAsync();
+                                //Console.WriteLine( "reqFail" );
+                            }
+                            else
+                            {
+                                //Console.WriteLine( "reqFail" );
+                            }
 
-                    //if( counter > 30 )
-                    //{
-                    //    throw new Exception( "Request failed, 100 failed requests" );
-                    //}
+                            //Console.WriteLine( $"{resp.StatusCode}" );
+                        }
+
+                        //if( counter > 30 )
+                        //{
+                        //    throw new Exception( "Request failed, 100 failed requests" );
+                        //}
+                    }
+                }
+                finally
+                {
+                    semaphore.Release();
                 }
 
                 return returnString;

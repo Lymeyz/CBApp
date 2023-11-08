@@ -25,7 +25,8 @@ namespace CBApp1
         {
             requestCount = 0;
             SetTimer( 1000 );
-            hClient.Timeout = TimeSpan.FromSeconds(3);
+            hClient.Timeout = TimeSpan.FromSeconds(2);
+
             requestTimer.Elapsed += this.OnTimedEvent;
         }
 
@@ -37,6 +38,7 @@ namespace CBApp1
                 if( requestCount < 30 )
                 {
                     resp = hClient.SendAsync( hReq ).GetAwaiter().GetResult();
+                    //resp = SendReq( hReq );
                     if( resp != null )
                     {
                         string respString = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -46,7 +48,7 @@ namespace CBApp1
                 {
                     Thread.Sleep( 1000 );
                     resp = hClient.SendAsync( hReq ).GetAwaiter().GetResult();
-
+                    //resp = SendReq( hReq );
                     if( resp != null )
                     {
                         string respString = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
@@ -55,6 +57,23 @@ namespace CBApp1
                 }
 
                 return resp;
+            }
+            catch( Exception e )
+            {
+                Console.WriteLine( e.Message );
+                Console.WriteLine( e.StackTrace );
+                return null;
+            }
+        }
+
+        private HttpResponseMessage SendReq( HttpRequestMessage req )
+        {
+            try
+            {
+                lock( requestRoot )
+                {
+                    return hClient.SendAsync( req ).GetAwaiter().GetResult();
+                }
             }
             catch( Exception e )
             {

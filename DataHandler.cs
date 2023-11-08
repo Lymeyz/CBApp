@@ -105,7 +105,7 @@ namespace CBApp1
                         {
                             copy = new Candle( longCandles[ product ] );
                             longProductCandles[ product ].Enqueue( copy );
-                            TrimToHours( product, 300, ref shortProductCandles );
+                            TrimToHours( product, 300, ref longProductCandles );
                         }
                     }
                     
