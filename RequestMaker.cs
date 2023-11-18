@@ -21,7 +21,6 @@ namespace CBApp1
         private Authenticator auth;
         private RequestLimiter limiter;
         string apiEndpoint;
-
         public RequestMaker(ref Authenticator authenticator, RequestLimiter limiter, string apiEndpoint)
         {
             auth = authenticator;

@@ -79,7 +79,7 @@ namespace CBApp1
                     { "AVAX-USD", "AVAX-USDC" }
                 };
 
-                OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 25, 3 , ref aTimer, 0.015, 1.01010, products, aliases);
+                OrderDirector director = new OrderDirector( ref analyser, ref writer, ref reqMaker, 25, 3 , ref aTimer, 0.02, 1.01010, products, aliases);
 
                 Console.ReadKey();
             }

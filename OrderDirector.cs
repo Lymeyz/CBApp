@@ -358,11 +358,6 @@ namespace CBApp1
 
                 accounts.FetchAccounts( reqMaker );
 
-                //if( prelOrder.ProductId == "SOL-USDC" )
-                //{
-                //    wsTracker.UnMatched[ "SOL-USDC" ][ "858b3fac-4133-4c46-89c7-2e87c68cc657" ].FilledSize = 0.520;
-                //}
-
                 bool activeOrder = false;
                 bool tooManyLogged = false;
                 bool tooClose = false;
@@ -393,7 +388,7 @@ namespace CBApp1
                     }
 
                     // check logged orders
-                    if( wsTracker.UnMatched[ prelOrder.ProductId].Count > maxBuys )
+                    if( wsTracker.UnMatched[ prelOrder.ProductId].Count >= maxBuys )
                     {
                         tooManyLogged = true;
                     }
@@ -817,6 +812,8 @@ namespace CBApp1
                 string priceString;
                 string guidString;
                 int sentCount = 0;
+
+                
 
                 if( prel.B )
                 {

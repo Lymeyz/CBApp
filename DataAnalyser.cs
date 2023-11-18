@@ -699,7 +699,7 @@ namespace CBApp1
 
                                 int bestEma = -1;
 
-                                if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.0142 )
+                                if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.0162 )
                                 {
                                     if( fiveMinCandles.ContainsKey( product )
                                         && currentFiveMinCandles.ContainsKey( product )
@@ -783,7 +783,7 @@ namespace CBApp1
 
                                                 if( hourLongAnalysisResult.BuyOk )
                                                 {
-                                                    if( price < 1.019 * latestLow )
+                                                    if( price < 1.018 * latestLow )
                                                     {
                                                         args = new PreOrderReadyEventArgs();
                                                         args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
@@ -893,7 +893,7 @@ namespace CBApp1
                                                                                         -1,
                                                                                         true,
                                                                                         true,
-                                                                                        false,
+                                                                                        true,
                                                                                         0.4,
                                                                                         bestEma,
                                                                                         3,
@@ -957,7 +957,7 @@ namespace CBApp1
                                                 double latestLow = Math.Min( bestVolatility.Peaks.First.Next.Value, bestVolatility.Peaks.First.Value );
                                                 double latestHigh = Math.Max( bestVolatility.Peaks.First.Next.Value, bestVolatility.Peaks.First.Value );
 
-                                                if( price < 1.02 * latestLow )
+                                                if( price < 1.018 * latestLow )
                                                 {
                                                     args = new PreOrderReadyEventArgs();
                                                     args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
@@ -993,7 +993,9 @@ namespace CBApp1
                                                 //writer.Write( $"Pre order sell {product} at {price}" );
                                             }
                                         }
-                                        else if ( hourLongAnalysisResult.SellOff )
+
+                                        if ( hourLongAnalysisResult.SellOff ||
+                                                  ( hourSingleResult.SellOff && hourSingleSettings.EmaLength > 48 ))
                                         {
                                             if( currentFiveMinCandles[ product ] != null )
                                             {
