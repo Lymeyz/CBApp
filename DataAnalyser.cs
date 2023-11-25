@@ -995,7 +995,7 @@ namespace CBApp1
                                         }
 
                                         if ( hourLongAnalysisResult.SellOff ||
-                                                  ( hourSingleResult.SellOff && hourSingleSettings.EmaLength > 48 ))
+                                                  ( hourSingleResult.SellOff && hourSingleSettings.EmaLength > 56 ))
                                         {
                                             if( currentFiveMinCandles[ product ] != null )
                                             {

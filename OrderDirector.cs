@@ -367,6 +367,13 @@ namespace CBApp1
 
                 OrderInfo activeBuyOrder = null;
                 List<FillInfo> fillsOnCanceled = new List<FillInfo>();
+                OrderInfo throwaway;
+
+                //if( wsTracker.UnMatched[ "ADA-USDC" ].ContainsKey( "98255e8d-29a8-4bd3-9f9b-0dab6193da66" ) )
+                //{
+                //    wsTracker.UnMatched[ "ADA-USDC" ].TryRemove( "98255e8d-29a8-4bd3-9f9b-0dab6193da66", out throwaway );
+                //}
+
 
                 if( prelOrder.B )
                 {
@@ -635,7 +642,7 @@ namespace CBApp1
                 // find matching orders
                 foreach( var pair in wsTracker.UnMatched[ productId ] )
                 {
-                    if ( (Math.Abs(prelPrice - ( requiredSellPercent * pair.Value.Price ))) <= ( 0.0018 * requiredSellPercent * pair.Value.Price ) )
+                    if ( (Math.Abs(prelPrice - ( requiredSellPercent * pair.Value.Price ))) <= ( 0.005 * requiredSellPercent * pair.Value.Price ) )
                     {
                         matchingBuyOrders.Add( pair.Value );
                         writer.Write( $"Sell {productId} at {prelPrice} matched with buy at {pair.Value.Price}" );
@@ -650,7 +657,7 @@ namespace CBApp1
                 {
                     foreach( var pair in wsTracker.UnMatched[ productId ] )
                     {
-                        if( (prelPrice < 0.96 * pair.Value.Price) &&
+                        if( (prelPrice < 0.997 * pair.Value.Price) &&
                             matchingBuyOrders.Where(o => o.ClientOrderId == pair.Value.ClientOrderId).ToList().Count == 0)
                         {
                             matchingBuyOrders.Add( pair.Value );
