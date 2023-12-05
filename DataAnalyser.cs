@@ -699,7 +699,7 @@ namespace CBApp1
 
                                 int bestEma = -1;
 
-                                if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.0162 )
+                                if( bestFiveVolatility.CurrentEmaVolatility > currentFiveMinCandles[ product ].Avg * 0.018 )
                                 {
                                     if( fiveMinCandles.ContainsKey( product )
                                         && currentFiveMinCandles.ContainsKey( product )
@@ -783,7 +783,7 @@ namespace CBApp1
 
                                                 if( hourLongAnalysisResult.BuyOk )
                                                 {
-                                                    if( price < 1.018 * latestLow )
+                                                    if( price < 1.018 * latestLow && price < 0.994 )
                                                     {
                                                         args = new PreOrderReadyEventArgs();
                                                         args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
@@ -860,239 +860,280 @@ namespace CBApp1
 
                         if( sortedHourResults.Count > 0 )
                         {
-                            VolatilityAnalysisResult bestVolatility = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ];
+                            VolatilityAnalysisResult bestVolatility = null;
                             SingleEmaAnalysisSettings hourSingleSettings;
                             SingleEmaAnalysisResult hourSingleResult = null;
 
-                            if( bestVolatility.CurrentEmaVolatility > currentHourCandles[ product ].Avg * 0.01 )
+                            for( int i = 0; i < sortedHourResults.Keys.Count; i++ )
                             {
-                                if( currentHourCandles.ContainsKey( product ) && sortedHourResults != null )
+                                bestVolatility = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ];
+                                sortedHourResults.RemoveAt( sortedHourResults.Keys.Count - 1 );
+
+                                if( bestVolatility.CurrentEmaVolatility > currentHourCandles[ product ].Avg * 0.012 )
                                 {
-
-                                    int bestEma = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ].EmaLength;
-
-                                    hourSingleSettings = new SingleEmaAnalysisSettings( product,
-                                                                                        false,
-                                                                                        false,
-                                                                                        -0.00034, // sOffS1
-                                                                                        -0.000049, // sOffS2
-                                                                                        -1,
-                                                                                        -1,
-                                                                                        -0.00044, // -0.000031 //bs1
-                                                                                        0.0000164, // bs2 0,0000182 --> 0,0000164
-                                                                                        -1, //-11
-                                                                                        false,
-                                                                                        true,
-                                                                                        -1, //bpeakrp
-                                                                                        -1, //bpeakwindow
-                                                                                        0.00200, //SS1
-                                                                                        -0.00011, //SS2 000039 --> 001
-                                                                                        false,
-                                                                                        false,
-                                                                                        -1,
-                                                                                        -1,
-                                                                                        true,
-                                                                                        true,
-                                                                                        true,
-                                                                                        0.4,
-                                                                                        bestEma,
-                                                                                        3,
-                                                                                        5,
-                                                                                        ref currentHourCandles,
-                                                                                        ref hourEmas,
-                                                                                        ref hourEmaSlopes,
-                                                                                        ref hourCandles );
-
-                                    hourSingleResult = SingleEmaAnalyseProduct( hourSingleSettings, null );
-
-                                    hourLongAnalysisSettings = new SingleEmaAnalysisSettings( product,
-                                                                                                      false,
-                                                                                                      false,
-                                                                                                      -0.00028,
-                                                                                                      -0.000032,
-                                                                                                      -1,
-                                                                                                      -1,
-                                                                                                      -0.00018,
-                                                                                                      -1,
-                                                                                                      -1,
-                                                                                                      true,
-                                                                                                      false,
-                                                                                                      -1,
-                                                                                                      -1,
-                                                                                                      0.00013,
-                                                                                                      -0.000021,
-                                                                                                      false,
-                                                                                                      false,
-                                                                                                      -1,
-                                                                                                      -1,
-                                                                                                      true,
-                                                                                                      false,
-                                                                                                      true,
-                                                                                                      0.11,
-                                                                                                      config.HourSingleEmaLength,
-                                                                                                      3,
-                                                                                                      14,
-                                                                                                      ref currentHourCandles,
-                                                                                                      ref hourEmas,
-                                                                                                      ref hourEmaSlopes,
-                                                                                                      ref hourCandles );
-
-                                    hourLongAnalysisResult = SingleEmaAnalyseProduct( hourLongAnalysisSettings, null );
-
-                                    //if( hourLongAnalysisResult.BuyOk )
-                                    //{
-                                    //    writer.Write( $"{product} buy long ok" );
-                                    //}
-
-                                    if( hourSingleResult != null && hourLongAnalysisResult != null )
+                                    if( currentHourCandles.ContainsKey( product ) && sortedHourResults != null )
                                     {
-                                        PreOrderReadyEventArgs args;
 
-                                        if( hourSingleResult.BuyOk && hourLongAnalysisResult.BuyOk )
+                                        int bestEma = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ].EmaLength;
+
+                                        hourSingleSettings = new SingleEmaAnalysisSettings( product,
+                                                                                            false,
+                                                                                            false,
+                                                                                            -0.00034, // sOffS1
+                                                                                            -0.000049, // sOffS2
+                                                                                            -1,
+                                                                                            -1,
+                                                                                            -0.00044, // -0.000031 //bs1
+                                                                                            0.0000164, // bs2 0,0000182 --> 0,0000144
+                                                                                            -1, //-11
+                                                                                            false,
+                                                                                            true,
+                                                                                            -1, //bpeakrp
+                                                                                            -1, //bpeakwindow
+                                                                                            0.00200, //SS1
+                                                                                            -0.000081, //SS2 00011 --> 000081
+                                                                                            false,
+                                                                                            false,
+                                                                                            -1,
+                                                                                            -1,
+                                                                                            true,
+                                                                                            true,
+                                                                                            true,
+                                                                                            0.4,
+                                                                                            bestEma,
+                                                                                            3,
+                                                                                            5,
+                                                                                            ref currentHourCandles,
+                                                                                            ref hourEmas,
+                                                                                            ref hourEmaSlopes,
+                                                                                            ref hourCandles );
+
+                                        hourSingleResult = SingleEmaAnalyseProduct( hourSingleSettings, null );
+
+                                        hourLongAnalysisSettings = new SingleEmaAnalysisSettings( product,
+                                                                                                          false,
+                                                                                                          false,
+                                                                                                          -0.00028,
+                                                                                                          -0.000032,
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          -0.00005, //00014 --> 00010
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          true,
+                                                                                                          false,
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          0.00013,
+                                                                                                          -0.000021,
+                                                                                                          false,
+                                                                                                          false,
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          true,
+                                                                                                          false,
+                                                                                                          true,
+                                                                                                          0.11,
+                                                                                                          config.HourSingleEmaLength,
+                                                                                                          3,
+                                                                                                          14,
+                                                                                                          ref currentHourCandles,
+                                                                                                          ref hourEmas,
+                                                                                                          ref hourEmaSlopes,
+                                                                                                          ref hourCandles );
+
+                                        hourLongAnalysisResult = SingleEmaAnalyseProduct( hourLongAnalysisSettings, null );
+
+                                        //if( hourLongAnalysisResult.BuyOk )
+                                        //{
+                                        //    writer.Write( $"{product} buy long ok" );
+                                        //}
+
+                                        if( hourSingleResult != null && hourLongAnalysisResult != null )
                                         {
-                                            if( currentFiveMinCandles[ product ] != null )
+                                            PreOrderReadyEventArgs args;
+
+                                            if( hourSingleResult.BuyOk && hourLongAnalysisResult.BuyOk )
                                             {
-                                                double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
-
-                                                double latestLow = Math.Min( bestVolatility.Peaks.First.Next.Value, bestVolatility.Peaks.First.Value );
-                                                double latestHigh = Math.Max( bestVolatility.Peaks.First.Next.Value, bestVolatility.Peaks.First.Value );
-
-                                                if( price < 1.018 * latestLow )
+                                                if( currentFiveMinCandles[ product ] != null )
                                                 {
+                                                    double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
+
+                                                    double latestLow = Math.Min( bestVolatility.Peaks.First.Next.Value, bestVolatility.Peaks.First.Value );
+                                                    double latestHigh = Math.Max( bestVolatility.Peaks.First.Next.Value, bestVolatility.Peaks.First.Value );
+
+                                                    if( price < 1.008 * latestLow && price < 0.994 * latestHigh )
+                                                    {
+                                                        args = new PreOrderReadyEventArgs();
+                                                        args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
+                                                        args.PreliminaryOrder.Price = price;
+
+                                                        //writer.Write( $"Buy {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now}" );
+                                                        //+
+                                                        //      $"Last peaks:\n{bestVolatility.Peaks.First.Value} - {bestVolatility.PeakTimes.First.Value}" +
+                                                        //      $"\n{bestVolatility.Peaks.First.Next.Value} - {bestVolatility.PeakTimes.First.Next.Value}" +
+                                                        //      $"\n{bestVolatility.Peaks.First.Next.Next.Value} - {bestVolatility.PeakTimes.First.Next.Next.Value}" );
+
+                                                        OnPreOrderReady( args );
+
+                                                        writer.Write( $"Pre order buy {product} at {price}" );
+                                                    }
+                                                }
+                                            }
+
+                                            if( hourSingleResult.SellOk )
+                                            {
+                                                if( currentFiveMinCandles[ product ] != null )
+                                                {
+                                                    double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
+
                                                     args = new PreOrderReadyEventArgs();
-                                                    args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
+                                                    args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
                                                     args.PreliminaryOrder.Price = price;
 
-                                                    //writer.Write( $"Buy {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now}" );
-                                                    //+
-                                                    //      $"Last peaks:\n{bestVolatility.Peaks.First.Value} - {bestVolatility.PeakTimes.First.Value}" +
-                                                    //      $"\n{bestVolatility.Peaks.First.Next.Value} - {bestVolatility.PeakTimes.First.Next.Value}" +
-                                                    //      $"\n{bestVolatility.Peaks.First.Next.Next.Value} - {bestVolatility.PeakTimes.First.Next.Next.Value}" );
+                                                    //writer.Write( $"Sell {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now} {DateTime.Now}" );
 
                                                     OnPreOrderReady( args );
 
-                                                    writer.Write( $"Pre order buy {product} at {price}" );
+                                                    //writer.Write( $"Pre order sell {product} at {price}" );
                                                 }
                                             }
-                                        }
 
-                                        if( hourSingleResult.SellOk )
-                                        {
-                                            if( currentFiveMinCandles[ product ] != null )
+                                            if( hourLongAnalysisResult.SellOff ||
+                                                      (hourSingleResult.SellOff && hourSingleSettings.EmaLength > 56) )
                                             {
-                                                double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
+                                                if( currentFiveMinCandles[ product ] != null )
+                                                {
+                                                    double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
 
-                                                args = new PreOrderReadyEventArgs();
-                                                args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
-                                                args.PreliminaryOrder.Price = price;
+                                                    args = new PreOrderReadyEventArgs();
+                                                    args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
+                                                    args.PreliminaryOrder.Price = price;
+                                                    args.PreliminaryOrder.SellOff = true;
 
-                                                //writer.Write( $"Sell {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now} {DateTime.Now}" );
+                                                    //writer.Write( $"Sell off {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now} {DateTime.Now}" );
 
-                                                OnPreOrderReady( args );
-
-                                                //writer.Write( $"Pre order sell {product} at {price}" );
-                                            }
-                                        }
-
-                                        if ( hourLongAnalysisResult.SellOff ||
-                                                  ( hourSingleResult.SellOff && hourSingleSettings.EmaLength > 56 ))
-                                        {
-                                            if( currentFiveMinCandles[ product ] != null )
-                                            {
-                                                double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
-
-                                                args = new PreOrderReadyEventArgs();
-                                                args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
-                                                args.PreliminaryOrder.Price = price;
-                                                args.PreliminaryOrder.SellOff = true;
-
-                                                //writer.Write( $"Sell off {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now} {DateTime.Now}" );
-
-                                                OnPreOrderReady( args );
+                                                    OnPreOrderReady( args );
+                                                }
                                             }
                                         }
                                     }
                                 }
-                            }
-                            else
-                            {
-                                if( currentHourCandles.ContainsKey( product ) && sortedHourResults != null )
+                                else
                                 {
-
-                                    int bestEma = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ].EmaLength;
-
-                                    hourSingleSettings = new SingleEmaAnalysisSettings( product,
-                                                                                        false,
-                                                                                        false,
-                                                                                        -0.00034, // sOffS1
-                                                                                        -0.000049, // sOffS2
-                                                                                        -1,
-                                                                                        -1,
-                                                                                        -0.00044, // -0.000031 //bs1
-                                                                                        0.0000182, // bs2
-                                                                                        -1,
-                                                                                        false,
-                                                                                        true,
-                                                                                        -1, //bpeakrp
-                                                                                        -1, //bpeakwindow
-                                                                                        0.00200, //SS1
-                                                                                        -0.0001, //SS2 000039 --> 001
-                                                                                        false,
-                                                                                        false,
-                                                                                        -1,
-                                                                                        -1,
-                                                                                        false,
-                                                                                        true,
-                                                                                        true,
-                                                                                        0.4,
-                                                                                        bestEma,
-                                                                                        3,
-                                                                                        5,
-                                                                                        ref currentHourCandles,
-                                                                                        ref hourEmas,
-                                                                                        ref hourEmaSlopes,
-                                                                                        ref hourCandles );
-
-                                    hourSingleResult = SingleEmaAnalyseProduct( hourSingleSettings, null );
-
-                                    if( hourSingleResult != null )
+                                    if( currentHourCandles.ContainsKey( product ) && sortedHourResults != null )
                                     {
-                                        PreOrderReadyEventArgs args;
 
-                                        if( hourSingleResult.SellOk )
+                                        int bestEma = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ].EmaLength;
+
+                                        hourSingleSettings = new SingleEmaAnalysisSettings( product,
+                                                                                            false,
+                                                                                            false,
+                                                                                            -0.00034, // sOffS1
+                                                                                            -0.000049, // sOffS2
+                                                                                            -1,
+                                                                                            -1,
+                                                                                            -0.00044, // -0.000031 //bs1
+                                                                                            0.0000182, // bs2
+                                                                                            -1,
+                                                                                            false,
+                                                                                            true,
+                                                                                            -1, //bpeakrp
+                                                                                            -1, //bpeakwindow
+                                                                                            0.00200, //SS1
+                                                                                            -0.000081, //SS2 0001 --> 000081
+                                                                                            false,
+                                                                                            false,
+                                                                                            -1,
+                                                                                            -1,
+                                                                                            false,
+                                                                                            true,
+                                                                                            true,
+                                                                                            0.4,
+                                                                                            bestEma,
+                                                                                            3,
+                                                                                            5,
+                                                                                            ref currentHourCandles,
+                                                                                            ref hourEmas,
+                                                                                            ref hourEmaSlopes,
+                                                                                            ref hourCandles );
+
+                                        hourSingleResult = SingleEmaAnalyseProduct( hourSingleSettings, null );
+
+                                        hourLongAnalysisSettings = new SingleEmaAnalysisSettings( product,
+                                                                                                          false,
+                                                                                                          false,
+                                                                                                          -0.00028,
+                                                                                                          -0.000032,
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          -0.00005, //00014 --> 00005
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          true,
+                                                                                                          false,
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          0.00013,
+                                                                                                          -0.000021,
+                                                                                                          false,
+                                                                                                          false,
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          true,
+                                                                                                          false,
+                                                                                                          true,
+                                                                                                          0.11,
+                                                                                                          config.HourSingleEmaLength,
+                                                                                                          3,
+                                                                                                          14,
+                                                                                                          ref currentHourCandles,
+                                                                                                          ref hourEmas,
+                                                                                                          ref hourEmaSlopes,
+                                                                                                          ref hourCandles );
+
+                                        hourLongAnalysisResult = SingleEmaAnalyseProduct( hourLongAnalysisSettings, null );
+
+                                        if( hourSingleResult != null )
                                         {
-                                            if( currentFiveMinCandles[ product ] != null )
+                                            PreOrderReadyEventArgs args;
+
+                                            if( hourSingleResult.SellOk )
                                             {
-                                                double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
+                                                if( currentFiveMinCandles[ product ] != null )
+                                                {
+                                                    double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
 
-                                                args = new PreOrderReadyEventArgs();
-                                                args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
-                                                args.PreliminaryOrder.Price = price;
+                                                    args = new PreOrderReadyEventArgs();
+                                                    args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
+                                                    args.PreliminaryOrder.Price = price;
 
-                                                //writer.Write( $"Sell {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now}" );
+                                                    //writer.Write( $"Sell {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now}" );
 
-                                                OnPreOrderReady( args );
+                                                    OnPreOrderReady( args );
+                                                }
+                                            }
+
+                                            if( hourLongAnalysisResult.SellOff ||
+                                                      (hourSingleResult.SellOff && hourSingleSettings.EmaLength > 56) )
+                                            {
+                                                if( currentFiveMinCandles[ product ] != null )
+                                                {
+                                                    double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
+
+                                                    args = new PreOrderReadyEventArgs();
+                                                    args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
+                                                    args.PreliminaryOrder.Price = price;
+                                                    args.PreliminaryOrder.SellOff = true;
+
+                                                    //writer.Write( $"Sell off {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now}" );
+
+                                                    OnPreOrderReady( args );
+                                                }
                                             }
                                         }
 
-                                        if( hourSingleResult.SellOff && bestVolatility.EmaLength > 50 )
-                                        {
-                                            if( currentFiveMinCandles[ product ] != null )
-                                            {
-                                                double price = Math.Round( currentFiveMinCandles[ product ].Avg, productInfos[ product ].QuotePrecision );
-
-                                                args = new PreOrderReadyEventArgs();
-                                                args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, false );
-                                                args.PreliminaryOrder.Price = price;
-                                                args.PreliminaryOrder.SellOff = true;
-
-                                                //writer.Write( $"Sell off {product} at {price}, hour ema length: {bestVolatility.EmaLength} {DateTime.Now}" );
-
-                                                OnPreOrderReady( args );
-                                            }
-                                        }
                                     }
-
                                 }
                             }
                         }
@@ -1913,13 +1954,15 @@ namespace CBApp1
                     
                     int sinceSwitch = 0;
 
+                    if( volSett.Product == "SOL-USD" && volSett.Length == 20 )
+                    //&& currentCandle.Time.Day == 27 && currentCandle.Time.Hour == 12 )
+                    {
+
+                    }
+
                     for( int i = 0; i < count; i++ )
                     {
-                        if( volSett.Product == "TRB-USD" && volSett.Length == 18 &&
-                            currentCandle.Time.Day == 27 && currentCandle.Time.Hour == 12 )
-                        {
-
-                        }
+                        
                         if( peaks == null )
                         {
                             peaks = new LinkedList<double>();
