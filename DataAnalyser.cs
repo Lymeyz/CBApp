@@ -589,7 +589,7 @@ namespace CBApp1
                 Console.WriteLine(e.Message);
             }
         }
-        private async void OnTimedEvent(Object source, ElapsedEventArgs e)
+        private void OnTimedEvent(Object source, ElapsedEventArgs e)
         {
             try
             {
@@ -600,21 +600,18 @@ namespace CBApp1
                             ((e.SignalTime.Minute + 1) % 5 == 0) && (e.SignalTime.Second > 35) )
                         )
                     {
-                        await Task.Run( () =>
+                        if( !analysisRunning )
                         {
-                            if( !analysisRunning )
+                            lock( analysisRoot )
                             {
-                                lock( analysisRoot )
-                                {
-                                    analysisRunning = true;
+                                analysisRunning = true;
 
-                                    writer.Write( $"analysis running {DateTime.UtcNow}" );
-                                    AnalysisFunctionsTests();
+                                writer.Write( $"analysis running {DateTime.UtcNow}" );
+                                AnalysisFunctionsTests();
 
-                                    analysisRunning = false;
-                                }
+                                analysisRunning = false;
                             }
-                        });
+                        }
                     }
                     else
                     {
@@ -642,7 +639,9 @@ namespace CBApp1
                 VolatilityAnalysisResult hourVolResult;
                 SortedList<double, VolatilityAnalysisResult> sortedHourResults;
                 SingleEmaAnalysisResult hourLongAnalysisResult = null;
+                SingleEmaAnalysisResult hourLongAnalysisResult2 = null;
                 SingleEmaAnalysisSettings hourLongAnalysisSettings;
+                SingleEmaAnalysisSettings hourLongAnalysisSettings2;
 
                 while ( analysisEnd > DateTime.UtcNow.AddSeconds( -3 ) )
                 {
@@ -820,6 +819,7 @@ namespace CBApp1
                     }
                 }
 
+                // HOURS
 
                 foreach( var pair in hourEmas.Where(p => p.Value != null) )
                 {
@@ -876,6 +876,8 @@ namespace CBApp1
 
                                         int bestEma = sortedHourResults.Values[ sortedHourResults.Keys.Count - 1 ].EmaLength;
 
+                                        
+
                                         hourSingleSettings = new SingleEmaAnalysisSettings( product,
                                                                                             false,
                                                                                             false,
@@ -884,7 +886,7 @@ namespace CBApp1
                                                                                             -1,
                                                                                             -1,
                                                                                             -0.00044, // -0.000031 //bs1
-                                                                                            0.0000164, // bs2 0,0000182 --> 0,0000144
+                                                                                            0.0000132, // bs2 0,0000182 --> 0,0000132
                                                                                             -1, //-11
                                                                                             false,
                                                                                             true,
@@ -917,7 +919,7 @@ namespace CBApp1
                                                                                                           -0.000032,
                                                                                                           -1,
                                                                                                           -1,
-                                                                                                          -0.00005, //00014 --> 00010
+                                                                                                          -0.00005, //00014 --> 00005
                                                                                                           -1,
                                                                                                           -1,
                                                                                                           true,
@@ -942,18 +944,57 @@ namespace CBApp1
                                                                                                           ref hourEmaSlopes,
                                                                                                           ref hourCandles );
 
+                                        if( hourLongAnalysisSettings.Product == "BTC-USD" )
+                                        {
+
+                                        }
+
                                         hourLongAnalysisResult = SingleEmaAnalyseProduct( hourLongAnalysisSettings, null );
 
-                                        //if( hourLongAnalysisResult.BuyOk )
-                                        //{
-                                        //    writer.Write( $"{product} buy long ok" );
-                                        //}
+                                        hourLongAnalysisSettings2 = new SingleEmaAnalysisSettings( product,
+                                                                                                          false,
+                                                                                                          false,
+                                                                                                          -0.00028,
+                                                                                                          -0.000032,
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          0.0030, //000031 --> 000030
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          true,
+                                                                                                          false,
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          0.00013,
+                                                                                                          -0.000021,
+                                                                                                          false,
+                                                                                                          false,
+                                                                                                          -1,
+                                                                                                          -1,
+                                                                                                          true,
+                                                                                                          false,
+                                                                                                          true,
+                                                                                                          0.11,
+                                                                                                          config.HourSingleEmaLength,
+                                                                                                          3,
+                                                                                                          14,
+                                                                                                          ref currentHourCandles,
+                                                                                                          ref hourEmas,
+                                                                                                          ref hourEmaSlopes,
+                                                                                                          ref hourCandles );
+
+                                        
+
+                                        hourLongAnalysisResult2 = SingleEmaAnalyseProduct( hourLongAnalysisSettings2, null );
+
+                                        
 
                                         if( hourSingleResult != null && hourLongAnalysisResult != null )
                                         {
                                             PreOrderReadyEventArgs args;
 
-                                            if( hourSingleResult.BuyOk && hourLongAnalysisResult.BuyOk )
+                                            if( hourSingleResult.BuyOk && (hourLongAnalysisResult.BuyOk ||
+                                                hourLongAnalysisResult2.BuyOk ) )
                                             {
                                                 if( currentFiveMinCandles[ product ] != null )
                                                 {
@@ -962,7 +1003,7 @@ namespace CBApp1
                                                     double latestLow = Math.Min( bestVolatility.Peaks.First.Next.Value, bestVolatility.Peaks.First.Value );
                                                     double latestHigh = Math.Max( bestVolatility.Peaks.First.Next.Value, bestVolatility.Peaks.First.Value );
 
-                                                    if( price < 1.008 * latestLow && price < 0.994 * latestHigh )
+                                                    if( (price < 1.015 * latestLow) && ((price < 0.988 * latestHigh) || ( hourLongAnalysisResult2.BuyOk && (price < 0.988 * latestHigh) ) ) )
                                                     {
                                                         args = new PreOrderReadyEventArgs();
                                                         args.PreliminaryOrder = new PreOrder( product, DateTime.UtcNow, true );
