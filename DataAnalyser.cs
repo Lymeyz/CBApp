@@ -1526,8 +1526,12 @@ namespace CBApp1
                 double candlePeak = newestCandle.Avg;
 
                 DateTime tStartTime = DateTime.MinValue;
-                double peakEmaPrice = -1;
-                bool foundPeak = false;
+                double switchEmaPrice = -1;
+                bool foundSwitch = false;
+
+                // count slopesratecandles until most recent switch
+                // if sloperatecount is less than minimum exit analysis
+                // calculate sloperateaverage based on SlopeRateAvgP 
 
                 if( result == null )
                 {
@@ -1571,7 +1575,7 @@ namespace CBApp1
                             prevEma = currEma;
                             currEma = sSett.PrevEmas.GetRemoveNewest();
                         }
-                        else if( !foundPeak )
+                        else if( !foundSwitch )
                         {
                             // check if slope passed through zero, otherwise continue
 
@@ -1579,18 +1583,18 @@ namespace CBApp1
                             {
                                 if( currEmaSlope >= 0 )
                                 {
-                                    peakEmaPrice = currEma.Price;
+                                    switchEmaPrice = currEma.Price;
                                     tStartTime = currEmaSlope.Time;
-                                    foundPeak = true;
+                                    foundSwitch = true;
                                 }
                             }
                             else
                             {
                                 if( currEmaSlope < 0 )
                                 {
-                                    peakEmaPrice = currEma.Price;
+                                    switchEmaPrice = currEma.Price;
                                     tStartTime = currEmaSlope.Time;
-                                    foundPeak = true;
+                                    foundSwitch = true;
                                 }
                             }
 
@@ -1621,9 +1625,9 @@ namespace CBApp1
                     }
 
                     if( tStartTime != DateTime.MinValue &&
-                        peakEmaPrice != -1)
+                        switchEmaPrice != -1)
                     {
-                        result.StartPrice = peakEmaPrice;
+                        result.StartPrice = switchEmaPrice;
                         result.Time = tStartTime;
                     }
 

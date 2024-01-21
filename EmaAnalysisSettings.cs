@@ -170,7 +170,10 @@ namespace CBApp1
                                           ref ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> emaSlopes,
                                           ref Dictionary<string, Queue<Candle>> candles,
                                           LinkedList<DateTime> peakTimes,
-                                          LinkedList<DateTime> switchTimes
+                                          LinkedList<DateTime> switchTimes, 
+                                          int cSSL,
+                                          double sSSLP,
+                                          double bSSLP
                                           )
         {
             Product = product;
@@ -203,8 +206,12 @@ namespace CBApp1
             CurrentCandles = currentCandles;
             Emas = emas;
             EmaSlopes = emaSlopes;
+            Candles1 = candles;
             PeakTimes = peakTimes;
             SwitchTimes = switchTimes;
+            CSSL = cSSL;
+            SSSLP = sSSLP;
+            BSSLP = bSSLP;
             PrevEmas = new LimitedDateTimeList<Ema>( emas[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
             PrevEmaSlopes = new LimitedDateTimeList<Ema>( emaSlopes[ product ][ emaLength ], emaSlopes[ product ][ emaLength ].Count );
             Candles = new LimitedDateTimeList<Candle>( candles[ product ], candles[ product ].Count );
@@ -240,8 +247,12 @@ namespace CBApp1
         public ConcurrentDictionary<string, Candle> CurrentCandles { get; }
         public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> Emas { get; }
         public ConcurrentDictionary<string, ConcurrentDictionary<int, ConcurrentStack<Ema>>> EmaSlopes { get; }
+        public Dictionary<string, Queue<Candle>> Candles1 { get; }
         public LinkedList<DateTime> PeakTimes { get; }
         public LinkedList<DateTime> SwitchTimes { get; }
+        public int CSSL { get; }
+        public double SSSLP { get; }
+        public double BSSLP { get; }
         public LimitedDateTimeList<Ema> PrevEmas { get; set; }
         public LimitedDateTimeList<Ema> PrevEmaSlopes { get; set; }
         public LimitedDateTimeList<Candle> Candles { get; set; }
