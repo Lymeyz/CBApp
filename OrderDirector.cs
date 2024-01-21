@@ -369,10 +369,15 @@ namespace CBApp1
                 List<FillInfo> fillsOnCanceled = new List<FillInfo>();
                 OrderInfo throwaway;
 
-                if( wsTracker.UnMatched[ "BCH-USDC" ].ContainsKey( "1815e7ea-024e-4a27-96bf-b571a5e58a39" ) )
+                if( wsTracker.UnMatched[ "TRB-USDC" ].ContainsKey( "ddfe51af-9ed4-46e7-86f9-2b9d014f11fd" ) )
                 {
                     //wsTracker.UnMatched[ "ADA-USDC" ][ "3babe17f-6460-4523-935c-170f2008fdf3" ].FilledSize = 37.51;
-                    wsTracker.UnMatched[ "BCH-USDC" ].TryRemove( "1815e7ea-024e-4a27-96bf-b571a5e58a39", out throwaway);
+                    wsTracker.UnMatched[ "TRB-USDC" ].TryRemove( "ddfe51af-9ed4-46e7-86f9-2b9d014f11fd", out throwaway);
+                }
+                if( wsTracker.UnMatched[ "ADA-USDC" ].ContainsKey( "3864dd25-2ee7-46e4-9bc9-50c18d0578fd" ) )
+                {
+                    //wsTracker.UnMatched[ "ADA-USDC" ][ "3babe17f-6460-4523-935c-170f2008fdf3" ].FilledSize = 37.51;
+                    wsTracker.UnMatched[ "ADA-USDC" ]["3864dd25-2ee7-46e4-9bc9-50c18d0578fd"].FilledSize = 41;
                 }
 
 

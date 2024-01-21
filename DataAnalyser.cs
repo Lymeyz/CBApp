@@ -735,7 +735,12 @@ namespace CBApp1
                                                                                               ref currentFiveMinCandles,
                                                                                               ref fiveMinEmas,
                                                                                               ref fiveMinEmaSlopes,
-                                                                                              ref fiveMinCandles );
+                                                                                              ref fiveMinCandles,
+                                                                                              bestFiveVolatility.PeakTimes,
+                                                                                              bestFiveVolatility.SwitchTimes,
+                                                                                              0,
+                                                                                              0.5
+                                                                                              );
 
                                         fiveAnalysisResult = SingleEmaAnalyseProduct( fiveAnalysisSettings, null );
 
@@ -776,7 +781,12 @@ namespace CBApp1
                                                                                                               ref currentHourCandles,
                                                                                                               ref hourEmas,
                                                                                                               ref hourEmaSlopes,
-                                                                                                              ref hourCandles );
+                                                                                                              ref hourCandles,
+                                                                                                              bestFiveVolatility.PeakTimes,
+                                                                                                              bestFiveVolatility.SwitchTimes,
+                                                                                                              0,
+                                                                                                              0.5
+                                                                                                              );
 
                                                 hourLongAnalysisResult = SingleEmaAnalyseProduct( hourLongAnalysisSettings, null );
 
@@ -908,7 +918,12 @@ namespace CBApp1
                                                                                             ref currentHourCandles,
                                                                                             ref hourEmas,
                                                                                             ref hourEmaSlopes,
-                                                                                            ref hourCandles );
+                                                                                            ref hourCandles,
+                                                                                            bestVolatility.PeakTimes,
+                                                                                            bestVolatility.SwitchTimes,
+                                                                                            0,
+                                                                                            0.5
+                                                                                            );
 
                                         hourSingleResult = SingleEmaAnalyseProduct( hourSingleSettings, null );
 
@@ -942,7 +957,12 @@ namespace CBApp1
                                                                                                           ref currentHourCandles,
                                                                                                           ref hourEmas,
                                                                                                           ref hourEmaSlopes,
-                                                                                                          ref hourCandles );
+                                                                                                          ref hourCandles,
+                                                                                                          bestVolatility.PeakTimes,
+                                                                                                          bestVolatility.SwitchTimes,
+                                                                                                          0,
+                                                                                                          0.5
+                                                                                                          );
 
                                         if( hourLongAnalysisSettings.Product == "BTC-USD" )
                                         {
@@ -981,7 +1001,12 @@ namespace CBApp1
                                                                                                           ref currentHourCandles,
                                                                                                           ref hourEmas,
                                                                                                           ref hourEmaSlopes,
-                                                                                                          ref hourCandles );
+                                                                                                          ref hourCandles,
+                                                                                                          bestVolatility.PeakTimes,
+                                                                                                          bestVolatility.SwitchTimes,
+                                                                                                          0,
+                                                                                                          0.5
+                                                                                                          );
 
                                         
 
@@ -1097,7 +1122,12 @@ namespace CBApp1
                                                                                             ref currentHourCandles,
                                                                                             ref hourEmas,
                                                                                             ref hourEmaSlopes,
-                                                                                            ref hourCandles );
+                                                                                            ref hourCandles,
+                                                                                            bestVolatility.PeakTimes,
+                                                                                            bestVolatility.SwitchTimes,
+                                                                                            0,
+                                                                                            0.5
+                                                                                            );
 
                                         hourSingleResult = SingleEmaAnalyseProduct( hourSingleSettings, null );
 
@@ -1131,7 +1161,12 @@ namespace CBApp1
                                                                                                           ref currentHourCandles,
                                                                                                           ref hourEmas,
                                                                                                           ref hourEmaSlopes,
-                                                                                                          ref hourCandles );
+                                                                                                          ref hourCandles,
+                                                                                                          bestVolatility.PeakTimes,
+                                                                                                          bestVolatility.SwitchTimes,
+                                                                                                          0,
+                                                                                                          0.5
+                                                                                                          );
 
                                         hourLongAnalysisResult = SingleEmaAnalyseProduct( hourLongAnalysisSettings, null );
 

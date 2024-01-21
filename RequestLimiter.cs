@@ -37,24 +37,28 @@ namespace CBApp1
                 HttpResponseMessage resp = null;
                 if( requestCount < 30 )
                 {
+                    //Console.WriteLine("Sending");
                     resp = hClient.SendAsync( hReq ).GetAwaiter().GetResult();
+                    //Console.WriteLine( "Sent" );
                     //resp = SendReq( hReq );
                     if( resp != null )
                     {
+                        //string respString = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
                         string respString = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
                     }
                 }
-                else
-                {
-                    Thread.Sleep( 1000 );
-                    resp = hClient.SendAsync( hReq ).GetAwaiter().GetResult();
-                    //resp = SendReq( hReq );
-                    if( resp != null )
-                    {
-                        string respString = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-                    }
+                //else
+                //{
+                //    Thread.Sleep( 1000 );
+                //    resp = hClient.SendAsync( hReq ).GetAwaiter().GetResult();
+                //    //resp = SendReq( hReq );
+                //    if( resp != null )
+                //    {
+                //        //string respString = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                //        string respString = resp.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+                //    }
                     
-                }
+                //}
 
                 return resp;
             }
