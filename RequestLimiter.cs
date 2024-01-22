@@ -23,6 +23,7 @@ namespace CBApp1
 
         public RequestLimiter()
         {
+            Console.WriteLine( "RL constructed" );
             requestCount = 0;
             SetTimer( 1000 );
             hClient.Timeout = TimeSpan.FromSeconds(2);
@@ -38,7 +39,8 @@ namespace CBApp1
                 if( requestCount < 30 )
                 {
                     //Console.WriteLine("Sending");
-                    resp = hClient.SendAsync( hReq ).GetAwaiter().GetResult();
+                    //resp = hClient.SendAsync( hReq ).GetAwaiter().GetResult();
+                    resp = await hClient.SendAsync( hReq );
                     //Console.WriteLine( "Sent" );
                     //resp = SendReq( hReq );
                     if( resp != null )
@@ -90,7 +92,7 @@ namespace CBApp1
         private void OnTimedEvent( Object source, ElapsedEventArgs e )
         {
             requestCount = 0;
-            //Console.WriteLine( "reset req count" );
+            //Console.WriteLine( $"reset req count {DateTime.Now}" );
         }
 
         private static void SetTimer( int ms )

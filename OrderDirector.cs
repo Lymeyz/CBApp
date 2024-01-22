@@ -374,10 +374,10 @@ namespace CBApp1
                     //wsTracker.UnMatched[ "ADA-USDC" ][ "3babe17f-6460-4523-935c-170f2008fdf3" ].FilledSize = 37.51;
                     wsTracker.UnMatched[ "TRB-USDC" ].TryRemove( "ddfe51af-9ed4-46e7-86f9-2b9d014f11fd", out throwaway);
                 }
-                if( wsTracker.UnMatched[ "ADA-USDC" ].ContainsKey( "3864dd25-2ee7-46e4-9bc9-50c18d0578fd" ) )
+                if( wsTracker.UnMatched[ "XRP-USDC" ].ContainsKey( "e94f2c02-669f-468e-ac69-b2443b172293" ) )
                 {
                     //wsTracker.UnMatched[ "ADA-USDC" ][ "3babe17f-6460-4523-935c-170f2008fdf3" ].FilledSize = 37.51;
-                    wsTracker.UnMatched[ "ADA-USDC" ]["3864dd25-2ee7-46e4-9bc9-50c18d0578fd"].FilledSize = 41;
+                    wsTracker.UnMatched[ "XRP-USDC" ][ "e94f2c02-669f-468e-ac69-b2443b172293" ].FilledSize = 83.889786;
                 }
 
 

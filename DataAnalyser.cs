@@ -602,20 +602,26 @@ namespace CBApp1
                     {
                         if( !analysisRunning )
                         {
-                            lock( analysisRoot )
-                            {
-                                analysisRunning = true;
+                            //lock( analysisRoot )
+                            //{
+                            //    analysisRunning = true;
 
-                                writer.Write( $"analysis running {DateTime.UtcNow}" );
-                                AnalysisFunctionsTests();
+                            //    writer.Write( $"analysis running {DateTime.UtcNow}" );
+                            //    AnalysisFunctionsTests();
 
-                                analysisRunning = false;
-                            }
+                            //    analysisRunning = false;
+                            //}
+                            analysisRunning = true;
+
+                            writer.Write( $"analysis running {DateTime.UtcNow}" );
+                            AnalysisFunctionsTests();
+
+                            analysisRunning = false;
                         }
                     }
                     else
                     {
-                        analysisRunning = false;
+                        //analysisRunning = false;
                     }
                 }
             }
@@ -623,6 +629,7 @@ namespace CBApp1
             {
                 Console.WriteLine(ex.StackTrace);
                 Console.WriteLine(ex.Message);
+                analysisRunning = false;
             }
         }
 
@@ -739,6 +746,7 @@ namespace CBApp1
                                                                                               bestFiveVolatility.PeakTimes,
                                                                                               bestFiveVolatility.SwitchTimes,
                                                                                               0,
+                                                                                              0.5,
                                                                                               0.5
                                                                                               );
 
@@ -785,6 +793,7 @@ namespace CBApp1
                                                                                                               bestFiveVolatility.PeakTimes,
                                                                                                               bestFiveVolatility.SwitchTimes,
                                                                                                               0,
+                                                                                                              0.5,
                                                                                                               0.5
                                                                                                               );
 
@@ -922,6 +931,7 @@ namespace CBApp1
                                                                                             bestVolatility.PeakTimes,
                                                                                             bestVolatility.SwitchTimes,
                                                                                             0,
+                                                                                            0.5,
                                                                                             0.5
                                                                                             );
 
@@ -961,6 +971,7 @@ namespace CBApp1
                                                                                                           bestVolatility.PeakTimes,
                                                                                                           bestVolatility.SwitchTimes,
                                                                                                           0,
+                                                                                                          0.5,
                                                                                                           0.5
                                                                                                           );
 
@@ -1005,6 +1016,7 @@ namespace CBApp1
                                                                                                           bestVolatility.PeakTimes,
                                                                                                           bestVolatility.SwitchTimes,
                                                                                                           0,
+                                                                                                          0.5,
                                                                                                           0.5
                                                                                                           );
 
@@ -1126,6 +1138,7 @@ namespace CBApp1
                                                                                             bestVolatility.PeakTimes,
                                                                                             bestVolatility.SwitchTimes,
                                                                                             0,
+                                                                                            0.5,
                                                                                             0.5
                                                                                             );
 
@@ -1165,6 +1178,7 @@ namespace CBApp1
                                                                                                           bestVolatility.PeakTimes,
                                                                                                           bestVolatility.SwitchTimes,
                                                                                                           0,
+                                                                                                          0.5,
                                                                                                           0.5
                                                                                                           );
 
